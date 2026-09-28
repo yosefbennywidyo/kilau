@@ -13,7 +13,7 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 | R3 | Kolom nullable di entity tetap bertipe? | belum (Task 9) | |
 | R4 | `buf << ...` di template tetap di jalur string buffer? | belum (Rencana 3) | |
 | R5 | FFI menangani `SQLITE_TRANSIENT` dan salinan `column_text`? | **terjawab: ya** (2026-09-28 ~16:20 WIB) | `bind_text(stmt, i, s, -1, -1)` = SQLITE_TRANSIENT lewat integer literal sebagai `:ptr`; teks yang dibaca di blok `query` selamat setelah `finalize` + `GC.start` (tes `text read in a block outlives the statement`, teks Unicode dan 10 KB); out-param `sqlite3**`/`sqlite3_stmt**` lewat wrapper C `ffi_source`. Biaya: handle/statement berjalan di jalur boxed (K-006). |
-| R6 | Green thread + FFI `blocking: true` + pool tahan konkurensi? | belum (Task 3 sebagian; Rencana 4) | |
+| R6 | Green thread + FFI `blocking: true` + pool tahan konkurensi? | **sebagian** (2026-09-28 ~16:30 WIB) | 50 thread × insert lewat pool 4 koneksi (WAL, busy_timeout 5000, `sqlite3_step`/`sqlite3_exec` `blocking: true`) lulus di spinel tanpa `SQLITE_BUSY`/`locked`, dengan id unik dan count 51 (framework/test/db_pool_test.rb). Konkurensi 64 di bawah HTTP diuji di Rencana 4. |
 
 ## K-001: `Time.parse` tidak tersedia, dan gagal diam-diam saat compile
 - Lapisan: model
