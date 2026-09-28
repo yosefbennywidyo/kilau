@@ -158,3 +158,21 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 - Solusi yang dipakai: status disimpan sebagai ivar lewat `initialize(status, message)`, dan subclass memanggil `super(404, message)`. Tidak ada override method pada subclass exception.
 - Biaya: nol
 - Upstream: kandidat laporan; belum dilaporkan
+
+## K-011: `URI.decode_www_form_component` mendekode input rusak diam-diam, termasuk menjadi byte NUL
+- Lapisan: http
+- Pola yang dicoba: `Kilau::Form.unescape` = `URI.decode_www_form_component` + `rescue ArgumentError` → 400 (seperti di CRuby)
+- Yang terjadi (repro, spinel vs CRuby):
+  ```
+  "%zz" -> "\u0000"          | CRuby: ArgumentError invalid %-encoding (%zz)
+  "post%5Bt%zz" -> "post[t\u0000" | CRuby: ArgumentError
+  "%4" -> "%4"                | CRuby: ArgumentError
+  "a%2" -> "a%2"              | CRuby: ArgumentError
+  "%C3%A9" -> "é"             | sama
+  ```
+  Input form berisi `%zz` akan sampai ke aplikasi sebagai byte NUL tanpa error.
+- Repro: repro/k011_uri_decode_malformed.rb
+- Klasifikasi: bug-compiler / stdlib (perilaku berbeda dari CRuby, diam-diam; relevan keamanan)
+- Solusi yang dipakai: `Kilau::Form.unescape` memvalidasi sendiri bahwa setiap `%` diikuti dua digit hex (kalau tidak, `BadRequest` 400), baru memanggil decoder stdlib. Tes `broken percent-encoding in a form/query is BadRequest` lulus di kedua engine.
+- Biaya: satu pemindaian string per nilai form
+- Upstream: kandidat laporan (prioritas: decode ke NUL); belum dilaporkan

@@ -1,0 +1,28 @@
+ok the request line is split
+ok the query string is kept apart from the path
+ok query decodes + and names
+ok header names are case-insensitive
+ok a GET has an empty body
+ok the body is read to Content-Length
+ok form groups a nested prefix
+ok form_value reads a top-level field
+ok form of an absent prefix is empty
+ok a non-form body is not decoded as a form
+ok EOF before a request line is nil
+ok a malformed request line is 400
+ok a request target without a leading slash is 400
+ok a header without a colon is 400
+ok headers past 8 KB are 431
+ok a body past 1 MB is 413
+ok a non-numeric Content-Length is 400
+ok a body shorter than Content-Length is 400
+ok a chunked body is 400
+ok headers cut off by EOF are 400
+ok broken percent-encoding in a form is BadRequest
+ok broken percent-encoding in a query is BadRequest
+ok path_int reads digits
+ok path_int of letters is BadRequest
+ok path_int of a huge number is BadRequest, not an overflow
+ok path_int of a missing param is BadRequest
+ok override_method changes the verb
+ok Form.encode round-trips through decode
