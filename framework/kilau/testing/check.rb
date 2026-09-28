@@ -9,5 +9,12 @@ module Kilau
       raise "FAIL: #{label}" unless yield
       puts "ok #{label}"
     end
+
+    def self.raises_db_error?
+      yield
+      false
+    rescue Kilau::DB::Error
+      true
+    end
   end
 end
