@@ -207,3 +207,21 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 - Solusi yang dipakai: `Route#match` → `Route#match_path`. **Aturan umum:** hindari nama method yang sama dengan method bawaan String/Array/Hash (`match`, `size`, `each`, `call`, ...) pada kelas framework yang bisa tidak terpakai di sebagian program.
 - Biaya: nol (ganti nama)
 - Upstream: kandidat laporan; belum dilaporkan
+
+## K-014: kode mati dengan receiver untyped bisa ditolak, bergantung pada isi program lain
+- Lapisan: model (terpicu dari tes HTTP server)
+- Pola yang dicoba: `Migrator#rollback` / `#status_lines` membandingkan dan meng-interpolasi `m.version`. Di framework/test/http_server_test.rb, Migrator tidak dipakai sama sekali, tapi tetap ikut di-compile sebagai bagian dari framework.
+- Yang terjadi:
+  ```
+  spinel: .../framework/kilau/model/migrator.rb:41: unsupported equality: node 3625 (CallNode `==`) recv=CallNode/ty1 argc=1 arg0ty6
+  spinel: .../framework/kilau/model/migrator.rb:52: unsupported interpolation value: node 3684 (EmbeddedStatementsNode)
+  spinel: 2 refusals, nothing written
+  ```
+  - Tes lain yang juga meng-compile Migrator tanpa memakainya (dispatcher_test, smoke_test) tidak kena.
+  - Repro kecil (class + Migrator mati, dengan atau tanpa `require "socket"` / Thread) **tidak** memicunya.
+  - Pemicu pastinya **belum terisolasi**. Pencarian dihentikan sesuai batas 6–8 giliran per masalah.
+- Repro: belum ada yang minimal. Kondisi pemicunya adalah framework/test/http_server_test.rb di commit sebelum perbaikan (lihat git log Task 5 Rencana 2).
+- Klasifikasi: bug-compiler (dugaan: receiver untyped di kode mati di-resolve ke tipe lain; sekeluarga dengan K-013)
+- Solusi yang dipakai: `m.version.to_s` sebelum `==` dan interpolasi, sehingga operand selalu `String`. **Aturan umum:** di kode framework yang bisa mati di sebagian program, paksa tipe primitif (`to_s`, `to_i`) sebelum `==` dan interpolasi pada nilai dari receiver generik.
+- Biaya: nol
+- Upstream: perlu isolasi lebih dulu sebelum layak dilaporkan

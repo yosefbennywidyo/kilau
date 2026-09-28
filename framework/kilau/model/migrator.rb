@@ -38,7 +38,7 @@ module Kilau
     def rollback
       last = applied_versions.last
       return nil if last.nil?
-      migration = @migrations.find { |m| m.version == last }
+      migration = @migrations.find { |m| m.version.to_s == last }
       raise Kilau::DB::Error, "no migration defines applied version #{last}" if migration.nil?
       in_transaction do
         migration.down(@schema)
@@ -49,7 +49,11 @@ module Kilau
 
     def status_lines
       done = applied_versions
-      @migrations.map { |m| "#{done.include?(m.version) ? "up  " : "down"} #{m.version}" }
+      @migrations.map do |m|
+        version = m.version.to_s
+        state = done.include?(version) ? "up  " : "down"
+        "#{state} #{version}"
+      end
     end
 
     private

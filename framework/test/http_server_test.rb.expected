@@ -1,0 +1,11 @@
+ok bind on port 0 picks a free port
+ok a GET is served over the socket
+ok a second request reuses the connection
+ok Connection: close is honoured
+ok HTTP/1.0 without keep-alive closes
+ok a malformed request line gets 400 and a close
+ok an oversized body gets 413
+ok an unknown path gets 404
+ok a client that sends nothing does not stop the server
+ok 20 concurrent connections are all served
+ok close ends run
