@@ -1,0 +1,18 @@
+ok escape covers the five HTML metacharacters
+ok escape leaves plain text alone
+ok render is 200 text/html
+ok render takes a status
+ok to_http writes the status line, headers, length and body
+ok to_http can close the connection
+ok redirect is 303 with a location
+ok redirect names See Other
+ok json sets its content type
+ok json takes a status
+ok text sets its content type
+ok empty has no body
+ok location is nil without a redirect
+ok an unknown status still serializes
+ok NotFound is 404 with a default message
+ok BadRequest is 400
+ok Unauthorized is 401
+ok a subclass rescued as Kilau::Error keeps its status
