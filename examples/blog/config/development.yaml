@@ -1,0 +1,8 @@
+server:
+  host: "127.0.0.1"
+  port: 5150
+database:
+  path: db/development.sqlite3
+  pool: 4
+logger:
+  requests: true
