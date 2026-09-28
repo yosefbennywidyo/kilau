@@ -1,0 +1,10 @@
+usage: COMMAND   (start | db migrate | db rollback | db status)
+error: config: no file at /nonexistent-kilau-config/development.yaml
+error: /tmp/kilau-cli-test/broken.yaml:2: lists are not supported
+ok an unknown command exits 2
+migrated 20260101000001
+ok db migrate uses the config's database
+up   20260101000001
+ok db status reports it
+ok a missing config file exits 1
+ok a malformed config exits 1
