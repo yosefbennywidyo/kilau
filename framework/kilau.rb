@@ -5,6 +5,7 @@ end
 
 require_relative "kilau/testing/check"
 require_relative "kilau/db/base"
+require_relative "kilau/db/binds"
 require_relative "kilau/db/native"
 require_relative "kilau/db/connection_spinel"
 require_relative "kilau/db/connection_cruby"

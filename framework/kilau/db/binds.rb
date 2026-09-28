@@ -1,0 +1,63 @@
+module Kilau
+  module DB
+    # Positional SQL parameters with their types, one call per parameter:
+    # Binds.new.text(title).int(created_at). Each kind lives in an array of
+    # its own type rather than one mixed Array: under Spinel an Integer in a
+    # mixed binds array was read back as a String and crashed
+    # (docs/CATALOG.md K-015), and a mixed array widens to boxed values (K-005).
+    class Binds
+      NULL = 0
+      INT = 1
+      FLOAT = 2
+      TEXT = 3
+
+      attr_reader :size
+
+      def initialize
+        @kinds = []
+        @ints = []
+        @floats = []
+        @texts = []
+        @size = 0
+      end
+
+      def int(value)
+        raise Error, "nil given to int; use int_or_nil for a nullable column" if value.nil?
+        push(INT, value, 0.0, "")
+      end
+
+      def float(value)
+        raise Error, "nil given to float; use float_or_nil for a nullable column" if value.nil?
+        push(FLOAT, 0, value, "")
+      end
+
+      # A NUL byte would truncate the text in C, so it is refused.
+      def text(value)
+        raise Error, "nil given to text; use text_or_nil for a nullable column" if value.nil?
+        raise Error, "a text bind cannot contain a NUL byte" if value.include?("\0")
+        push(TEXT, 0, 0.0, value)
+      end
+
+      def null = push(NULL, 0, 0.0, "")
+      def int_or_nil(value) = value.nil? ? null : int(value)
+      def float_or_nil(value) = value.nil? ? null : float(value)
+      def text_or_nil(value) = value.nil? ? null : text(value)
+
+      def kind(i) = @kinds[i]
+      def int_at(i) = @ints[i]
+      def float_at(i) = @floats[i]
+      def text_at(i) = @texts[i]
+
+      private
+
+      def push(kind, int_value, float_value, text_value)
+        @kinds << kind
+        @ints << int_value
+        @floats << float_value
+        @texts << text_value
+        @size += 1
+        self
+      end
+    end
+  end
+end

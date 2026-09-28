@@ -248,3 +248,23 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 - Solusi yang dipakai: binder bertipe `Kilau::DB::Binds` menggantikan array binds campuran (D-019). Tidak ada lagi `PolyArray` di jalur SQL.
 - Biaya: perubahan API `execute/query/insert(sql, binds)` di Rencana 1 (binds kini `Binds`, bukan Array). Sekaligus menghapus pelebaran K-005.
 - Upstream: kandidat laporan setelah repro minimal; belum dilaporkan
+
+## K-016: `Pool#query_first` mengembalikan `nil` saat dipanggil dari handler; penugasan dari blok bersarang hilang
+- Lapisan: db
+- Pola yang dicoba: `found = nil; with { |conn| conn.query(sql, binds) { |row| found = yield(row) unless taken ... } }; found`, dipanggil dari `PostsController.load_item` (parameter untyped, K-012) lewat dispatch poly
+- Yang terjadi (2026-09-28 ~17:03 WIB, framework dengan `Binds`):
+  - Tes blog `GET /posts/1` setelah create → 404 di spinel. CRuby 200.
+  - Instrumentasi di `load_item` (program tes yang sama):
+    ```
+    id=1 class=Integer kind=1 int_at=1
+    sql=SELECT id, title, content, created_at, updated_at FROM posts WHERE id = ? LIMIT 1
+    post=nil
+    ```
+  - Pada konfigurasi yang sama: `query_all(...)` → `size=1`, `query_first(...)` → `nil`.
+  - **Sensitif terhadap seluruh program:** menambahkan satu pemanggilan bertipe `Post.find_by_id(db, 1)` di mana pun dalam program membuat `query_first` benar lagi.
+  - Repro mandiri dengan pola yang sama (/tmp, blok bersarang + `yield` + receiver untyped) lulus.
+- Repro: framework/kilau/db/pool.rb pada commit d8de580 + tes blog `posts_request_test.rb`. Belum minimal.
+- Klasifikasi: bug-compiler (dugaan: variabel lokal yang ditangkap blok bersarang, ditulis dari dalam, tidak terlihat oleh method saat method itu di-dispatch poly)
+- Solusi yang dipakai: `query_first` mengumpulkan ke array (`found << yield(row) if found.empty?`, lalu `found.first`), pola yang sama dengan `query_all` yang terbukti benar
+- Biaya: nol
+- Upstream: kandidat laporan setelah repro minimal; belum dilaporkan

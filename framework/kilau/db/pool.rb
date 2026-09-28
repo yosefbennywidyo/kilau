@@ -42,19 +42,13 @@ module Kilau
       end
 
       # Maps the first row, or returns nil. Every row is still stepped, so
-      # give the query a LIMIT 1.
+      # give the query a LIMIT 1. The result is collected in an array, not
+      # assigned to a local from the nested blocks: reached from a handler,
+      # Spinel lost that assignment and answered nil (docs/CATALOG.md K-016).
       def query_first(sql, binds)
-        found = nil
-        taken = false
-        with do |conn|
-          conn.query(sql, binds) do |row|
-            unless taken
-              found = yield(row)
-              taken = true
-            end
-          end
-        end
-        found
+        found = []
+        with { |conn| conn.query(sql, binds) { |row| found << yield(row) if found.empty? } }
+        found.first
       end
 
       def close

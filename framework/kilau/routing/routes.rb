@@ -67,7 +67,7 @@ module Kilau
     end
 
     def self.health(app_context)
-      app_context.db.query_first("SELECT 1", []) { |row| row.int(0) }
+      app_context.db.query_first("SELECT 1", Kilau::DB::Binds.new) { |row| row.int(0) }
       Format.json("{\"ok\":true}")
     rescue Kilau::DB::Error
       Format.json("{\"ok\":false}", status: 503)

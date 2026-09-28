@@ -9,8 +9,8 @@ class Widget < Entities::Widget
     errors.add("name", "must be at least 2 characters") if name.to_s.length < 2
   end
 
-  def self.find_by_id(db, id) = db.query_first(select_sql + " WHERE id = ? LIMIT 1", [id]) { |row| from_row(row) }
-  def self.all(db) = db.query_all(select_sql + " ORDER BY id", []) { |row| from_row(row) }
+  def self.find_by_id(db, id) = db.query_first(select_sql + " WHERE id = ? LIMIT 1", Kilau::DB::Binds.new.int(id)) { |row| from_row(row) }
+  def self.all(db) = db.query_all(select_sql + " ORDER BY id", Kilau::DB::Binds.new) { |row| from_row(row) }
 end
 
 db = Kilau::DB::Pool.new(":memory:", 1)

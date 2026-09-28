@@ -44,7 +44,7 @@ end
 
 def table_exists?(conn, name)
   found = false
-  conn.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", [name]) { |row| found = true }
+  conn.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", Kilau::DB::Binds.new.text(name)) { |row| found = true }
   found
 end
 
@@ -55,7 +55,7 @@ T.check("migrate again applies nothing") { migrator.migrate.empty? }
 T.check("status lists every migration as up") { migrator.status_lines == ["up   20260101000001", "up   20260101000002"] }
 
 columns = []
-conn.query("PRAGMA table_info(widgets)", []) { |row| columns << "#{row.text(1)} #{row.text(2)} #{row.int(3)}" }
+conn.query("PRAGMA table_info(widgets)", Kilau::DB::Binds.new) { |row| columns << "#{row.text(1)} #{row.text(2)} #{row.int(3)}" }
 T.check("create_table maps column types") do
   columns == ["id INTEGER 0", "name TEXT 1", "note TEXT 0", "qty INTEGER 1", "price REAL 1", "created_at INTEGER 1", "updated_at INTEGER 1"]
 end

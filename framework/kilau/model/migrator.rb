@@ -15,7 +15,7 @@ module Kilau
 
     def applied_versions
       versions = []
-      @conn.query("SELECT version FROM schema_migrations ORDER BY version", []) { |row| versions << row.text(0) }
+      @conn.query("SELECT version FROM schema_migrations ORDER BY version", Kilau::DB::Binds.new) { |row| versions << row.text(0) }
       versions
     end
 
@@ -27,7 +27,7 @@ module Kilau
         next if done.include?(migration.version)
         in_transaction do
           migration.up(@schema)
-          @conn.execute("INSERT INTO schema_migrations (version) VALUES (?)", [migration.version])
+          @conn.execute("INSERT INTO schema_migrations (version) VALUES (?)", Kilau::DB::Binds.new.text(migration.version.to_s))
         end
         applied << migration.version
       end
@@ -42,7 +42,7 @@ module Kilau
       raise Kilau::DB::Error, "no migration defines applied version #{last}" if migration.nil?
       in_transaction do
         migration.down(@schema)
-        @conn.execute("DELETE FROM schema_migrations WHERE version = ?", [last])
+        @conn.execute("DELETE FROM schema_migrations WHERE version = ?", Kilau::DB::Binds.new.text(last))
       end
       last
     end

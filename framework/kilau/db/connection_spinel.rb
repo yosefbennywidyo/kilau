@@ -80,12 +80,11 @@ if RUBY_ENGINE == "spinel"
         private
 
         def prepare(sql, binds)
-          DB.check_binds(binds)
           stmt = Native.kilau_sqlite_prepare(@handle, sql)
           raise Error, "#{Native.sqlite3_errmsg(@handle)} (#{sql})" if stmt == nil
           i = 0
           while i < binds.size
-            rc = bind(stmt, i + 1, binds[i])
+            rc = bind(stmt, i + 1, binds, i)
             if rc != SQLITE_OK
               message = Native.sqlite3_errmsg(@handle)
               Native.sqlite3_finalize(stmt)
@@ -98,11 +97,11 @@ if RUBY_ENGINE == "spinel"
 
         # -1, -1: length up to the NUL, and SQLITE_TRANSIENT so SQLite
         # copies the text before the GC may move or free it.
-        def bind(stmt, index, value)
-          case value
-          when Integer then Native.sqlite3_bind_int64(stmt, index, value)
-          when Float then Native.sqlite3_bind_double(stmt, index, value)
-          when String then Native.sqlite3_bind_text(stmt, index, value, -1, -1)
+        def bind(stmt, index, binds, i)
+          case binds.kind(i)
+          when Binds::INT then Native.sqlite3_bind_int64(stmt, index, binds.int_at(i))
+          when Binds::FLOAT then Native.sqlite3_bind_double(stmt, index, binds.float_at(i))
+          when Binds::TEXT then Native.sqlite3_bind_text(stmt, index, binds.text_at(i), -1, -1)
           else Native.sqlite3_bind_null(stmt, index)
           end
         end

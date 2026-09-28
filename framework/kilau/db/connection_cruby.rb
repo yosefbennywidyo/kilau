@@ -46,17 +46,15 @@ else
         end
 
         def execute(sql, binds)
-          DB.check_binds(binds)
-          @db.execute(sql, binds)
+          @db.execute(sql, values(binds))
           @db.changes
         rescue SQLite3::Exception => e
           raise Error, e.message
         end
 
         def query(sql, binds)
-          DB.check_binds(binds)
           rows = begin
-            @db.execute(sql, binds)
+            @db.execute(sql, values(binds))
           rescue SQLite3::Exception => e
             raise Error, e.message
           end
@@ -69,6 +67,18 @@ else
         def close
           @db.close
           nil
+        end
+
+        private
+
+        def values(binds)
+          (0...binds.size).map do |i|
+            case binds.kind(i)
+            when Binds::INT then binds.int_at(i)
+            when Binds::FLOAT then binds.float_at(i)
+            when Binds::TEXT then binds.text_at(i)
+            end
+          end
         end
       end
     end
