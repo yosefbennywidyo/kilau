@@ -1,0 +1,14 @@
+ok an invalid save returns false
+ok an invalid save leaves id nil
+ok the validation message is recorded
+ok a valid save returns true
+ok save assigns the row id
+ok errors are cleared after a valid save
+ok save fills both timestamps
+ok an update saves
+ok find_by_id returns the updated row
+ok created_at survives an update
+ok find_by_id of a missing id is nil
+ok all returns rows in id order
+ok destroy removes the row
+ok destroying an unsaved record is false

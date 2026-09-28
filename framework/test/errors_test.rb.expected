@@ -1,0 +1,6 @@
+ok new errors are empty
+ok messages on one field are joined
+ok a field without errors reads nil
+ok size counts fields
+ok each yields fields in insertion order
+ok clear empties

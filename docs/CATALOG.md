@@ -98,3 +98,17 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 - Solusi yang dipakai: diterima untuk sekarang. Semua pemanggilan `Native.*` tetap benar.
 - Biaya: setiap akses kolom lewat `Row` mem-unbox pointer statement. Diukur di benchmark S3 (100 baris) di Rencana 4.
 - Upstream: kandidat pertanyaan ke spinel (apakah `:ptr` dalam ivar bisa tetap bertipe); belum dilaporkan
+
+## K-007: pemanggilan method yang tak terdefinisi di blok `unless yield` menjadi error tak jelas
+- Lapisan: testing (diagnostik compiler)
+- Pola yang dicoba: fase RED TDD. `T.check("...") { widget.save(db) }` sebelum `Kilau::Model` ada.
+- Yang terjadi:
+  - Dalam isolasi: `spinel: unresolved.rb:3: unsupported condition (non-bool): node 10 (YieldNode)` / `1 refusal, nothing written`.
+  - Di framework/test/model_test.rb: C yang tidak valid, `kilau/testing/check.rb:9: error: invalid argument type 'sp_RbVal' to unary expression`, lalu `C compilation failed`.
+  - CRuby melaporkan `undefined method 'save' for an instance of Gadget (NoMethodError)`.
+  - Hilang begitu method-nya didefinisikan. Nilai poly biasa sebagai hasil `yield` bekerja normal.
+- Repro: repro/k007_unresolved_call_in_yield_condition.rb
+- Klasifikasi: bug-compiler (kualitas diagnostik; bukan perilaku runtime)
+- Solusi yang dipakai: tidak perlu. Di fase RED, baca error ini sebagai "method belum ada".
+- Biaya: kebingungan saat TDD
+- Upstream: kandidat laporan (sebaiknya menyebut method yang tak ada); belum dilaporkan
