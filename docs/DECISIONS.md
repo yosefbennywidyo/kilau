@@ -17,3 +17,7 @@ katalog. Penyimpangan dari spec atau rencana juga dicatat di sini.
 | D-010 | Helper tes | `Kilau::Testing.check` / `T.check` sebagai method modul, bukan `include` di top level (penyimpangan dari Rencana 1) | Method bertipe blok lewat `include` di top level gagal link | K-004 |
 | D-011 | Snapshot tes | `.expected` berisi stdout+stderr gabungan; `make test-cruby` juga menggabungkan (penyimpangan dari Rencana 1) | `spin test` menggabungkan kedua stream (spinel #3405); docs/spin.md yang menyebut "stdout" sudah usang | — |
 | D-012 | Config | `Kilau::Config`, parser subset YAML + getter bertipe + override `KILAU_*`; `logger.requests` (bool) menggantikan `logger.level` di contoh spec | YAML tidak ada; hanya log request yang diimplementasikan | K-002 |
+| D-013 | Router | Handler = blok yang disimpan di `Endpoint`, dengan `get/post/patch/delete` sebagai method class `Kilau::Controller` | Tanpa `const_get`/`send` saat runtime; biaya tipenya tercatat di K-012 | R1, K-012 |
+| D-014 | Request | `request.request_method`, bukan `request.method` (penyimpangan dari spec §3.2) | `method` akan menutupi `Object#method` | — |
+| D-015 | Tes request | `Kilau::Testing::Client.new(hooks, app_context)`, bukan `Kilau::Testing.request(App)` (penyimpangan dari spec §3) | Tes menyiapkan DB + migrasi sendiri; client tidak perlu tahu migrasi app | — |
+| D-016 | Error handler | `Kilau::Error` menyimpan status di ivar lewat `initialize`; subclass hanya `super(status, msg)` | Override method pada subclass exception gagal compile | K-010 |

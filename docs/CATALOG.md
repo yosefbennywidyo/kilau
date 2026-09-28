@@ -8,7 +8,7 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 
 | ID | Pertanyaan | Status | Bukti |
 |---|---|---|---|
-| R1 | Tabel closure route tetap bertipe? | belum (Rencana 2) | |
+| R1 | Tabel closure route tetap bertipe? | **terjawab: tidak** (2026-09-28 ~16:45 WIB) | Proc handler yang disimpan di `Endpoint` lalu dipanggil lewat `@handler.call` adalah penghalang tipe. Return `Endpoint#call` dan `Dispatcher#call` "born here" untyped, dan parameter `app_context`/`request` setiap handler "never bound", jadi seluruh kode handler berjalan boxed (K-012). Fallback spec §2.2 (`kilau gen routes`, dispatch `case` yang memanggil handler langsung) diputuskan di Rencana 4 berdasarkan benchmark S1/S2. |
 | R2 | `Hash[String, String]` params/form tetap sempit? | belum (Rencana 2) | |
 | R3 | Kolom nullable di entity tetap bertipe? | **terjawab: ya** (2026-09-28 ~16:19 WIB) | `--warn-widen` pada framework/test/model_test.rb (Widget, kolom `note` nullable lewat `text_or_nil`) dan examples/blog/test/post_model_test.rb: tidak ada peringatan untuk atribut entity, `from_row`, atau `Row#text_or_nil` yang dipanggil. Kemunculan `text_or_nil`/`float` di log Post hanya karena method itu tak pernah dipanggil di sana ("never bound"). Pelebaran yang tersisa di lapisan data berasal dari K-005, K-006, dan K-008, bukan dari nullability. |
 | R4 | `buf << ...` di template tetap di jalur string buffer? | belum (Rencana 3) | |
@@ -176,3 +176,22 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 - Solusi yang dipakai: `Kilau::Form.unescape` memvalidasi sendiri bahwa setiap `%` diikuti dua digit hex (kalau tidak, `BadRequest` 400), baru memanggil decoder stdlib. Tes `broken percent-encoding in a form/query is BadRequest` lulus di kedua engine.
 - Biaya: satu pemindaian string per nilai form
 - Upstream: kandidat laporan (prioritas: decode ke NUL); belum dilaporkan
+
+## K-012: proc yang disimpan lalu dipanggil lewat `.call` memutus inferensi tipe (menjawab R1)
+- Lapisan: routing
+- Pola Loco yang dicoba: `get { |app_context, request| list(app_context, request) }` → `Endpoint` menyimpan blok → `Dispatcher` memanggil `route.endpoint.call(app_context, request)`
+- Yang terjadi (`--warn-widen`, framework/test/dispatcher_test.rb, 2026-09-28 ~16:45 WIB):
+  ```
+  kilau/controller/controller.rb:11:5: warning: the return of `call` widened to untyped (boxed poly slow path)
+  kilau/controller/controller.rb:11:38: note: returned `@handler.call(app_context, request)` is untyped -- born here: no untyped input
+  kilau/routing/dispatcher.rb:12:5: warning: the return of `call` widened to untyped (boxed poly slow path)
+  test/dispatcher_test.rb:16:30: warning: parameter `request` of `list` widened to untyped (boxed poly slow path)
+  note: never bound: no call site gives it a type
+  ```
+  Hal yang sama terjadi untuk `app_context`/`request` di `add`, `show`, `update`, dan `remove`.
+- Repro: framework/test/dispatcher_test.rb (`spinel $(spin flags) --warn-widen ...`)
+- Klasifikasi: pelebaran-tipe (batas inferensi: argumen dan return proc yang disimpan tidak dilacak)
+- Solusi yang dipakai: diterima di Rencana 2, karena perilakunya benar di kedua engine.
+- Biaya: belum terukur. Setiap request melewati dispatch boxed, dan setiap akses `request.*`/`app_context.*` di handler berjalan boxed.
+- Alternatif (spec §2.2 fallback): `kilau gen routes` menghasilkan `case` yang memanggil `PostsController.list(app_context, request)` langsung, tanpa proc. Diputuskan di Rencana 4 dengan angka S1/S2.
+- Upstream: kandidat pertanyaan (apakah tipe argumen/return proc yang disimpan bisa dilacak bila semua pemanggil konsisten); belum dilaporkan

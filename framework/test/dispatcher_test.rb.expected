@@ -1,0 +1,21 @@
+kilau: RuntimeError: boom
+ok a Hooks without routes raises NotImplementedError
+ok a route captures its params
+ok a route refuses a different shape
+ok prefix and / make the prefix itself
+ok _ping answers ok as JSON
+ok _health answers ok with a working database
+ok a GET reaches its handler with the query and app_context
+ok a POST reads the nested form and redirects
+ok path params reach the handler
+ok a non-numeric id is 400
+ok PATCH arrives as POST + _method
+ok DELETE arrives as POST + _method
+ok _method=get does not change the verb
+ok a POST where only GET is routed is 404
+ok an unknown path is 404
+ok the 404 page escapes the path
+ok broken percent-encoding in a form is 400
+ok a raised NotFound is 404 with its message escaped
+ok a raised Unauthorized is 401
+ok an unexpected exception is 500 without its message
