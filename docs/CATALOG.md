@@ -195,3 +195,15 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 - Biaya: belum terukur. Setiap request melewati dispatch boxed, dan setiap akses `request.*`/`app_context.*` di handler berjalan boxed.
 - Alternatif (spec §2.2 fallback): `kilau gen routes` menghasilkan `case` yang memanggil `PostsController.list(app_context, request)` langsung, tanpa proc. Diputuskan di Rencana 4 dengan angka S1/S2.
 - Upstream: kandidat pertanyaan (apakah tipe argumen/return proc yang disimpan bisa dilacak bila semua pemanggil konsisten); belum dilaporkan
+
+## K-013: method buatan bernama sama dengan bawaan (`match`) pada receiver untyped di-resolve ke bawaan, dan C gagal compile
+- Lapisan: routing
+- Pola yang dicoba: `Route#match(path)` dipanggil dari `Dispatcher#call`. Di program yang tidak memakai router (misalnya framework/test/smoke_test.rb, yang tetap meng-compile seluruh framework), `route` tidak pernah bertipe.
+- Yang terjadi:
+  - Di test suite: `kilau/routing/dispatcher.rb:16: error: assigning to 'volatile sp_RbVal' from incompatible type 'sp_MatchData *'`. `smoke_test` dan `http_parser_test` gagal build, sedangkan `dispatcher_test` (yang memakai router) lulus.
+  - Repro minimal: `k013.rb:12: error: assigning to 'sp_RbVal' from incompatible type 'sp_MatchData *'`. CRuby jalan normal.
+- Repro: repro/k013_builtin_name_on_untyped_receiver.rb
+- Klasifikasi: bug-compiler
+- Solusi yang dipakai: `Route#match` → `Route#match_path`. **Aturan umum:** hindari nama method yang sama dengan method bawaan String/Array/Hash (`match`, `size`, `each`, `call`, ...) pada kelas framework yang bisa tidak terpakai di sebagian program.
+- Biaya: nol (ganti nama)
+- Upstream: kandidat laporan; belum dilaporkan

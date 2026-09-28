@@ -41,8 +41,8 @@ T.check("a Hooks without routes raises NotImplementedError") do
 end
 
 route = Kilau::Route.new("GET", "/notes/:id/edit", NotesController.get { |app_context, request| Kilau::Format.empty(204) })
-T.check("a route captures its params") { route.match("/notes/7/edit") == { "id" => "7" } }
-T.check("a route refuses a different shape") { route.match("/notes/7").nil? && route.match("/notes//edit").nil? }
+T.check("a route captures its params") { route.match_path("/notes/7/edit") == { "id" => "7" } }
+T.check("a route refuses a different shape") { route.match_path("/notes/7").nil? && route.match_path("/notes//edit").nil? }
 T.check("prefix and / make the prefix itself") { Kilau::Routes.new.prefix("/notes/").add("/", NotesController.get { |c, r| Kilau::Format.empty(204) }).routes[0].pattern == "/notes" }
 
 db = Kilau::DB::Pool.new(":memory:", 1)
