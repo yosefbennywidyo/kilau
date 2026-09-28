@@ -6,7 +6,8 @@ module Kilau
     USAGE = "usage: COMMAND [--db PATH]   (COMMAND: migrate | rollback | status)"
     DEFAULT_DB = "db/development.sqlite3"
 
-    # Returns the process exit status.
+    # Returns the process exit status: 0 on success, 1 when the database
+    # cannot be opened or a migration fails, 2 on a usage error.
     def self.run(migrations, argv)
       command = argv[0]
       db_path = DEFAULT_DB
@@ -25,7 +26,12 @@ module Kilau
         return 2
       end
 
-      conn = Kilau::DB::Connection.open(db_path)
+      conn = begin
+        Kilau::DB::Connection.open(db_path)
+      rescue Kilau::DB::Error => e
+        $stderr.puts "error: #{e.message}"
+        return 1
+      end
       begin
         migrator = Migrator.new(conn, migrations)
         if command == "migrate"
@@ -38,6 +44,9 @@ module Kilau
         else
           migrator.status_lines.each { |line| puts line }
         end
+      rescue Kilau::DB::Error => e
+        $stderr.puts "error: #{e.message}"
+        return 1
       ensure
         conn.close
       end

@@ -1,7 +1,9 @@
 usage: COMMAND [--db PATH]   (COMMAND: migrate | rollback | status)
 usage: COMMAND [--db PATH]   (COMMAND: migrate | rollback | status)
+error: sqlite open /nonexistent-kilau-dir/x.sqlite3: unable to open database file
 ok an unknown command exits 2
 ok --db without a path exits 2
+ok an unopenable database exits 1 with a message
 migrated 20260928000001
 ok migrate exits 0
 up   20260928000001
