@@ -86,5 +86,33 @@ module KilauTool
       lines << "end"
       lines.join("\n") + "\n"
     end
+
+    TABLES_SQL = "SELECT name FROM sqlite_master WHERE type = 'table' " \
+                 "AND name NOT LIKE 'sqlite_%' AND name != 'schema_migrations' ORDER BY name"
+
+    # Reads every user table of the SQLite file at db_path and writes
+    # <out_dir>/<table>.rb. Returns the paths written, by table name.
+    def self.generate(db_path, out_dir)
+      raise ArgumentError, "no database at #{db_path}" unless File.exist?(db_path)
+      raise ArgumentError, "no directory at #{out_dir}" unless File.directory?(out_dir)
+      conn = Kilau::DB::Connection.open(db_path)
+      written = []
+      begin
+        tables = []
+        conn.query(TABLES_SQL, []) { |row| tables << row.text(0) }
+        tables.each do |table|
+          columns = []
+          conn.query("PRAGMA table_info(#{table})", []) do |row|
+            columns << Column.new(row.text(1), row.text(2).upcase, row.int(3) == 1, row.int(5) > 0)
+          end
+          path = "#{out_dir}/#{table}.rb"
+          File.write(path, render(table, columns))
+          written << path
+        end
+      ensure
+        conn.close
+      end
+      written
+    end
   end
 end
