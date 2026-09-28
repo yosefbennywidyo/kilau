@@ -1,0 +1,12 @@
+ok migrate applies pending migrations in version order
+ok migrate again applies nothing
+ok status lists every migration as up
+ok create_table maps column types
+ok rollback undoes the newest migration
+ok status shows the rolled back migration as down
+ok the rolled back table is gone
+ok rollback with nothing applied returns nil
+ok duplicate versions are rejected
+ok a failing migration raises
+ok a failing migration is not recorded
+ok a failing migration's earlier steps roll back
