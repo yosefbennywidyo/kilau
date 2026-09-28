@@ -4,7 +4,7 @@
 # as spin test merges them (spinel #3405).
 SPIN ?= spin
 RUBY ?= ruby
-PACKAGES ?= framework tool
+PACKAGES ?= framework tool examples/blog
 
 .PHONY: test test-cruby tool
 

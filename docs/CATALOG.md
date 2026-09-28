@@ -10,7 +10,7 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 |---|---|---|---|
 | R1 | Tabel closure route tetap bertipe? | belum (Rencana 2) | |
 | R2 | `Hash[String, String]` params/form tetap sempit? | belum (Rencana 2) | |
-| R3 | Kolom nullable di entity tetap bertipe? | belum (Task 9) | |
+| R3 | Kolom nullable di entity tetap bertipe? | **terjawab: ya** (2026-09-28 ~16:19 WIB) | `--warn-widen` pada framework/test/model_test.rb (Widget, kolom `note` nullable lewat `text_or_nil`) dan examples/blog/test/post_model_test.rb: tidak ada peringatan untuk atribut entity, `from_row`, atau `Row#text_or_nil` yang dipanggil. Kemunculan `text_or_nil`/`float` di log Post hanya karena method itu tak pernah dipanggil di sana ("never bound"). Pelebaran yang tersisa di lapisan data berasal dari K-005, K-006, dan K-008, bukan dari nullability. |
 | R4 | `buf << ...` di template tetap di jalur string buffer? | belum (Rencana 3) | |
 | R5 | FFI menangani `SQLITE_TRANSIENT` dan salinan `column_text`? | **terjawab: ya** (2026-09-28 ~16:20 WIB) | `bind_text(stmt, i, s, -1, -1)` = SQLITE_TRANSIENT lewat integer literal sebagai `:ptr`; teks yang dibaca di blok `query` selamat setelah `finalize` + `GC.start` (tes `text read in a block outlives the statement`, teks Unicode dan 10 KB); out-param `sqlite3**`/`sqlite3_stmt**` lewat wrapper C `ffi_source`. Biaya: handle/statement berjalan di jalur boxed (K-006). |
 | R6 | Green thread + FFI `blocking: true` + pool tahan konkurensi? | **sebagian** (2026-09-28 ~16:30 WIB) | 50 thread × insert lewat pool 4 koneksi (WAL, busy_timeout 5000, `sqlite3_step`/`sqlite3_exec` `blocking: true`) lulus di spinel tanpa `SQLITE_BUSY`/`locked`, dengan id unik dan count 51 (framework/test/db_pool_test.rb). Konkurensi 64 di bawah HTTP diuji di Rencana 4. |
@@ -112,3 +112,22 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 - Solusi yang dipakai: tidak perlu. Di fase RED, baca error ini sebagai "method belum ada".
 - Biaya: kebingungan saat TDD
 - Upstream: kandidat laporan (sebaiknya menyebut method yang tak ada); belum dilaporkan
+
+## K-008: method yang mengembalikan hasil blok melebar ke untyped, termasuk `Post.all`
+- Lapisan: db / model
+- Pola yang dicoba: helper generik ala Loco (`Pool#with { |conn| ... }`, `query_all(sql, binds) { |row| from_row(row) }`) yang mengembalikan nilai dari blok pemanggil
+- Yang terjadi (`--warn-widen`, examples/blog/test/post_model_test.rb):
+  ```
+  framework/kilau/db/pool.rb:18:7: warning: the return of `with` widened to untyped (boxed poly slow path)
+  framework/kilau/db/pool.rb:38:7: warning: the return of `query_all` widened to untyped (boxed poly slow path)
+  src/models/posts.rb:11:3: warning: the return of `all` widened to untyped (boxed poly slow path)
+  framework/kilau/model/errors.rb:15:5: warning: the return of `[]` widened to untyped (boxed poly slow path)
+  src/models/_entities/posts.rb:29:5: warning: the return of `insert_binds` widened to untyped (boxed poly slow path)
+  ```
+  - Satu method dipakai dengan blok yang mengembalikan tipe berbeda (Integer, String, Post), sehingga return-nya melebar dan hasil `Post.all` ikut boxed.
+  - `Errors#[]` (lookup `Hash[String, String]` → `String | nil`) juga melebar. Ini relevan untuk R2.
+- Repro: examples/blog/test/post_model_test.rb (`spinel $(spin flags) --warn-widen ...`)
+- Klasifikasi: pelebaran-tipe
+- Solusi yang dipakai: diterima di Rencana 1, karena perilakunya benar di kedua engine.
+- Biaya: belum terukur. Kandidat perbaikan di Rencana 2/4 kalau benchmark S3 menunjukkan biaya: entity hasil generate menyediakan finder bertipe sendiri (`all`, `find_by_id`) yang memanggil `Connection#query` langsung, bukan lewat blok generik pool.
+- Upstream: tidak perlu (sifat inferensi return per method, bukan per pemanggilan)

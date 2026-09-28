@@ -1,0 +1,7 @@
+ok an invalid post is not saved
+ok the title message is Indonesian
+ok the content message is Indonesian
+ok a valid post saves
+ok all lists the newest first
+ok find_by_id reads the content back
+ok find_by_id of a missing id is nil

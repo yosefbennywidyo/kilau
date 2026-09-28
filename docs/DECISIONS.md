@@ -13,5 +13,6 @@ katalog. Penyimpangan dari spec atau rencana juga dicatat di sini.
 | D-006 | DSL migrasi | Blok `create_table("posts") { \|t\| t.string("title") }`, bukan array pasangan (penyimpangan dari spec §5.1) | Array `[String, Symbol]` bernilai campuran → jalur boxed; blok bertipe | — |
 | D-007 | Versi migrasi | Method `version` eksplisit | Nama class tidak dibaca lewat reflection | — |
 | D-008 | Lokasi DB untuk `blog_schema` | Flag `--db PATH` (default `db/development.sqlite3`) sampai config ada di Rencana 2 | YAML tidak tersedia | K-002 |
+| D-009 | Entity | Codegen (`kilau gen entities`), di-commit ke `src/models/_entities/` | Pola Loco sendiri (SeaORM entity dari skema) | — |
 | D-010 | Helper tes | `Kilau::Testing.check` / `T.check` sebagai method modul, bukan `include` di top level (penyimpangan dari Rencana 1) | Method bertipe blok lewat `include` di top level gagal link | K-004 |
 | D-011 | Snapshot tes | `.expected` berisi stdout+stderr gabungan; `make test-cruby` juga menggabungkan (penyimpangan dari Rencana 1) | `spin test` menggabungkan kedua stream (spinel #3405); docs/spin.md yang menyebut "stdout" sudah usang | — |
