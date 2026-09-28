@@ -18,7 +18,11 @@ module Kilau
 
     def location = @headers["location"]
 
+    # A CR or LF would let a value start another header or end the head.
     def set_header(name, value)
+      if name.include?("\r") || name.include?("\n") || value.include?("\r") || value.include?("\n")
+        raise ArgumentError, "header #{name.inspect} contains a line break"
+      end
       @headers[name] = value
       nil
     end

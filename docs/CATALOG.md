@@ -268,3 +268,16 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 - Solusi yang dipakai: `query_first` mengumpulkan ke array (`found << yield(row) if found.empty?`, lalu `found.first`), pola yang sama dengan `query_all` yang terbukti benar
 - Biaya: nol
 - Upstream: kandidat laporan setelah repro minimal; belum dilaporkan
+
+## K-017: satu `elsif <panggilan> == 0` + `raise` di `Model#save` merusak jalur insert di cabang lain
+- Lapisan: model
+- Pola yang dicoba (perbaikan temuan review Rencana 2 #1): `elsif db.execute(update_sql, update_binds) == 0; raise Kilau::Error::NotFound, "row #{id} no longer exists"; end`
+- Yang terjadi:
+  - framework/test/model_test.rb di spinel gagal pada save valid **pertama** (cabang insert, bukan update) dengan `nil given to int; use int_or_nil for a nullable column (Kilau::DB::Error)`. Timestamp yang baru diisi `touch` terbaca nil oleh `Binds#int`.
+  - CRuby lulus.
+  - Ditulis ulang sebagai `else; changed = db.execute(...); raise ... if changed.to_i == 0; end` → lulus di kedua engine.
+- Repro: framework/kilau/model/model.rb dengan bentuk `elsif` di atas + framework/test/model_test.rb. Belum minimal.
+- Klasifikasi: bug-compiler (sensitivitas inferensi seluruh program; sekeluarga dengan K-015/K-016)
+- Solusi yang dipakai: bentuk `else` + variabel + `to_i`
+- Biaya: nol
+- Upstream: perlu isolasi

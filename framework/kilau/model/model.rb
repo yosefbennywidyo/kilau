@@ -22,7 +22,9 @@ module Kilau
       if id.nil?
         self.id = db.insert(insert_sql, insert_binds)
       else
-        db.execute(update_sql, update_binds)
+        changed = db.execute(update_sql, update_binds)
+        # The row went away since it was loaded (another request deleted it).
+        raise Kilau::Error::NotFound, "row #{id.to_s} no longer exists" if changed.to_i == 0
       end
       true
     end

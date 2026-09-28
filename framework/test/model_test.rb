@@ -41,4 +41,14 @@ second.save(db)
 T.check("all returns rows in id order") { Widget.all(db).map { |w| w.name } == ["gear", "cog"] }
 T.check("destroy removes the row") { second.destroy(db) && Widget.find_by_id(db, 2).nil? }
 T.check("destroying an unsaved record is false") { Widget.new.destroy(db) == false }
+gone = Widget.find_by_id(db, 1)
+db.execute("DELETE FROM widgets WHERE id = ?", Kilau::DB::Binds.new.int(1))
+gone.name = "renamed"
+vanished = begin
+  gone.save(db)
+  "saved"
+rescue Kilau::Error::NotFound => e
+  e.message
+end
+T.check("updating a row deleted meanwhile raises NotFound") { vanished == "row 1 no longer exists" }
 db.close

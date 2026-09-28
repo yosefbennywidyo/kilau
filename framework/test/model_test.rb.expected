@@ -12,3 +12,4 @@ ok find_by_id of a missing id is nil
 ok all returns rows in id order
 ok destroy removes the row
 ok destroying an unsaved record is false
+ok updating a row deleted meanwhile raises NotFound

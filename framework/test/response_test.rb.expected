@@ -12,6 +12,8 @@ ok text sets its content type
 ok empty has no body
 ok location is nil without a redirect
 ok an unknown status still serializes
+ok a header value with CR or LF is refused
+ok a header name with CR or LF is refused
 ok NotFound is 404 with a default message
 ok BadRequest is 400
 ok Unauthorized is 401

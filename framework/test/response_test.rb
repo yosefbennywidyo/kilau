@@ -22,6 +22,14 @@ T.check("empty has no body") { Kilau::Format.empty(204).body == "" && Kilau::For
 T.check("location is nil without a redirect") { page.location.nil? }
 T.check("an unknown status still serializes") { Kilau::Response.new(299, "text/plain", "").to_http(false).start_with?("HTTP/1.1 299 Unknown\r\n") }
 
+def header_refused?(name, value)
+  Kilau::Format.text("x").set_header(name, value)
+  false
+rescue ArgumentError
+  true
+end
+T.check("a header value with CR or LF is refused") { header_refused?("location", "/x\r\nset-cookie: a=b") && header_refused?("location", "/x\ny") }
+T.check("a header name with CR or LF is refused") { header_refused?("x-a\r\nx-b", "v") }
 T.check("NotFound is 404 with a default message") { e = Kilau::Error::NotFound.new; e.status == 404 && e.message == "not found" }
 T.check("BadRequest is 400") { Kilau::Error::BadRequest.new("x").status == 400 }
 T.check("Unauthorized is 401") { Kilau::Error::Unauthorized.new.status == 401 }
