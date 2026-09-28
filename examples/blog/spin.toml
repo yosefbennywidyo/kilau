@@ -1,0 +1,3 @@
+# Kilau example app: a blog.
+[dependencies]
+kilau = { path = "../../framework" }

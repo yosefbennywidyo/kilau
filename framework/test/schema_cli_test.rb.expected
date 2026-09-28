@@ -1,0 +1,12 @@
+usage: COMMAND [--db PATH]   (COMMAND: migrate | rollback | status)
+usage: COMMAND [--db PATH]   (COMMAND: migrate | rollback | status)
+ok an unknown command exits 2
+ok --db without a path exits 2
+migrated 20260928000001
+ok migrate exits 0
+up   20260928000001
+ok status exits 0
+rolled back 20260928000001
+ok rollback exits 0
+nothing to roll back
+ok rollback with nothing applied exits 0
