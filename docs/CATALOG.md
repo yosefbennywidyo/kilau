@@ -225,3 +225,26 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 - Solusi yang dipakai: `m.version.to_s` sebelum `==` dan interpolasi, sehingga operand selalu `String`. **Aturan umum:** di kode framework yang bisa mati di sebagian program, paksa tipe primitif (`to_s`, `to_i`) sebelum `==` dan interpolasi pada nilai dari receiver generik.
 - Biaya: nol
 - Upstream: perlu isolasi lebih dulu sebelum layak dilaporkan
+
+## K-015: Integer di array binds campuran terbaca sebagai String, lalu segfault (jalur handler lewat `Endpoint#call`)
+- Lapisan: db / routing
+- Pola yang dicoba: blog `POST /posts` → `Endpoint#call` (proc tersimpan) → `PostsController.add` (parameter untyped, K-012) → `Post#save(db)` (dispatch poly `db.insert`) → `Pool#insert` → `Connection#execute` → `DB.check_binds(binds)` dengan `binds = [@title, @content, @created_at, @updated_at]`
+- Yang terjadi:
+  - Binary tes: `Segmentation fault: 11` (exit 139), di spinel saja. CRuby cocok dengan snapshot.
+  - lldb (build `--debug`): crash di `sp_str_include + 36`, `lr` = `_proc_1 + 692 at base.rb:21:293` (`value.include?("\0")`), `x0 = 0x6aba38b7` = 1790589111 = epoch `created_at`.
+  - Mencetak `value.class` per elemen: `bind 2: String` untuk `created_at`, padahal C `insert_binds` mem-push `sp_box_int_or_nil(self->iv_created_at)`.
+  - Mengganti `binds.each` dengan loop indeks tidak mengubah apa pun.
+- Reduksi (delta-debug di atas app blog):
+  | Varian | Hasil |
+  |---|---|
+  | `Testing::Client#post` | crash |
+  | `Dispatcher#call` | crash |
+  | `routes[1].endpoint.call` | crash |
+  | `PostsController.add(...)` langsung | lulus |
+  | `save` di proc biasa dengan ctx untyped | lulus |
+  | salinan rantai yang sama tanpa framework (/tmp) | lulus |
+- Repro: repro/k015_endpoint_save_crash.rb (butuh app blog; cara pakai di header file). **Belum minimal**; isolasi dihentikan pada batas waktu yang disepakati pengguna.
+- Klasifikasi: bug-compiler/runtime (pembacaan elemen array poly salah tag), serius (crash)
+- Solusi yang dipakai: binder bertipe `Kilau::DB::Binds` menggantikan array binds campuran (D-019). Tidak ada lagi `PolyArray` di jalur SQL.
+- Biaya: perubahan API `execute/query/insert(sql, binds)` di Rencana 1 (binds kini `Binds`, bukan Array). Sekaligus menghapus pelebaran K-005.
+- Upstream: kandidat laporan setelah repro minimal; belum dilaporkan
