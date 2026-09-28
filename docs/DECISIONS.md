@@ -16,3 +16,4 @@ katalog. Penyimpangan dari spec atau rencana juga dicatat di sini.
 | D-009 | Entity | Codegen (`kilau gen entities`), di-commit ke `src/models/_entities/` | Pola Loco sendiri (SeaORM entity dari skema) | — |
 | D-010 | Helper tes | `Kilau::Testing.check` / `T.check` sebagai method modul, bukan `include` di top level (penyimpangan dari Rencana 1) | Method bertipe blok lewat `include` di top level gagal link | K-004 |
 | D-011 | Snapshot tes | `.expected` berisi stdout+stderr gabungan; `make test-cruby` juga menggabungkan (penyimpangan dari Rencana 1) | `spin test` menggabungkan kedua stream (spinel #3405); docs/spin.md yang menyebut "stdout" sudah usang | — |
+| D-012 | Config | `Kilau::Config`, parser subset YAML + getter bertipe + override `KILAU_*`; `logger.requests` (bool) menggantikan `logger.level` di contoh spec | YAML tidak ada; hanya log request yang diimplementasikan | K-002 |

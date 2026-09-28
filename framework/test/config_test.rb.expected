@@ -1,0 +1,26 @@
+ok a quoted string reads without its quotes
+ok an integer reads as Integer
+ok a plain string reads as written
+ok a nested integer reads
+ok a boolean reads
+ok a # inside quotes is not a comment
+ok key? sees leaves only
+ok a list is refused with its line
+ok an anchor is refused
+ok a block scalar is refused
+ok a flow collection is refused
+ok a single-quoted string is refused
+ok a tab in the indentation is refused
+ok a duplicate key is refused
+ok a map key without children is refused
+ok a map key at the end of the file is refused
+ok an indented line under a scalar is refused
+ok an unterminated quote is refused
+ok a line without a key is refused
+ok a missing space after the colon is refused
+ok a non-integer read as int names the key
+ok a quoted number is a string, not an int
+ok a non-boolean read as bool names the key
+ok a missing key names the key
+ok load of a missing file names the path
+ok KILAU_SERVER_PORT overrides server.port

@@ -131,3 +131,30 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 - Solusi yang dipakai: diterima di Rencana 1, karena perilakunya benar di kedua engine.
 - Biaya: belum terukur. Kandidat perbaikan di Rencana 2/4 kalau benchmark S3 menunjukkan biaya: entity hasil generate menyediakan finder bertipe sendiri (`all`, `find_by_id`) yang memanggil `Connection#query` langsung, bukan lewat blok generik pool.
 - Upstream: tidak perlu (sifat inferensi return per method, bukan per pemanggilan)
+
+## K-009: `StringIO` gagal link karena izin file instalasi
+- Lapisan: testing (lingkungan)
+- Pola yang dicoba: tes parser HTTP dengan `StringIO` sebagai IO palsu
+- Yang terjadi:
+  ```
+  ld: file cannot be open()ed, errno=13 (Permission denied) path=/usr/local/lib/spinel/packages/stringio/sp_stringio.o in '/usr/local/lib/spinel/packages/stringio/sp_stringio.o'
+  clang: error: linker command failed with exit code 1 (use -v to see invocation)
+  ```
+  CRuby mencetak `a`.
+- Repro: repro/k009_stringio_install_perms.rb
+- Klasifikasi: lingkungan / instalasi. File `sp_stringio*.o` dimiliki `root:wheel` dengan mode `0640` setelah `sudo make install`.
+- Solusi yang dipakai: tes memakai `FakeIO` sendiri (framework/test/support/fake_io.rb). Perbaikan permanen yang butuh izin pengguna: `sudo chmod a+r /usr/local/lib/spinel/packages/*/*.o`, atau install ulang dengan umask 022.
+- Biaya: nol untuk Kilau
+- Upstream: kandidat (installer sebaiknya memaksa mode 0644); belum dilaporkan
+
+## K-010: method yang di-override subclass exception, dipanggil setelah `rescue Base => e`, gagal compile
+- Lapisan: controller
+- Pola yang dicoba: `class Kilau::Error; def status = 500; end` dengan `NotFound#status = 404`, lalu `rescue Kilau::Error => e; e.status` di dispatcher
+- Yang terjadi:
+  - `repro/k010_exception_method_override.rb:14: error: no member named 'cls_id' in 'struct sp_Exception_s'` (exit compile 1). CRuby mencetak `404`.
+  - Pada varian yang sama (probe 2026-09-28), `e.is_a?(NotFoundErr)` mengembalikan `false`, padahal CRuby `true`. Tanpa override method, `is_a?` benar.
+- Repro: repro/k010_exception_method_override.rb
+- Klasifikasi: bug-compiler
+- Solusi yang dipakai: status disimpan sebagai ivar lewat `initialize(status, message)`, dan subclass memanggil `super(404, message)`. Tidak ada override method pada subclass exception.
+- Biaya: nol
+- Upstream: kandidat laporan; belum dilaporkan
