@@ -1,0 +1,3 @@
+# Kilau's build tool: the `kilau` binary (kilau gen ...).
+[dependencies]
+kilau = { path = "../framework" }

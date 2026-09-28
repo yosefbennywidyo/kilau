@@ -4,9 +4,9 @@
 # as spin test merges them (spinel #3405).
 SPIN ?= spin
 RUBY ?= ruby
-PACKAGES ?= framework
+PACKAGES ?= framework tool
 
-.PHONY: test test-cruby
+.PHONY: test test-cruby tool
 
 test:
 	@for pkg in $(PACKAGES); do (cd $$pkg && $(SPIN) test) || exit 1; done
@@ -20,3 +20,6 @@ test-cruby:
 	    echo "FAIL $$t"; head -40 build/cruby.diff; fail=1; \
 	  fi; \
 	done; exit $$fail
+
+tool:
+	cd tool && $(SPIN) build
