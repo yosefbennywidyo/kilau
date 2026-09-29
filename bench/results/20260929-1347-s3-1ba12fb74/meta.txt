@@ -1,0 +1,18 @@
+date=2026-09-29 13:47 WIB
+kilau_sha=03fedb4
+machine=MacBookAir10,1 Apple M1 cores=8 mem=8GB
+os=macOS 26.6.2
+spinel=spinel 2026.09.12+2124 (1ba12fb74) [apple clang 21.0.0 (cc)]
+ruby=ruby 4.0.6 (2026-07-14 revision 03b6d3f889) +PRISM [arm64-darwin23]
+rails=8.1.4
+puma=puma version 8.0.2
+oha=oha 1.16.0
+reps=3
+warmup=10
+duration=30
+pool=5
+cooldown=20
+order=scenario, concurrency, app (apps interleaved)
+artifact_kilau_bytes=843224
+artifact_kilau_routes_bytes=787256
+artifact_rails_kb=88600

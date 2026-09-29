@@ -1,0 +1,8 @@
+ok   s1 kilau == kilau-routes (11 bytes)
+ok   s1 kilau == rails (11 bytes)
+ok   s2 kilau == kilau-routes (439 bytes)
+ok   s2 kilau == rails (439 bytes)
+ok   s3 kilau == kilau-routes (6773 bytes)
+ok   s3 kilau == rails (6773 bytes)
+ok   s4 kilau == kilau-routes (14 bytes)
+ok   s4 kilau == rails (14 bytes)
