@@ -1,0 +1,4 @@
+ok a bare check passes
+ok a bare check sees no db error
+ok a bare check sees a db error
+ok the module form still works
