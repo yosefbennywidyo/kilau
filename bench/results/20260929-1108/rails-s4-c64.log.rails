@@ -1,0 +1,11 @@
+# Logfile created on 2026-09-29 12:19:52 +0700 by logger.rb/v1.7.0
+  
+ActiveRecord::StatementTimeout (SQLite3::BusyException: database is locked)
+Caused by: SQLite3::BusyException (database is locked)
+
+Information for: ActiveRecord::StatementTimeout (SQLite3::BusyException: database is locked):
+  
+
+Information for cause: SQLite3::BusyException (database is locked):
+  
+app/controllers/posts_controller.rb:9:in 'PostsController#create'
