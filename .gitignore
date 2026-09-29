@@ -7,3 +7,5 @@ bench/rails_blog/vendor/
 bench/rails_blog/.bundle/
 bench/rails_blog/log/
 bench/rails_blog/tmp/
+docs/superpowers/
+docs/review/

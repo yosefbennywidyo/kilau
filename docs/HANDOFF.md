@@ -28,8 +28,8 @@ Sebelum `bench/run.sh`: tutup app berat. Mesin tanpa kipas: urutan selang-seling
 
 **Langkah berikutnya**
 1. Pengguna memutuskan merge `plan-4-routes-bench`.
-2. **Rencana 6 Fase 0** (`docs/superpowers/plans/2026-09-29-kilau-rencana-6-bug-compiler.md`): build spinel `origin/master` (740 commit di depan) di worktree terpisah, uji ulang semua repro K dan suite. Lalu ukur ulang S3 untuk D-023.
-3. **Rencana 5** Fase A–C (`…-rencana-5-kualitas-route.md`).
+2. **Rencana 6 Fase 0** (dokumen rencana lokal, tidak dipublikasikan): build spinel `origin/master` (740 commit di depan) di worktree terpisah, uji ulang semua repro K dan suite. Lalu ukur ulang S3 untuk D-023.
+3. **Rencana 5** Fase A–C .
 4. Benchmark tahap berikutnya dengan k6, dari mesin terpisah (FINDINGS §8).
 5. Minor yang ditunda:
    - dari Rencana 1–2: `Migrator#migrate` `.to_s`, cabang `Binds::NULL`, `ROLLBACK` yang menutupi error;
@@ -57,7 +57,7 @@ Sebelum `bench/run.sh`: tutup app berat. Mesin tanpa kipas: urutan selang-seling
   - `make test` (spinel): framework 13/13, tool 6/6, blog 3/3
   - `make test-cruby`: 22/22 (sekarang dijalankan per direktori paket, seperti `spin test`)
   - `cd examples/blog && make e2e`: 11/11
-- Rencana: `docs/superpowers/plans/2026-09-29-kilau-rencana-3-template.md`. Keputusan baru: D-020 (subset sintaks), D-021 (lokasi hasil + golden yang dijalankan).
+- Keputusan baru: D-020 (subset sintaks), D-021 (lokasi hasil + golden yang dijalankan).
 
 **Menjalankan blog**
 ```
@@ -99,7 +99,7 @@ Kandidat laporan upstream dan bacaan wajib: sama seperti entri di bawah.
   - `make test` (spinel): framework 13/13, tool 2/2, blog 2/2
   - `make test-cruby`: 17/17
   - `cd examples/blog && make e2e`: 11/11 (termasuk 200 request dengan 32 koneksi paralel)
-- Review akhir Rencana 2 selesai: 2 Important sudah diperbaiki (`1a71483`), 2 Minor ditunda (lihat bawah). Detailnya ada di `docs/review/rencana-review-rencana-2.md` dan `docs/review/proses-reviewer-rencana-2.md`.
+- Review akhir Rencana 2 selesai: 2 Important sudah diperbaiki (`1a71483`), 2 Minor ditunda (lihat bawah). Detailnya ada di catatan review lokal (tidak dipublikasikan).
 - `.DS_Store` untracked. Abaikan saja, atau tambahkan ke `.gitignore`.
 
 **Menjalankan blog**

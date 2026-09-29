@@ -1,4 +1,4 @@
-/Users/crowdotech/apps/me/gems/kilau/bench/lib.sh: line 80: 10452 Terminated: 15          ( cd "$BENCH/rails_blog" && exec env RAILS_ENV=production DATABASE_PATH="$db" PORT="$port" WEB_CONCURRENCY="$CORES" RAILS_MAX_THREADS="$POOL" RAILS_LOG="$log.rails" bundle exec puma -C config/puma.rb ) > "$log" 2>&1
+bench/lib.sh: line 80: 10452 Terminated: 15          ( cd "$BENCH/rails_blog" && exec env RAILS_ENV=production DATABASE_PATH="$db" PORT="$port" WEB_CONCURRENCY="$CORES" RAILS_MAX_THREADS="$POOL" RAILS_LOG="$log.rails" bundle exec puma -C config/puma.rb ) > "$log" 2>&1
 ok   s1 kilau == kilau-routes (11 bytes)
 ok   s1 kilau == rails (11 bytes)
 ok   s2 kilau == kilau-routes (439 bytes)
