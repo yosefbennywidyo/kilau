@@ -24,7 +24,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 | K-013 | C gagal (`sp_MatchData *`) | sama | **masih ada** |
 | K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
 | K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **masih ada**; repro minimal (user-defined `each` + array campuran) |
-| K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **masih ada**; repro minimal 37 baris; perbaikan diajukan: matz/spinel#6008 |
+| K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **diperbaiki upstream** (matz/spinel#6008, di-merge 2026-09-30 02:21 WIB, `fe642d488`); compiler Kilau `6626c0f05` belum berisi perbaikan ini |
 | K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **diperbaiki upstream** (matz/spinel#5789, di-merge 2026-09-29 17:49 WIB, `dca09ca13`); diverifikasi di `6626c0f05`: repro sama dengan CRuby |
 
 Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 26/26;
@@ -313,7 +313,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Klasifikasi: bug-compiler/runtime (pembacaan elemen array poly salah tag), serius (crash)
 - Solusi yang dipakai: binder bertipe `Kilau::DB::Binds` menggantikan array binds campuran (D-019). Tidak ada lagi `PolyArray` di jalur SQL.
 - Biaya: perubahan API `execute/query/insert(sql, binds)` di Rencana 1 (binds kini `Binds`, bukan Array). Sekaligus menghapus pelebaran K-005.
-- Upstream: PR matz/spinel#6008
+- Upstream: **diperbaiki** (matz/spinel#6008)
 
 ## K-016: `Pool#query_first` mengembalikan `nil` saat dipanggil dari handler; penugasan dari blok bersarang hilang
 - Lapisan: db
@@ -338,7 +338,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Temuan sampingan: di program blog, proc `{ |c, r| c.db.query_first(…) { |row| row.int(0) }.nil? ? 404 : 200 }` membuat spinel menolak `src/controllers/posts.rb:53` dengan `unsupported condition (non-bool)`. Ini sekeluarga dengan K-007/K-014, dan belum diisolasi.
 - **Mekanisme (Rencana 6 Fase 2, 2026-09-30 ~01:00 WIB, dibuktikan dengan instrumentasi):** tipe nilai `yield` dihitung `yield_value_type` (`src/analyze_util.c`) dari blok di tiap call site yang di-resolve `yvt_callee_index`, yang hanya me-resolve receiver bertipe objek. Satu-satunya pemanggil `query_first` adalah parameter proc (receiver `poly`, efek K-012), jadi call site dilewati dan nilai yield tetap `UNKNOWN`. `found` lalu bertipe dari penulisan lainnya saja (`nil`), return method `nil`, dan fungsi C di-emit `void` sehingga nilai `found` dibuang. Codegen tetap mengirim panggilan ke `sp_Pool_query_first` lewat `switch (cls_id)` dan membaca nilai yield sebagai poly.
 - **Koreksi syarat:** blok bersarang dua level **tidak** diperlukan. Yang menentukan: receiver poly, dan tidak ada jalur lain yang memberi tipe ke lokal itu. `conn = @idle.last` menyembunyikan bug (panggilan bertipe `conn.query` memberi `found` tipe poly lewat jalur lain); `@idle.pop` memunculkannya.
-- **Perbaikan:** `yield_value_type` mencatat call site yang dilewati bila receiver-nya poly dan namanya sama dengan method instance itu; bila tidak ada call site ter-resolve yang memberi tipe, nilai yield = poly. Tes `test/yield_value_through_poly_receiver.rb` merah sebelum (`nil`/`true`/`nil`), hijau sesudah, lulus di bawah `SPINEL_GC_STRESS=1`. `make check` RC=0 (4.741 pass; 25 timeout dalam satu jendela 90 dtk, lulus saat diulang). C yang di-emit untuk 62 benchmark + optcarrot identik (optcarrot 1128 fps). Commit `76c9df044`, **PR https://github.com/matz/spinel/pull/6008** (dibuka 2026-09-30).
+- **Perbaikan:** `yield_value_type` mencatat call site yang dilewati bila receiver-nya poly dan namanya sama dengan method instance itu; bila tidak ada call site ter-resolve yang memberi tipe, nilai yield = poly. Tes `test/yield_value_through_poly_receiver.rb` merah sebelum (`nil`/`true`/`nil`), hijau sesudah, lulus di bawah `SPINEL_GC_STRESS=1`. `make check` RC=0 (4.741 pass; 25 timeout dalam satu jendela 90 dtk, lulus saat diulang). C yang di-emit untuk 62 benchmark + optcarrot identik (optcarrot 1128 fps). Commit `76c9df044`, **PR https://github.com/matz/spinel/pull/6008** (dibuka 2026-09-30), **di-merge oleh matz 2026-09-30 02:21 WIB** (`fe642d488`). CodeRabbit memberi 2 temuan: (1) mode `g_yvt_unify_all` mengabaikan call site poly bila ada call site bertipe; tidak bisa direproduksi dengan tiga bentuk (yield biasa, akumulator `out << yield`, `blk.call`), dibalas tanpa perubahan kode; (2) alias yang dipanggil lewat receiver poly; ternyata bug terpisah yang sudah ada sebelumnya, dicatat sebagai K-019.
 - Klasifikasi: bug-compiler (tipe nilai `yield` saat semua pemanggil lewat receiver poly)
 - Solusi yang dipakai: `query_first` mengumpulkan ke array (`found << yield(row) if found.empty?`, lalu `found.first`), pola yang sama dengan `query_all` yang terbukti benar
 - Biaya: nol
@@ -374,3 +374,14 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Klasifikasi: bug-tooling
 - Upstream: **PR https://github.com/matz/spinel/pull/5983 di-merge oleh matz 2026-09-30 00:23 WIB** (merge commit `c5898078e`; dibuka ~00:20 WIB, commit `265ed2fea`, branch `spin-compiler-mtime-through-path`). `spinel_bin` sekarang mencari `$0` polos lewat PATH (fungsi `which` di `spin.rb`) sebelum `expand_path`. Tes baru di `tools/spin_e2e.sh` gagal sebelum dan lulus sesudah perbaikan. `make check`: semua leg lulus; corpus 4.647 pass, 1 fail (`hash_store_operand_gc_root`, timeout 10 dtk saat run paralel, lulus 5/5 bila dijalankan sendiri).
 - Tindak lanjut: CodeRabbit menemukan bahwa `which` melewati komponen PATH kosong (`:` di awal/akhir, `::`), padahal shell membacanya sebagai direktori kerja. Sejak #5983, `spinel_bin` bisa memakai compiler di sebelah `spin` lain yang lebih belakang di PATH. Perbaikan (`split(":", -1)`, komponen kosong → `.`) + tes e2e dengan `spin` decoy yang compiler-nya selalu gagal (merah sebelum, hijau sesudah): **PR https://github.com/matz/spinel/pull/5997 di-merge oleh matz 2026-09-30 01:24 WIB** (commit `4fafd9ba4`; CI hijau, CodeRabbit tanpa temuan). Hanya `spin-check` yang dijalankan (tidak ada perubahan di `src/`/`lib/`).
+
+## K-019: alias dari method yang `yield` di dalam blok bersarang gagal dikompilasi
+- Lapisan: compiler (codegen alias + yield)
+- Yang terjadi: `alias find first_match`, dengan `first_match` yang `yield` di dalam `with { |conn| conn.query { |row| found = yield(row) } }`, menghasilkan C tidak valid: `non-pointer operand type 'sp_Row' incompatible with NULL` / `operand of type 'sp_Row' where arithmetic or pointer type is required` di baris alias dan di `yield` terdalam. CRuby mencetak 7.
+- Repro: **repro/k019_alias_of_nested_yield_method.rb** (2026-09-30).
+- Diuji di spinel `6626c0f05` (terpasang) dan `76c9df044` (`master` + #6008): gagal di keduanya. Memanggil lewat nama asli (`first_match`) benar. Receiver bertipe maupun poly sama-sama gagal.
+- Tidak memicu (alias benar): `yield` langsung, `yield` di dalam satu blok `each`, alias dipanggil berdampingan dengan nama aslinya. Jadi syaratnya lebih sempit; belum direduksi lebih jauh.
+- Ditemukan saat menanggapi CodeRabbit di matz/spinel#6008.
+- Klasifikasi: bug-compiler
+- Solusi yang dipakai: tidak ada (Kilau tidak memakai alias seperti ini)
+- Upstream: kandidat laporan/PR setelah direduksi
