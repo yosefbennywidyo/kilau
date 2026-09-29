@@ -1,11 +1,19 @@
-# The blog's build steps. `entities` regenerates src/models/_entities from
+# The blog's build steps. `make` compiles the templates, then the binary
+# (spec §1, build flow). `entities` regenerates src/models/_entities from
 # the migrations: migrate the development database with blog_schema, then
 # read it back with the kilau tool (spec §5.3).
 SPIN ?= spin
 KILAU ?= ../../tool/build/bin/kilau
 DB ?= db/development.sqlite3
 
-.PHONY: entities e2e
+.PHONY: all templates entities e2e
+
+all: templates
+	$(SPIN) build blog
+
+templates:
+	$(MAKE) -C ../.. tool
+	$(KILAU) gen templates .
 
 entities:
 	$(MAKE) -C ../.. tool
@@ -18,8 +26,7 @@ entities:
 # server on a free port, drive it with curl, stop it. Logs in /tmp.
 E2E_DB ?= /tmp/kilau-e2e.sqlite3
 
-e2e:
-	$(SPIN) build blog
+e2e: all
 	rm -f $(E2E_DB) $(E2E_DB)-wal $(E2E_DB)-shm
 	KILAU_DATABASE_PATH=$(E2E_DB) ./build/bin/blog db migrate
 	./e2e.sh $(E2E_DB)

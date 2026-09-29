@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="id">
+<head><meta charset="utf-8"><title>&lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt; &amp; &quot;q&quot; · Kilau</title></head>
+<body>
+<h1>&lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt; &amp; &quot;q&quot;</h1>
+<p>&lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt; &amp; &quot;q&quot;</p>
+<p><a href="/posts/7/edit">Edit</a></p>
+<form method="post" action="/posts/7"><input type="hidden" name="_method" value="delete"><button>Delete</button></form>
+<p><a href="/posts">All posts</a></p>
+
+</body>
+</html>
+ok show escapes the title in <title> and <h1>
+ok show escapes the content
+ok show never holds the raw script
+ok the list escapes each title
+ok edit escapes the input value
+ok edit posts to the post with a patch override
+<!doctype html>
+<html lang="id">
+<head><meta charset="utf-8"><title>New post · Kilau</title></head>
+<body>
+<h1>New post</h1>
+<form method="post" action="/posts">
+<ul class="errors">
+<li>title minimal 2 karakter</li>
+<li>content wajib diisi</li>
+</ul>
+<p><label>Title <input name="post[title]" value="&lt;"></label></p>
+<p><label>Content <textarea name="post[content]"></textarea></label></p>
+<button>Save</button>
+</form>
+
+</body>
+</html>
+ok errors are listed, escaped
+ok the typed value survives, escaped
+ok a valid form lists no errors

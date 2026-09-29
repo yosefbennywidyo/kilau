@@ -1,0 +1,11 @@
+{#- args: post -#}
+{% if !post.errors.empty? %}
+<ul class="errors">
+{% for field, message in post.errors %}
+<li>{{ field }} {{ message }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+<p><label>Title <input name="post[title]" value="{{ post.title }}"></label></p>
+<p><label>Content <textarea name="post[content]">{{ post.content }}</textarea></label></p>
+<button>Save</button>

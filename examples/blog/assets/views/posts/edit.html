@@ -1,0 +1,9 @@
+{#- args: post -#}
+{% extends "layout.html" %}
+{% block title %}Edit post{% endblock %}
+{% block content %}
+<h1>Edit post</h1>
+<form method="post" action="/posts/{{ post.id }}"><input type="hidden" name="_method" value="patch">
+{% include "posts/_form.html" %}
+</form>
+{% endblock %}

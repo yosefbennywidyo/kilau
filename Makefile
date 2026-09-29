@@ -11,10 +11,10 @@ KILAU ?= tool/build/bin/kilau
 
 .PHONY: test test-cruby tool templates
 
-test:
+test: templates
 	@for pkg in $(PACKAGES); do (cd $$pkg && $(SPIN) test) || exit 1; done
 
-test-cruby:
+test-cruby: templates
 	@mkdir -p build; fail=0; \
 	for pkg in $(PACKAGES); do \
 	  for t in $$(cd $$pkg && ls test/*_test.rb); do \
