@@ -261,6 +261,12 @@ Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 
   - Repro kecil (class + Migrator mati, dengan atau tanpa `require "socket"` / Thread) **tidak** memicunya.
   - Pemicu pastinya **belum terisolasi**. Pencarian dihentikan sesuai batas 6–8 giliran per masalah.
 - Repro: belum ada yang minimal. Kondisi pemicunya adalah framework/test/http_server_test.rb di commit sebelum perbaikan (lihat git log Task 5 Rencana 2).
+- **Isolasi lanjutan (Rencana 6 Fase 1, 2026-09-29 16:26 WIB, spinel `1ba12fb74`)**: penolakan yang sama masih muncul (bentuk lama: `migrator.rb` tanpa `to_s` + `http_server_test.rb`). Temuan:
+  1. reduksi per file (oracle: CRuby berjalan sukses + spinel menolak dengan `unsupported equality`): wajib ada rantai **kode mati** `cli/schema_cli` → `model/migrator` → `model/migration`, plus `db/connection_spinel`. File lain tidak bisa dilepas karena dipakai tes HTTP yang hidup;
+  2. rantai kode mati itu **saja** (15 file framework, badan program `puts "ok"`) ter-compile normal. Jadi penolakan juga butuh **bagian hidup** program (server HTTP, Dispatcher, Config, dan seterusnya). Itu menjelaskan kenapa repro kecil dulu tidak pernah memicunya;
+  3. pesan penolakan: `recv=CallNode/ty1 argc=1 arg0ty0`. `m.version` bertipe nil, karena `Migration#version` di kelas dasar hanya `raise` dan tes ini tidak punya subclass migrasi, sedangkan argumennya tidak diketahui tipenya. Repro tulisan tangan dengan bentuk itu (kode mati saja) ter-compile normal;
+  4. temuan terkait: kalau `Migrator` **dipakai** dan `version` hanya `raise`, spinel menolak `"#{m.version}"` saat compile (`unsupported interpolation value`), padahal CRuby baru gagal saat runtime.
+- ddmin per baris dengan oracle ketat (CRuby harus berjalan sukses) masih berjalan (1.428 → 853 baris saat dicatat). Batas 6–8 giliran untuk K-014 sudah tercapai.
 - Klasifikasi: bug-compiler (dugaan: receiver untyped di kode mati di-resolve ke tipe lain; sekeluarga dengan K-013)
 - Solusi yang dipakai: `m.version.to_s` sebelum `==` dan interpolasi, sehingga operand selalu `String`. **Aturan umum:** di kode framework yang bisa mati di sebagian program, paksa tipe primitif (`to_s`, `to_i`) sebelum `==` dan interpolasi pada nilai dari receiver generik.
 - Biaya: nol
