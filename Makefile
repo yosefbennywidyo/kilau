@@ -2,19 +2,20 @@
 # through spin (Spinel); `test-cruby` runs the same files under CRuby and
 # diffs them against the same .expected snapshots. Both streams are merged,
 # as spin test merges them (spinel #3405), and each test runs from its
-# package directory, as spin test runs it. Both first compile the blog's
-# templates, which its views require (spec §4).
+# package directory, as spin test runs it. Both first generate the blog's
+# templates and routes, which its views and blog_routes require (spec §4,
+# §2.2).
 SPIN ?= spin
 RUBY ?= ruby
 PACKAGES ?= framework tool examples/blog
 KILAU ?= tool/build/bin/kilau
 
-.PHONY: test test-cruby tool templates
+.PHONY: test test-cruby tool gen
 
-test: templates
+test: gen
 	@for pkg in $(PACKAGES); do (cd $$pkg && $(SPIN) test) || exit 1; done
 
-test-cruby: templates
+test-cruby: gen
 	@mkdir -p build; fail=0; \
 	for pkg in $(PACKAGES); do \
 	  for t in $$(cd $$pkg && ls test/*_test.rb); do \
@@ -29,5 +30,6 @@ test-cruby: templates
 tool:
 	cd tool && $(SPIN) build
 
-templates: tool
+gen: tool
 	$(KILAU) gen templates examples/blog
+	$(KILAU) gen routes examples/blog

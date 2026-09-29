@@ -1,0 +1,20 @@
+ok the root redirects to the post list
+ok an empty list renders
+ok the new form renders
+ok an invalid post re-renders the form with 422
+ok the re-rendered form keeps what was typed, escaped
+ok a valid post redirects to it
+ok show escapes the title
+ok show escapes the content
+ok the list links to the post, escaped
+ok the edit form holds the escaped title
+ok an update redirects to the post
+ok the update is visible
+ok an invalid update re-renders with 422
+ok a missing post is 404
+ok a non-numeric id is 400
+ok delete redirects to the list
+ok the deleted post is gone
+ok _ping answers
+ok _health answers
+ok the generated table is the app's route table

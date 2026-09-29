@@ -1,9 +1,11 @@
 #!/bin/sh
-# Drives a running blog over HTTP. $1: the scratch database path.
+# Drives a running blog over HTTP. $1: the scratch database path;
+# BIN: the binary under build/bin (blog or blog_routes).
 set -u
 DB="$1"
+BIN="${BIN:-blog}"
 LOG=/tmp/kilau-e2e-server.log
-KILAU_DATABASE_PATH="$DB" KILAU_SERVER_PORT=0 ./build/bin/blog start > "$LOG" 2>&1 &
+KILAU_DATABASE_PATH="$DB" KILAU_SERVER_PORT=0 ./build/bin/$BIN start > "$LOG" 2>&1 &
 PID=$!
 trap 'kill $PID 2>/dev/null' EXIT
 i=0
