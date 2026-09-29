@@ -361,4 +361,4 @@ Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 
 - Bukti: `cd framework && /usr/local/bin/spin test` → 0 `(cached)`, 14 tes dikompilasi ulang.
 - Solusi yang dipakai: `Makefile` Kilau memakai `SPIN ?= $(shell command -v spin)` (path absolut).
 - Klasifikasi: bug-tooling
-- Upstream: kandidat laporan/PR (belum dilaporkan). Perbaikan yang mungkin: resolve `"spinel"` lewat PATH (fungsi `which` sudah ada di `spin.rb`) sebelum stat.
+- Upstream: **PR https://github.com/matz/spinel/pull/5983** (dibuka 2026-09-30 ~00:20 WIB, commit `265ed2fea`, branch `spin-compiler-mtime-through-path`). `spinel_bin` sekarang mencari `$0` polos lewat PATH (fungsi `which` di `spin.rb`) sebelum `expand_path`. Tes baru di `tools/spin_e2e.sh` gagal sebelum dan lulus sesudah perbaikan. `make check`: semua leg lulus; corpus 4.647 pass, 1 fail (`hash_store_operand_gc_root`, timeout 10 dtk saat run paralel, lulus 5/5 bila dijalankan sendiri).
