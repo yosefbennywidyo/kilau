@@ -24,7 +24,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 | K-013 | C gagal (`sp_MatchData *`) | sama | **masih ada** |
 | K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
 | K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **masih ada** |
-| K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **masih ada** |
+| K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **masih ada**; repro minimal 37 baris |
 | K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **masih ada** |
 
 Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 26/26;
@@ -303,7 +303,13 @@ Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 
   - Pada konfigurasi yang sama: `query_all(...)` → `size=1`, `query_first(...)` → `nil`.
   - **Sensitif terhadap seluruh program:** menambahkan satu pemanggilan bertipe `Post.find_by_id(db, 1)` di mana pun dalam program membuat `query_first` benar lagi.
   - Repro mandiri dengan pola yang sama (/tmp, blok bersarang + `yield` + receiver untyped) lulus.
-- Repro: framework/kilau/db/pool.rb pada commit d8de580 + tes blog `posts_request_test.rb`. Belum minimal.
+- Repro: **repro/k016_nested_block_assignment.rb** (37 baris Ruby murni, tanpa SQLite atau Kilau; 2026-09-29 14:42 WIB). CRuby mencetak 200, spinel `38dc57dd` dan `1ba12fb74` mencetak 404.
+- **Syarat minimal** (masing-masing dibuktikan dengan menghapusnya; tanpa syarat itu spinel juga mencetak 200):
+  1. penugasan `found = yield(row)` berada **dua tingkat blok** di dalam (`with { query { … } }`); satu tingkat benar;
+  2. argumen blok luar **berasal dari koleksi** (`@idle.pop`, Array atau `Thread::Queue`); objek dari ivar benar; `begin/ensure` tidak berpengaruh;
+  3. `query_first` dipanggil pada **parameter proc** (receiver untyped), dan proc itu **disimpan di ivar lalu dipanggil dari method** (`Endpoint#call`); proc yang dipanggil dari variabel lokal benar.
+- Jalan reduksi (Rencana 6 Fase 1): program blog (1.661 baris setelah di-flatten) → tanpa server/CLI/migrasi/POST (1.241) → bisection per lapisan (Client, Dispatcher, dan controller tidak dibutuhkan; proc tersimpan wajib) → framework DB + `Endpoint` saja → sintetis tanpa SQLite → 37 baris.
+- Temuan sampingan: di program blog, proc `{ |c, r| c.db.query_first(…) { |row| row.int(0) }.nil? ? 404 : 200 }` membuat spinel menolak `src/controllers/posts.rb:53` dengan `unsupported condition (non-bool)`. Ini sekeluarga dengan K-007/K-014, dan belum diisolasi.
 - Klasifikasi: bug-compiler (dugaan: variabel lokal yang ditangkap blok bersarang, ditulis dari dalam, tidak terlihat oleh method saat method itu di-dispatch poly)
 - Solusi yang dipakai: `query_first` mengumpulkan ke array (`found << yield(row) if found.empty?`, lalu `found.first`), pola yang sama dengan `query_all` yang terbukti benar
 - Biaya: nol
