@@ -2,6 +2,49 @@
 
 Entri terbaru di atas.
 
+## 2026-09-29 17:44 WIB — Rencana 6: Fase 0 selesai, Fase 1 hampir, Fase 2 dimulai (PR K-017)
+
+**Status**
+- Kilau memakai spinel **`1ba12fb74`** (`/usr/local`). Suite 14/14, 8/8, 4/4, CRuby 26/26, e2e hijau. D-023: `gen routes` diadopsi.
+- Rencana 6 **Fase 0** (uji ulang di spinel terbaru) selesai: K-010 dan K-011 diperbaiki upstream, sisanya masih ada. Tabel lengkap di `docs/CATALOG.md`.
+- Rencana 6 **Fase 1** (repro minimal):
+
+| K | Repro | Status |
+|---|---|---|
+| K-016 | `repro/k016_nested_block_assignment.rb` (37 baris) | ✅ minimal + 3 syarat terbukti |
+| K-017 | `repro/k017_elsif_argument_evaluated_early.rb` | ✅ minimal + mekanisme (argumen `elsif` dievaluasi terlalu dini) |
+| K-015 | `repro/k015_user_each_misreads_array_element.rb` | ✅ minimal + 3 syarat (`each` buatan pengguna yang `yield` membuat elemen Integer terbaca String) |
+| K-014 | belum ada | 🟡 butuh rantai migrasi mati **dan** bagian program hidup (tes HTTP); reduksi dihentikan di sekitar 344 baris, tidak tersimpan |
+| K-004, K-007, K-013 | repro minimal sudah ada sejak awal | — |
+
+- Rencana 6 **Fase 2** (perbaikan di spinel):
+  - **K-017 diperbaiki.** Di `emit_if` (`src/codegen_stmt.c`), prelude predikat `elsif` sekarang di-emit di dalam cabangnya. Tes `test/elsif_condition_args_wait_for_their_branch.rb`, `make check` hijau (4.597 pass).
+  - Commit `05a5ebef6` di branch `elsif-condition-args-in-branch` (fork `yosefbennywidyo/spinel`).
+  - **PR terbuka: https://github.com/matz/spinel/pull/5789.** Menunggu review; CI butuh persetujuan maintainer.
+
+**Lingkungan**
+- Worktree spinel terbaru: `~/apps/me/gems/spinel-latest`, sedang di branch `elsif-condition-args-in-branch`. Remote `fork` = `git@github.com:yosefbennywidyo/spinel.git`. Untuk perbaikan berikutnya, buat branch baru dari `origin/master`.
+- Setelah **setiap** `sudo make install` spinel, jalankan `sudo chmod a+r /usr/local/lib/spinel/packages/*/*.o` (K-009: sccache menulis mode 0640).
+- Alat dan input reduksi Fase 1 disimpan di `~/apps/me/gems/kilau-private-20260929/phase1/` (di luar repo; `/tmp` sudah tidak bisa diandalkan). Isinya:
+  - `repros.sh`, `old_shapes.sh`, `try.sh`,
+  - `k014/` (input flatten + `oracle_run.sh`),
+  - `k015/` (skrip greedy + tahapan),
+  - `pr-k017.md` (deskripsi PR).
+- Pelajaran reduksi sudah di skill `spinel-notes`:
+  - `spinel-reduce` tidak punya checkpoint, dan file sementaranya bentrok kalau dua input bernama sama.
+  - oracle harus mewajibkan program berjalan di CRuby.
+  - bisection per file atau per method jauh lebih cepat daripada ddmin per baris.
+
+**Langkah berikutnya (urutan disarankan)**
+1. **Pantau PR #5789**: tanggapi review, dan rebase ke `origin/master` kalau diminta (saat dibuat branch ini 82 commit di belakang, tapi masih bisa di-merge tanpa konflik).
+2. **Fase 2 K-016** (nilai salah diam-diam): mulai dari repro 37 baris. Ini bug inferensi/penangkapan variabel di blok bersarang yang diakses lewat proc tersimpan; periksa C yang di-emit untuk `found` (sel yang ditangkap).
+3. **Fase 2 K-015** (segfault): mulai dari repro. Tebakan awal: dispatch poly `each` yang ikut mempertimbangkan `each` buatan pengguna salah membaca tag elemen. Periksa C untuk `binds.each` di `check_binds`.
+4. **Fase 2 K-004 / K-013 / K-007**: repro minimalnya sudah ada.
+5. **K-014**: lanjutkan reduksi dengan reducer rakus yang punya checkpoint (pola `greedy2.py`), memakai `k014/k014_run_flat.rb` + `oracle_run.sh`. Target: repro yang tetap berjalan di CRuby.
+6. Setiap perbaikan: tes spinel + `make check` hijau → commit (email Gmail, tanpa atribusi Claude) → push ke `fork` → PR **hanya dengan izin pengguna per item**. Gaya PR: judul = subjek commit, body prosa + `Test: … (output taken from CRuby 4.0.6)`.
+7. **Rencana 5** Fase A–C (daftar route, 405/HEAD, deteksi konflik), sekarang dengan `gen routes` sebagai jalur utama.
+8. Minor yang ditunda: lihat entri 2026-09-29 12:xx di bawah.
+
 ## 2026-09-29 14:00 WIB — Spinel 1ba12fb74, K-009 dipahami, D-023: gen routes diadopsi
 
 **Status repo**

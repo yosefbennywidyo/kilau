@@ -23,7 +23,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 | K-012 | pelebaran app 30 (`blog`) / 11 (`blog_routes`) | 30 / 11 | tidak berubah |
 | K-013 | C gagal (`sp_MatchData *`) | sama | **masih ada** |
 | K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
-| K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **masih ada** |
+| K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **masih ada**; repro minimal (user-defined `each` + array campuran) |
 | K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **masih ada**; repro minimal 37 baris |
 | K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **masih ada** di upstream; perbaikan diajukan: matz/spinel#5789 |
 
@@ -295,7 +295,13 @@ Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 
   2. di dalam blok, `Post.new` + `post.save(c)`, dengan `c` = pool (argumen proc untyped). `Testing::Client`, `Dispatcher`, `AppContext`, dan route table **tidak** dibutuhkan;
   3. **kode mati** harus ikut di-compile: `model/migration` + `model/migrator` + `migration/migrator.rb` app (Migrator tidak pernah dibuat, dan `@conn` di dalamnya untyped; ia memanggil `@conn.execute(sql, [migration.version])` dan `@conn.query(...)`) serta `http/request` (yang punya `Request#query(name)`, bernama sama dengan `Connection#query`). Tanpa salah satunya, crash hilang;
   4. lapisan lain framework (server, parser, Config, Format, Routes, Dispatcher, Testing, CLI) dan kode app lain tidak dibutuhkan.
-- Program minimal per file: 724 baris setelah di-flatten (framework DB/model/controller + migrasi + Request + model Post). Replika sintetis dengan unsur-unsur di atas **belum** crash, jadi ada detail lain yang belum teridentifikasi. Reduksi otomatis (`spinel-reduce`, oracle: CRuby 303 + spinel exit 139) berjalan dari 724 baris itu. Batas 6–8 giliran untuk K-015 sudah tercapai.
+- **Repro minimal (2026-09-29 17:44 WIB)**: **repro/k015_user_each_misreads_array_element.rb** (Ruby murni, tanpa SQLite atau Kilau, dengan trace). CRuby mencetak `bind: Integer`, `bind: NilClass`, lalu 303. Spinel `38dc57dd`/`1ba12fb74` mencetak **`bind: String`** untuk elemen Integer, lalu `String#include?` segfault (exit 139).
+- **Syarat** (masing-masing dibuktikan dengan menghapusnya di versi rapi):
+  1. ada kelas buatan pengguna dengan method **`each` yang `yield`** (`Errors#each`, tidak pernah dipanggil; `yield 1` sudah cukup). Kalau di-rename atau tanpa `yield`, tidak crash. Dugaan: `binds.each { … }` pada receiver untyped di-dispatch poly dan ikut mempertimbangkan `each` buatan pengguna (sekeluarga dengan K-013);
+  2. method mati mengoper Array berisi String ke `execute` yang sama (`Migrator#migrate` pada `@conn` untyped), plus kelas `Migration#version` yang mengembalikan String;
+  3. jalur hidup berjalan di dalam blok yang ditangkap lewat `&handler`, disimpan di ivar, dan dipanggil lewat method (`Endpoint#call`). Literal `proc`, atau `save` langsung, tidak crash.
+- Tidak dibutuhkan: SQLite/FFI, `Thread::Queue`, `Pool#with`, loop bind, dan String di binds (cukup `[Integer, nil]`).
+- Jalan reduksi (Rencana 6 Fase 1): per file (724 baris) → per method dengan checkpoint (496) → SQLite diganti stub Ruby murni (411) → per baris (172) → pemangkasan kumulatif dan repro bersih.
 - Klasifikasi: bug-compiler/runtime (pembacaan elemen array poly salah tag), serius (crash)
 - Solusi yang dipakai: binder bertipe `Kilau::DB::Binds` menggantikan array binds campuran (D-019). Tidak ada lagi `PolyArray` di jalur SQL.
 - Biaya: perubahan API `execute/query/insert(sql, binds)` di Rencana 1 (binds kini `Binds`, bukan Array). Sekaligus menghapus pelebaran K-005.
