@@ -25,7 +25,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 | K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
 | K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **masih ada** |
 | K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **masih ada**; repro minimal 37 baris |
-| K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **masih ada** |
+| K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **masih ada**; repro minimal + mekanisme (argumen `elsif` dievaluasi terlalu dini) |
 
 Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 26/26;
 `make e2e` 11/11 untuk kedua binary. Tidak ada regresi.
@@ -328,7 +328,13 @@ Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 
   - framework/test/model_test.rb di spinel gagal pada save valid **pertama** (cabang insert, bukan update) dengan `nil given to int; use int_or_nil for a nullable column (Kilau::DB::Error)`. Timestamp yang baru diisi `touch` terbaca nil oleh `Binds#int`.
   - CRuby lulus.
   - Ditulis ulang sebagai `else; changed = db.execute(...); raise ... if changed.to_i == 0; end` → lulus di kedua engine.
-- Repro: framework/kilau/model/model.rb dengan bentuk `elsif` di atas + framework/test/model_test.rb. Belum minimal.
+- Repro: **repro/k017_elsif_argument_evaluated_early.rb** (Ruby murni, dengan trace; 2026-09-29 14:55 WIB).
+- **Mekanisme, terbukti dengan trace** (spinel `38dc57dd` dan `1ba12fb74`): argumen pemanggilan di kondisi `elsif` (`db.execute("update", update_binds)`) **dievaluasi sebelum cabang `if` dijalankan**, meskipun cabang `if` yang diambil. `update_binds` → `.int(@id)` dengan `@id` masih nil → `nil given to int`. CRuby tidak pernah memanggil `update_binds` di jalur insert. Jadi yang dulu dibaca sebagai "timestamp nil" sebenarnya `@id` yang nil.
+- **Syarat** (masing-masing dibuktikan dengan menghapusnya):
+  1. cabang kedua berbentuk `elsif <recv>.<call>(<arg>)`. Bentuk `else; x = <recv>.<call>(<arg>); end` benar, dan tanpa cabang kedua juga benar;
+  2. argumennya (`update_binds`) memanggil method yang dipakai cabang `if` (`insert_binds`). Argumen yang dibangun sendiri benar.
+- Tidak dibutuhkan: superclass atau modul, `== 0`, `raise` di cabang, dan kode lain di framework. `elsif check(arg)` polos di method top level dievaluasi benar, jadi bentuk pastinya masih lebih sempit dari "setiap argumen `elsif`".
+- Reduksi (Rencana 6 Fase 1): program tes (framework penuh) → reduksi per file (cukup DB + model + entity) → repro sintetis 50 baris → pemangkasan kumulatif (37) → tanpa superclass (33) + trace.
 - Klasifikasi: bug-compiler (sensitivitas inferensi seluruh program; sekeluarga dengan K-015/K-016)
 - Solusi yang dipakai: bentuk `else` + variabel + `to_i`
 - Biaya: nol
