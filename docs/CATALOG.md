@@ -25,7 +25,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 | K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
 | K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **masih ada** |
 | K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **masih ada**; repro minimal 37 baris |
-| K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **masih ada**; repro minimal + mekanisme (argumen `elsif` dievaluasi terlalu dini) |
+| K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **masih ada** di upstream; perbaikan lokal `05a5ebef6` (belum upstream) |
 
 Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 26/26;
 `make e2e` 11/11 untuk kedua binary. Tidak ada regresi.
@@ -340,6 +340,7 @@ Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 
   1. cabang kedua berbentuk `elsif <recv>.<call>(<arg>)`. Bentuk `else; x = <recv>.<call>(<arg>); end` benar, dan tanpa cabang kedua juga benar;
   2. argumennya (`update_binds`) memanggil method yang dipakai cabang `if` (`insert_binds`). Argumen yang dibangun sendiri benar.
 - Tidak dibutuhkan: superclass atau modul, `== 0`, `raise` di cabang, dan kode lain di framework. `elsif check(arg)` polos di method top level dievaluasi benar, jadi bentuk pastinya masih lebih sempit dari "setiap argumen `elsif`".
+- **Perbaikan (Rencana 6 Fase 2, 2026-09-29 17:11 WIB)**: di spinel, `emit_if` (`src/codegen_stmt.c`) kini menangkap prelude predikat `elsif` dan meng-emit-nya di dalam blok `else` milik `elsif` itu, sama seperti yang sudah dilakukan emitter lengan `case`/ternary. Tes baru `test/elsif_condition_args_wait_for_their_branch.rb` (+ snapshot CRuby) gagal sebelum dan lulus sesudah perbaikan. `make check`: 4.597 pass, 0 fail, `alloc-report-test`, `infer-test`, dan `spin-e2e` hijau. Commit `05a5ebef6` di branch lokal `elsif-condition-args-in-branch`, **belum dikirim ke upstream** (butuh izin pengguna).
 - Reduksi (Rencana 6 Fase 1): program tes (framework penuh) → reduksi per file (cukup DB + model + entity) → repro sintetis 50 baris → pemangkasan kumulatif (37) → tanpa superclass (33) + trace.
 - Klasifikasi: bug-compiler (sensitivitas inferensi seluruh program; sekeluarga dengan K-015/K-016)
 - Solusi yang dipakai: bentuk `else` + variabel + `to_i`
