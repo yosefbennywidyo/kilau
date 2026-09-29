@@ -2,9 +2,13 @@ module Kilau
   module DB
     # Positional SQL parameters with their types, one call per parameter:
     # Binds.new.text(title).int(created_at). Each kind lives in an array of
-    # its own type rather than one mixed Array: under Spinel an Integer in a
-    # mixed binds array was read back as a String and crashed
-    # (docs/CATALOG.md K-015), and a mixed array widens to boxed values (K-005).
+    # its own type, with @kinds recording the order, rather than in one mixed
+    # Array. A mixed Array is Array[untyped] under Spinel (docs/CATALOG.md
+    # K-005), so every value would be boxed and tested at run time. Typed
+    # arrays keep the binds on Spinel's typed paths. The builder also refuses
+    # nil for a NOT NULL column and a NUL byte in text before SQLite sees
+    # them. (It started as the workaround for K-015, an Integer in a mixed
+    # binds array read back as a String, which matz/spinel#6027 fixed.)
     class Binds
       NULL = 0
       INT = 1
