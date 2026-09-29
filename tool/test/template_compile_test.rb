@@ -55,3 +55,5 @@ T.check("buf is reserved") { compile_error({ "a.html" => "{#- args: buf -#}\n" }
 T.check("a loop variable may not shadow an argument") do
   compile_error({ "a.html" => "{#- args: post, posts -#}\n{% for post in posts %}{% endfor %}\n" }).include?("shadows")
 end
+T.check("the else branch of a ternary is checked") { compile_error({ "a.html" => "{#- args: c, ok -#}\n{{ c ? ok : typo }}\n" }).include?("a.html:2: typo is not an argument") }
+T.check("a symbol is not read as a variable") { compile_error({ "a.html" => "{#- args: s -#}\n{{ s == :draft }}\n" }) == "" }

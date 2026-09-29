@@ -155,7 +155,10 @@ module KilauTool
           j += 1 if j < expr.size && (expr[j] == "?" || expr[j] == "!")
           name = expr[i, j - i]
           hash_key = j < expr.size && expr[j] == ":" && (j + 1 == expr.size || expr[j + 1] != ":")
-          local = Template.lower_start?(c) && prev != "." && prev != ":" && prev != "@" && prev != "$"
+          # A colon right against the name makes it a symbol or the tail
+          # of Foo::bar; a ternary's " : " leaves a space and is checked.
+          glued_colon = i > 0 && expr[i - 1] == ":"
+          local = Template.lower_start?(c) && prev != "." && !glued_colon && prev != "@" && prev != "$"
           if local && !hash_key && !Template::KEYWORDS.include?(name) && !found.include?(name)
             found << name
           end

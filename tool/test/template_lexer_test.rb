@@ -22,3 +22,5 @@ end
 T.check("an unclosed {{ names the file and line") { lex_error("a\n{{ x\n}}") == "t.html:3: {{ is not closed by }} on the same line" }
 T.check("an empty tag is refused") { lex_error("{%  %}") == "t.html:2: empty {% %}" }
 T.check("an empty body has no tokens") { KilauTool::TemplateLexer.tokenize("", "t.html", 2).empty? }
+T.check("}} inside a string literal does not close an expression") { KilauTool::TemplateLexer.tokenize("{{ \"}}\" + x }}", "t.html", 2).map { |t| t.text } == ["\"}}\" + x"] }
+T.check("%} inside a string literal does not close a tag") { KilauTool::TemplateLexer.tokenize("{% if x == '%}' %}", "t.html", 2).map { |t| t.text } == ["if x == '%}'"] }

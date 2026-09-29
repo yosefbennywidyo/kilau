@@ -50,9 +50,9 @@ module KilauTool
           pieces << Token.new("text", line[pos, start - pos], number) if start > pos
           opener = line[start, 2]
           closer = CLOSERS.fetch(opener)
-          stop = line.index(closer, start + 2)
-          raise ArgumentError, "#{path}:#{number}: #{opener} is not closed by #{closer} on the same line" if stop.nil?
           kind = KINDS.fetch(opener)
+          stop = kind == "comment" ? line.index(closer, start + 2) : closer_index(line, closer, start + 2)
+          raise ArgumentError, "#{path}:#{number}: #{opener} is not closed by #{closer} on the same line" if stop.nil?
           inner = line[start + 2, stop - start - 2].strip
           raise ArgumentError, "#{path}:#{number}: empty #{opener} #{closer}" if inner.empty? && kind != "comment"
           pieces << Token.new(kind, inner, number)
@@ -60,6 +60,25 @@ module KilauTool
         end
       end
       pieces
+    end
+
+    # Where closer ends a Ruby expression or tag: a closer inside a
+    # "..." or '...' literal belongs to the literal ({{ "}}" }}).
+    def self.closer_index(line, closer, pos)
+      i = pos
+      while i < line.size
+        c = line[i]
+        if c == "\"" || c == "'"
+          i += 1
+          i += line[i] == "\\" ? 2 : 1 while i < line.size && line[i] != c
+          i += 1
+        elsif line[i, closer.size] == closer
+          return i
+        else
+          i += 1
+        end
+      end
+      nil
     end
 
     def self.next_opener(line, pos)

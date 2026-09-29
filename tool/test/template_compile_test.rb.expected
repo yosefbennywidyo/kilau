@@ -19,3 +19,5 @@ ok extends after other content is refused
 ok two templates with one method name are refused
 ok buf is reserved
 ok a loop variable may not shadow an argument
+ok the else branch of a ternary is checked
+ok a symbol is not read as a variable

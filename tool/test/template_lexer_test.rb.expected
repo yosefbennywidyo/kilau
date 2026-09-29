@@ -20,3 +20,5 @@
 ok an unclosed {{ names the file and line
 ok an empty tag is refused
 ok an empty body has no tokens
+ok }} inside a string literal does not close an expression
+ok %} inside a string literal does not close a tag
