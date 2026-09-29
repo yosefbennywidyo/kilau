@@ -101,6 +101,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Biaya: nol untuk runtime; tes sedikit lebih verbose
 - Upstream: kandidat laporan ke spinel dengan repro di atas; belum dilaporkan (menunggu persetujuan pengguna)
 - **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** method yang `yield` hanya ada dalam bentuk inline, jadi fungsinya tidak pernah di-emit. `emit_inline_call_x` (`src/codegen_iter.c`) mencari panggilan tanpa receiver di kelas pembungkus dan fungsi top level, tapi tidak di modul yang di-`include` di top level. Panggilan jatuh ke jalur top-level-include di `emit_call`, yang memanggil `sp_<Modul>_<method>(NULL, …)`, fungsi yang tidak ada, sehingga link gagal. Kini inliner juga mencari lewat `comp_included_method_index`; method yang memakai ivar tetap ke jalur lama (ditolak dengan diagnostik #3775). Tes `test/toplevel_include_yielding_method.rb` (yield, `&blk`, modul bersarang, dipanggil dari method top level) merah sebelum, hijau sesudah, GC stress lulus; C benchmark identik; CI penuh hijau di PR fork. Commit `471ed6171` → direvisi tiga kali atas temuan CodeRabbit menjadi `602e30b52`: (1) `comp_included_method_index` kini mencari method **instance** dulu, karena modul dengan `def self.pick` + `def pick` diam-diam menjawab singleton; (2) inliner juga mengambil method kelas (`module_function`) dengan modul sebagai self, karena `module_function` + `yield` masih gagal link; (3) pemeriksaan ivar di kedua jalur kini lewat satu helper `scope_uses_ivars` (`codegen_util.c`) yang juga menangkap target multi-assign (`@a, @b = …`) dan `&&=`, dipatok reject test `test/reject/toplevel_include_yield_ivar_target.rb`. Temuan ke-4 (ivar di blok bersarang) tidak bisa direproduksi dengan lima bentuk; dibalas. **PR https://github.com/matz/spinel/pull/6029**, **di-merge oleh matz 2026-09-30 05:41 WIB** (`eb340a6ab`). Riwayat terkait: #5117 (gejala sama lewat clone proc form saat modul di-include dua kali).
+- **Workaround dicabut (2026-09-30, compiler `35ddccadb`):** `Kilau::Testing` kini `module_function`; tes bisa `include Kilau::Testing` lalu `check` tanpa receiver (tes baru `framework/test/testing_include_test.rb`), tes lama `T.check` tetap. Satu bentuk tersisa gagal: K-021.
 
 ## K-005: array binds campuran melebar ke untyped
 - Lapisan: db
@@ -318,6 +319,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Biaya: perubahan API `execute/query/insert(sql, binds)` di Rencana 1 (binds kini `Binds`, bukan Array). Sekaligus menghapus pelebaran K-005.
 - Upstream: **diperbaiki** (matz/spinel#6008)
 - **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** `Pool#insert` hanya dijangkau lewat receiver yang tidak diikat call site bertipe, jadi parameternya `UNKNOWN` selama fixpoint dan baru dilebarkan ke `POLY` oleh backstop "never bound" (`src/analyze.c`) sesudahnya; pengikatan parameter tidak dijalankan ulang, sehingga `Connection#execute`'s `binds` hanya diberi tipe oleh call site mati `[migration.version]` → `StrArray`. Saat jalan, `sp_poly_as_str_array` membaca tiap elemen sebagai `v.s` tanpa cek tag → Integer jadi pointer string → segfault. (`Errors#each` hanya menentukan apakah literal mati bertipe `StrArray` atau `PolyArray`.) Backstop kini dua tahap: (1) lebarkan parameter method yang bisa dijangkau panggilan (self implisit, receiver kelasnya/turunannya, atau receiver poly/belum ditentukan) lalu ikat ulang parameter sampai stabil; (2) baru lebarkan parameter method yang tak dipanggil siapa pun. Versi pertama (ikat ulang setelah melebarkan semua) gagal `infer-test` #4889 di CI fork dan diperbaiki. Tes `test/widened_param_reaches_its_callee.rb` segfault sebelum, hijau sesudah; CI penuh hijau di PR fork; C benchmark identik. Commit `592036080`, **PR https://github.com/matz/spinel/pull/6027**, **di-merge oleh matz 2026-09-30 03:26 WIB** (`5fb976da3`). CodeRabbit: satu temuan (`is_descendant` untuk kelas yang sama) tidak valid, dibalas.
+- **Workaround tidak lagi wajib (2026-09-30, compiler `35ddccadb`):** repro sama dengan CRuby. `Kilau::DB::Binds` **dipertahankan** karena desain (D-019): builder bertipe menjaga bind tetap sempit, sedangkan array campuran selalu `Array[untyped]` (K-005) dan lewat jalur boxed.
 
 ## K-016: `Pool#query_first` mengembalikan `nil` saat dipanggil dari handler; penugasan dari blok bersarang hilang
 - Lapisan: db
@@ -347,6 +349,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Solusi yang dipakai: `query_first` mengumpulkan ke array (`found << yield(row) if found.empty?`, lalu `found.first`), pola yang sama dengan `query_all` yang terbukti benar
 - Biaya: nol
 - Upstream: kandidat laporan setelah repro minimal; belum dilaporkan
+- **Workaround dicabut (2026-09-30, compiler `35ddccadb`):** `Pool#query_first` kembali `found = yield(row)` di blok bersarang; suite hijau termasuk tes blog `show escapes the title` yang dulu memicu K-016.
 
 ## K-017: satu `elsif <panggilan> == 0` + `raise` di `Model#save` merusak jalur insert di cabang lain
 - Lapisan: model
@@ -403,4 +406,14 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Klasifikasi: bug-compiler (nilai salah diam-diam + C gagal)
 - Solusi yang dipakai: tidak perlu di Kilau (pola ini tidak dipakai)
 - Upstream: PR matz/spinel#6092
+
+## K-021: method `module_function` yang `yield` + `rescue`, dipanggil tanpa receiver setelah `include` top level dengan blok yang selalu raise, menghasilkan C tidak valid
+- Lapisan: compiler (inline method modul via top-level include, jalur baru dari matz/spinel#6029)
+- Ditemukan: 2026-09-30 saat mencabut workaround K-004.
+- Yang terjadi: `include T; check("x") { raises? { raise DbErr, "boom" } }` dengan `raises?` = `yield; false; rescue DbErr; true` → `invalid argument type 'void' to unary expression` di `unless yield` milik `check`. CRuby: `ok x`.
+- Tidak memicu: lewat modul (`T.check { T.raises? { raise … } }`), `raises?` tanpa receiver dengan blok yang tidak raise, `check` tanpa receiver dengan blok biasa.
+- Repro: **repro/k021_include_rescue_yield_raising_block.rb**
+- Klasifikasi: bug-compiler
+- Solusi yang dipakai: tes Kilau memanggil `Kilau::Testing.raises_db_error?` lewat modul untuk bentuk ini
+- Upstream: kandidat PR (belum direduksi/diperbaiki)
 
