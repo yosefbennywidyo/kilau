@@ -45,7 +45,7 @@ with Spinel's M:N threads and no GVL, and Rails is eight Puma processes.
 |---|---|
 | `framework/` | The `kilau` package: HTTP server, parser, `Request`/`Response`, Loco-style `Routes`/`AppRoutes`/`Dispatcher`, a YAML-subset `Config`, SQLite over FFI with a connection pool, models and migrations, and `Kilau::Testing` |
 | `tool/` | The `kilau` build tool: `kilau gen entities`, `kilau gen templates`, `kilau gen routes` |
-| `examples/blog/` | The example app: migrations, controllers, models, Tera-style templates in `assets/views/`, and two entry points: `blog` (route table) and `blog_routes` (generated dispatcher) |
+| `examples/blog/` | The example app: migrations, controllers, models, Tera-style templates in `assets/views/`, and two entry points: `blog_routes` (generated dispatcher, the one to deploy; decision D-023) and `blog` (route table, kept for development and as a fallback) |
 | `bench/` | The Rails comparison app, the benchmark harness, raw results and `RESULTS.md` |
 | `repro/` | Minimal reproductions of the Spinel limits and bugs catalogued in `docs/CATALOG.md` |
 | `docs/` | `CATALOG.md` (AOT limits, K-001 to K-017), `DECISIONS.md`, `FINDINGS.md`, `HANDOFF.md` |
@@ -82,8 +82,8 @@ make test-cruby    # the same tests under CRuby, against the same snapshots
 
 cd examples/blog
 make               # kilau gen templates + routes, then build blog and blog_routes
-./build/bin/blog db migrate
-./build/bin/blog start          # http://127.0.0.1:5150
+./build/bin/blog_routes db migrate
+./build/bin/blog_routes start   # http://127.0.0.1:5150
 make e2e           # drive both binaries with curl
 ```
 

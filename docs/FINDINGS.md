@@ -47,7 +47,7 @@ isi seluruh program.
 |---|---|---|
 | Entity model | `kilau gen entities` (D-009) | Pola Loco sendiri (entity dari skema), dan tipe kolom tetap sempit (R3) |
 | Template | `kilau gen templates` (D-020, D-021) | Interpreter template runtime butuh data bernilai campuran dan akses atribut by-name, yang keduanya jalur boxed. Template yang di-compile menjadi method Ruby memakai append in-place (R4 = ya untuk buffer). |
-| Dispatch route | `kilau gen routes` (D-022), eksperimen | Proc yang disimpan adalah penghalang tipe (K-012, R1 = tidak). Salinan body blok yang dipanggil langsung menurunkan titik pelebaran di kode app dari **30 → 11**. Sisanya berawal dari K-008 (`Post.all`/`find_by_id`). Keputusan adopsi **ditunda** (D-023). |
+| Dispatch route | `kilau gen routes` (D-022), eksperimen | Proc yang disimpan adalah penghalang tipe (K-012, R1 = tidak). Salinan body blok yang dipanggil langsung menurunkan titik pelebaran di kode app dari **30 → 11**. Sisanya berawal dari K-008 (`Post.all`/`find_by_id`). **Diadopsi** sebagai jalur utama setelah diukur ulang di spinel `1ba12fb74` (D-023). |
 
 Tanpa `send`, `method_missing`, `define_method` bernama dinamis, atau `eval`, semua
 "magic" Rails harus pindah ke codegen yang dijalankan sebelum build. Setiap generator
@@ -74,7 +74,7 @@ di kedua engine.
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa
 memunculkan atau menyembunyikan bug, dan repro mandiri biasanya tidak memicunya.
 Upstream spinel sudah 740 commit di depan, dan beberapa commit-nya tampak menyentuh
-K-010, K-011, K-015, dan K-016. Pemeriksaan ulangnya adalah **Rencana 6 Fase 0**.
+K-010, K-011, K-015, dan K-016. Hasil pemeriksaan ulang (Rencana 6 Fase 0, spinel `1ba12fb74`): hanya **K-010 dan K-011** yang diperbaiki. K-004, K-007, dan K-013 s.d. K-017 masih ada (tabel status di `docs/CATALOG.md`).
 
 ## 5. Biaya DX
 
@@ -137,9 +137,7 @@ K-010, K-011, K-015, dan K-016. Pemeriksaan ulangnya adalah **Rencana 6 Fase 0**
 
 ## 8. Langkah berikutnya
 
-1. **Rencana 6 Fase 0:** build spinel `origin/master` di worktree terpisah, uji ulang
-   semua repro K dan suite Kilau. Setelah itu **ukur ulang S3** untuk memutuskan
-   D-023.
+1. ~~Rencana 6 Fase 0~~ selesai (2026-09-29 14:00 WIB): K-010 dan K-011 diperbaiki upstream, dan K-004, K-007, K-013 s.d. K-017 masih ada. Kilau sekarang memakai spinel `1ba12fb74`. D-023: `gen routes` diadopsi.
 2. **K-008** di `Pool#query_all`/`query_first`. Ini sumber sisa pelebaran di template
    dan handler, dan kemungkinan kunci performa S3.
 3. **Rencana 5** (kualitas route): introspeksi, 405 + HEAD, deteksi konflik, trie

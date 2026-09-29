@@ -2,6 +2,25 @@
 
 Entri terbaru di atas.
 
+## 2026-09-29 14:00 WIB — Spinel 1ba12fb74, K-009 dipahami, D-023: gen routes diadopsi
+
+**Status repo**
+- `main` dipublikasikan di https://github.com/yosefbennywidyo/kilau (MIT).
+- Kilau memakai spinel **`2026.09.12+2124 (1ba12fb74)`**, terpasang di `/usr/local`. Suite 14/14, 8/8, 4/4, CRuby 26/26, e2e 11/11 × 2.
+
+**Hasil Rencana 6 Fase 0** (tabel lengkap di `docs/CATALOG.md`)
+- Diperbaiki upstream: K-010, K-011.
+- Masih ada: K-004, K-007, K-013, K-014, K-015 (segfault), K-016 (nilai salah), K-017.
+- K-012 tidak berubah (pelebaran 30 / 11).
+- K-009 adalah masalah instalasi: sccache menulis `.o` dengan mode 0640, lalu `cp -r` saat install mempertahankannya. Setelah **setiap** `sudo make install` spinel, jalankan `sudo chmod a+r /usr/local/lib/spinel/packages/*/*.o`.
+
+**D-023: `gen routes` diadopsi.** `blog_routes` adalah binary deploy dan benchmark utama. `blog` (route table) tetap sebagai mode dev/tes dan fallback. Dasarnya adalah S3 di dua compiler (+12–34% req/s, p99 c16 57 → 12–13 ms), sementara S1/S2/S4 setara.
+
+**Langkah berikutnya**
+1. Rencana 6 Fase 1: repro minimal K-016 → K-015 → K-017 → K-014, lalu Fase 2 perbaikan (K-004/K-007/K-013 sudah punya repro minimal). Batas waktu per bug belum diputuskan pengguna.
+2. Rencana 5 Fase A–C (route listing, 405/HEAD, konflik), sekarang dengan `gen routes` sebagai jalur utama.
+3. Kandidat upstream baru: installer spinel + sccache (K-009).
+
 ## 2026-09-29 12:39 WIB — Rencana 4 selesai: gen routes, benchmark vs Rails, FINDINGS
 
 **Status repo**
