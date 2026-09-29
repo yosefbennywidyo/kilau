@@ -2,6 +2,20 @@
 
 Entri terbaru di atas.
 
+## 2026-09-30 06:20 WIB — K-004 merged; PR K-013, K-007, K-020 terbuka
+
+**Status**
+- Upstream merged (7 PR, peringkat ~28/63): #5789 (K-017), #5983+#5997 (K-018), #6008 (K-016), #6027 (K-015), #6028 (K-019), **#6029 (K-004)**.
+- PR terbuka: **#6063 (K-013)** (CodeRabbit bersih), **#6093 (K-007)**, **#6092 (K-020, baru)**.
+- K-020: `run { next true if c; nil }` mencetak `nil` (nilai salah diam-diam); ditemukan dari review CodeRabbit di fork K-007.
+- Alur baru terbukti: PR fork **non-draft** → CI + CodeRabbit di fork sebelum PR ke matz. Kuota CodeRabbit gratis di fork ≈2 review/20 mnt; K-020 terlewat review fork karena kuota.
+- Kilau masih memakai spinel `6626c0f05`.
+
+**Langkah berikutnya**
+1. Pantau #6063, #6092, #6093 (tanggapi temuan CodeRabbit upstream bila ada).
+2. Naikkan compiler Kilau ke `master` terbaru (sudah berisi K-004/015/016/017/018/019), jalankan ulang repro, cabut workaround: K-015 `Binds`, K-016 pola array `query_first`, K-004 helper tes; K-013 (`match_path`) setelah #6063 merged.
+3. Sisa: K-014 (susun ulang bentuk lama dari riwayat git `migrator.rb`).
+
 ## 2026-09-30 04:38 WIB — K-015/K-019 merged; K-004 direvisi (CI hijau); K-013 di CI fork; survei ivar
 
 **Status**

@@ -15,13 +15,13 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 
 | K | `38dc57dd` | `1ba12fb74` | Status |
 |---|---|---|---|
-| K-004 | link gagal (`Undefined symbols`) | link gagal | **masih ada**; perbaikan diajukan: matz/spinel#6029 (CI hijau) |
-| K-007 | `unsupported condition (non-bool)` | sama | **masih ada** |
+| K-004 | link gagal (`Undefined symbols`) | link gagal | **diperbaiki upstream** (matz/spinel#6029, di-merge 2026-09-30 05:41 WIB, `eb340a6ab`) |
+| K-007 | `unsupported condition (non-bool)` | sama | **masih ada**; perbaikan diajukan: matz/spinel#6093 |
 | K-009 | link gagal (izin `root 0640`) | lulus dari worktree | soal instalasi; akar masalah ditemukan 2026-09-29 13:45 WIB, lihat entri K-009 |
 | K-010 | C gagal (`no member named 'cls_id'`) | sama dengan CRuby | **diperbaiki upstream** |
 | K-011 | `%zz` → NUL | sama dengan CRuby (`ArgumentError`) | **diperbaiki upstream** |
 | K-012 | pelebaran app 30 (`blog`) / 11 (`blog_routes`) | 30 / 11 | tidak berubah |
-| K-013 | C gagal (`sp_MatchData *`) | sama | **masih ada**; perbaikan di CI fork (PR fork #4) |
+| K-013 | C gagal (`sp_MatchData *`) | sama | **masih ada**; perbaikan diajukan: matz/spinel#6063 |
 | K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
 | K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **diperbaiki upstream** (matz/spinel#6027, di-merge 2026-09-30 03:26 WIB) |
 | K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **diperbaiki upstream** (matz/spinel#6008, di-merge 2026-09-30 02:21 WIB, `fe642d488`); compiler Kilau `6626c0f05` belum berisi perbaikan ini |
@@ -100,7 +100,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Solusi yang dipakai: `Kilau::Testing` memakai method modul, dan tes memanggil `T.check(...)` dengan `T = Kilau::Testing`
 - Biaya: nol untuk runtime; tes sedikit lebih verbose
 - Upstream: kandidat laporan ke spinel dengan repro di atas; belum dilaporkan (menunggu persetujuan pengguna)
-- **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** method yang `yield` hanya ada dalam bentuk inline, jadi fungsinya tidak pernah di-emit. `emit_inline_call_x` (`src/codegen_iter.c`) mencari panggilan tanpa receiver di kelas pembungkus dan fungsi top level, tapi tidak di modul yang di-`include` di top level. Panggilan jatuh ke jalur top-level-include di `emit_call`, yang memanggil `sp_<Modul>_<method>(NULL, …)`, fungsi yang tidak ada, sehingga link gagal. Kini inliner juga mencari lewat `comp_included_method_index`; method yang memakai ivar tetap ke jalur lama (ditolak dengan diagnostik #3775). Tes `test/toplevel_include_yielding_method.rb` (yield, `&blk`, modul bersarang, dipanggil dari method top level) merah sebelum, hijau sesudah, GC stress lulus; C benchmark identik; CI penuh hijau di PR fork. Commit `471ed6171` → direvisi tiga kali atas temuan CodeRabbit menjadi `602e30b52`: (1) `comp_included_method_index` kini mencari method **instance** dulu, karena modul dengan `def self.pick` + `def pick` diam-diam menjawab singleton; (2) inliner juga mengambil method kelas (`module_function`) dengan modul sebagai self, karena `module_function` + `yield` masih gagal link; (3) pemeriksaan ivar di kedua jalur kini lewat satu helper `scope_uses_ivars` (`codegen_util.c`) yang juga menangkap target multi-assign (`@a, @b = …`) dan `&&=`, dipatok reject test `test/reject/toplevel_include_yield_ivar_target.rb`. Temuan ke-4 (ivar di blok bersarang) tidak bisa direproduksi dengan lima bentuk; dibalas. **PR https://github.com/matz/spinel/pull/6029**, CI hijau, menunggu merge. Riwayat terkait: #5117 (gejala sama lewat clone proc form saat modul di-include dua kali).
+- **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** method yang `yield` hanya ada dalam bentuk inline, jadi fungsinya tidak pernah di-emit. `emit_inline_call_x` (`src/codegen_iter.c`) mencari panggilan tanpa receiver di kelas pembungkus dan fungsi top level, tapi tidak di modul yang di-`include` di top level. Panggilan jatuh ke jalur top-level-include di `emit_call`, yang memanggil `sp_<Modul>_<method>(NULL, …)`, fungsi yang tidak ada, sehingga link gagal. Kini inliner juga mencari lewat `comp_included_method_index`; method yang memakai ivar tetap ke jalur lama (ditolak dengan diagnostik #3775). Tes `test/toplevel_include_yielding_method.rb` (yield, `&blk`, modul bersarang, dipanggil dari method top level) merah sebelum, hijau sesudah, GC stress lulus; C benchmark identik; CI penuh hijau di PR fork. Commit `471ed6171` → direvisi tiga kali atas temuan CodeRabbit menjadi `602e30b52`: (1) `comp_included_method_index` kini mencari method **instance** dulu, karena modul dengan `def self.pick` + `def pick` diam-diam menjawab singleton; (2) inliner juga mengambil method kelas (`module_function`) dengan modul sebagai self, karena `module_function` + `yield` masih gagal link; (3) pemeriksaan ivar di kedua jalur kini lewat satu helper `scope_uses_ivars` (`codegen_util.c`) yang juga menangkap target multi-assign (`@a, @b = …`) dan `&&=`, dipatok reject test `test/reject/toplevel_include_yield_ivar_target.rb`. Temuan ke-4 (ivar di blok bersarang) tidak bisa direproduksi dengan lima bentuk; dibalas. **PR https://github.com/matz/spinel/pull/6029**, **di-merge oleh matz 2026-09-30 05:41 WIB** (`eb340a6ab`). Riwayat terkait: #5117 (gejala sama lewat clone proc form saat modul di-include dua kali).
 
 ## K-005: array binds campuran melebar ke untyped
 - Lapisan: db
@@ -146,7 +146,8 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Klasifikasi: bug-compiler (kualitas diagnostik; bukan perilaku runtime)
 - Solusi yang dipakai: tidak perlu. Di fase RED, baca error ini sebagai "method belum ada".
 - Biaya: kebingungan saat TDD
-- Upstream: kandidat laporan (sebaiknya menyebut method yang tak ada); belum dilaporkan
+- Upstream: PR matz/spinel#6093
+- **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** node `yield` dipakai bersama semua call site, jadi tipenya diambil dari blok call site lain. Hanya satu call site → tak bertipe → ditolak "non-bool"; di samping call site berblok bool → tipe bool, lalu blok yang melempar (`({ sp_raise_nomethod(...); })`, `sp_RbVal`) di-negasi `!` → C gagal (gejala "program besar"). Di samping blok poly sudah benar (`sp_poly_truthy`). `emit_cond` (`codegen_stmt.c`) kini, sebelum dispatch tipe, melihat blok yang di-inline di call site ini: bila tail-nya tak bertipe, `block_tail_is_unresolved` (dipindah dari `codegen_fold.c` jadi helper bersama), dan tidak ada `next v` → kondisi `((yield), 0)` (bentuk sama dengan #5096). Versi pertama lupa syarat tail tak bertipe (blok `1 + 1 == 2` ikut dianggap falsy); temuan CodeRabbit di fork menambah syarat `next`. Tes `test/yield_condition_block_calls_missing_method.rb` merah sebelum, hijau sesudah, GC stress lulus, CI fork hijau, C benchmark identik. Commit `9198a689d`, **PR https://github.com/matz/spinel/pull/6093**.
 
 ## K-008: method yang mengembalikan hasil blok melebar ke untyped, termasuk `Post.all`
 - Lapisan: db / model
@@ -256,7 +257,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Solusi yang dipakai: `Route#match` → `Route#match_path`. **Aturan umum:** hindari nama method yang sama dengan method bawaan String/Array/Hash (`match`, `size`, `each`, `call`, ...) pada kelas framework yang bisa tidak terpakai di sebagian program.
 - Biaya: nol (ganti nama)
 - Upstream: kandidat laporan; belum dilaporkan
-- **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** analyzer (`an_user_defines_or_reads`) menghitung setiap kelas yang mendefinisikan `match`, sedangkan codegen (`user_defines_or_reads`) hanya kelas yang bisa dijangkau. Karena `Route` tak pernah dibuat, codegen memakai `match` bawaan (`sp_MatchData *`) ke slot yang analyzer beri tipe poly, dan C gagal. Arm `match` di `codegen_call_recv.c` kini mem-box hasil bawaan bila analyzer mengetik panggilan itu poly (`match?`/`=~` sudah aman; `size` dicek aman). Tes `test/untyped_receiver_builtin_match_beside_user_match.rb` merah sebelum, hijau sesudah, GC stress lulus, C benchmark identik. Commit `705e36969`, CI di PR fork #4; PR ke matz belum dibuka.
+- **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** analyzer (`an_user_defines_or_reads`) menghitung setiap kelas yang mendefinisikan `match`, sedangkan codegen (`user_defines_or_reads`) hanya kelas yang bisa dijangkau. Karena `Route` tak pernah dibuat, codegen memakai `match` bawaan (`sp_MatchData *`) ke slot yang analyzer beri tipe poly, dan C gagal. Arm `match` di `codegen_call_recv.c` kini mem-box hasil bawaan bila analyzer mengetik panggilan itu poly (`match?`/`=~` sudah aman; `size` dicek aman). Tes `test/untyped_receiver_builtin_match_beside_user_match.rb` merah sebelum, hijau sesudah, GC stress lulus, C benchmark identik. Commit `705e36969`, CI hijau + CodeRabbit bersih di PR fork #4, lalu **PR https://github.com/matz/spinel/pull/6063** (dibuka 2026-09-30 05:44 WIB; CodeRabbit upstream: tanpa temuan).
 
 ## K-014: kode mati dengan receiver untyped bisa ditolak, bergantung pada isi program lain
 - Lapisan: model (terpicu dari tes HTTP server)
@@ -389,3 +390,17 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Solusi yang dipakai: tidak ada (Kilau tidak memakai alias seperti ini)
 - Upstream: **diperbaiki** (matz/spinel#6028)
 - **Koreksi & perbaikan (Rencana 6 Fase 2, 2026-09-30):** alias tidak berperan; memanggil `first_match` langsung gagal sama. Pemicu minimal: kelas kecil read-only (`Row`) dikompilasi sebagai *value object* (struct), lalu di-`yield` ke blok yang harus jadi proc sungguhan (blok menulis lokal luar dan receiver berasal dari Array). Tiga tempat memperlakukan struct sebagai pointer: (1) `emit_proc_call_args` mengecek `proc_slot_is_ptr` (benar untuk semua objek) sebelum cek by-value → cast `(sp_int)(uintptr_t)` struct, dan temp di-root sebagai pointer; (2) parameter blok tanpa argumen default `NULL`; (3) temp hasil `emit_poly_method_dispatch` diinisialisasi `NULL`. Helper baru `default_value_from_compiler` (nama usulan pengguna) memberi `(sp_X){0}` untuk value object, dipakai hanya di tiga tempat itu. Emitter (3) ditemukan dengan instrumentasi backtrace sementara di `buf_putn` setelah pencarian teks gagal. Tes `test/value_object_yielded_through_a_proc_block.rb` merah sebelum, hijau sesudah, GC stress lulus; CI penuh hijau di PR fork; C benchmark identik. Commit `58fc6b8e4`, **PR https://github.com/matz/spinel/pull/6028**, **di-merge oleh matz 2026-09-30 03:26 WIB** (`7304a08a2`). CodeRabbit: `SP_GC_ROOT` vs `SP_GC_ROOT_STR` untuk field String; tidak valid (`_SP_GC_SLOT_TAG` memilih tag dari tipe C slot), dibalas.
+
+## K-020: nilai `next` di blok diabaikan saat mengetik panggilan method yang `yield`
+- Lapisan: compiler (inferensi tipe + codegen blok inline)
+- Ditemukan: 2026-09-30, saat menanggapi temuan CodeRabbit di PR K-007 (`next true` sebelum tail yang tak ter-resolve).
+- Yang terjadi (`def run = yield`):
+  - `p run { next true if 1 == 1; nil }` → Spinel mencetak **`nil`**, CRuby `true` (**nilai salah diam-diam**: `p` di-fold ke "nil").
+  - `run { next true if c; "str" }` / `run { next 5 if c; "tail" }` → C gagal (`const char *` ← `sp_RbVal`).
+  - `run { next 5 if c; obj.missing }` → C gagal (`sp_int` ← `sp_RbVal`).
+- Mekanisme: `method_call_ret` (`analyze_util.c`) mengetik panggilan method yield-tailed dari **tail blok saja**, sedangkan `yield_value_type` sudah menggabungkan `block_next_value_ty`. Setelah diperbaiki, tail berupa panggilan tak bertipe masih ditugaskan ke slot bertipe nilai `next`.
+- Perbaikan: `method_call_ret` menggabungkan tipe `next` dengan tail (void → nil); inliner blok (`codegen_iter.c`) menjalankan tail panggilan tak bertipe sebagai `(void)(...)` (ia melempar, atau placeholder nil, dan slot sudah nil). Tes `test/next_value_types_a_yield_call.rb` merah sebelum, hijau sesudah, GC stress lulus, CI fork hijau, C benchmark identik. Review CodeRabbit di fork terlewat karena kuota. Commit `f3d38f439`, **PR https://github.com/matz/spinel/pull/6092**.
+- Klasifikasi: bug-compiler (nilai salah diam-diam + C gagal)
+- Solusi yang dipakai: tidak perlu di Kilau (pola ini tidak dipakai)
+- Upstream: PR matz/spinel#6092
+
