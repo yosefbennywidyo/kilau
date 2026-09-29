@@ -13,7 +13,7 @@ Entri terbaru di atas.
 **Langkah berikutnya**
 1. ~~Kembalikan `Model#save` ke bentuk `elsif`~~ selesai 2026-09-29 23:20 WIB; suite hijau.
 2. K-018: PR https://github.com/matz/spinel/pull/5983 **di-merge** 2026-09-30 00:23 WIB. Tindak lanjut temuan CodeRabbit (komponen PATH kosong di `which`): PR https://github.com/matz/spinel/pull/5997 **di-merge** 2026-09-30 01:24 WIB. K-018 selesai. Commit upstream spinel sekarang memakai trailer `Co-Authored-By: Claude …` sesuai README spinel; PR #5789 sudah diberi komentar disclosure.
-3. Lanjutkan dari entri sebelumnya: Fase 2 K-016 → K-015 → K-004/K-013/K-007 → K-014.
+3. ~~Fase 2 K-016~~: PR https://github.com/matz/spinel/pull/6008 (2026-09-30); pantau review. Berikutnya: K-015 → K-004/K-013/K-007 → K-014.
 
 ## 2026-09-29 17:44 WIB — Rencana 6: Fase 0 selesai, Fase 1 hampir, Fase 2 dimulai (PR K-017)
 

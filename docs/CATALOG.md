@@ -24,7 +24,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 | K-013 | C gagal (`sp_MatchData *`) | sama | **masih ada** |
 | K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
 | K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **masih ada**; repro minimal (user-defined `each` + array campuran) |
-| K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **masih ada**; repro minimal 37 baris |
+| K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **masih ada**; repro minimal 37 baris; perbaikan diajukan: matz/spinel#6008 |
 | K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **diperbaiki upstream** (matz/spinel#5789, di-merge 2026-09-29 17:49 WIB, `dca09ca13`); diverifikasi di `6626c0f05`: repro sama dengan CRuby |
 
 Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 26/26;
@@ -313,7 +313,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Klasifikasi: bug-compiler/runtime (pembacaan elemen array poly salah tag), serius (crash)
 - Solusi yang dipakai: binder bertipe `Kilau::DB::Binds` menggantikan array binds campuran (D-019). Tidak ada lagi `PolyArray` di jalur SQL.
 - Biaya: perubahan API `execute/query/insert(sql, binds)` di Rencana 1 (binds kini `Binds`, bukan Array). Sekaligus menghapus pelebaran K-005.
-- Upstream: kandidat laporan setelah repro minimal; belum dilaporkan
+- Upstream: PR matz/spinel#6008
 
 ## K-016: `Pool#query_first` mengembalikan `nil` saat dipanggil dari handler; penugasan dari blok bersarang hilang
 - Lapisan: db
@@ -336,7 +336,10 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
   3. `query_first` dipanggil pada **parameter proc** (receiver untyped), dan proc itu **disimpan di ivar lalu dipanggil dari method** (`Endpoint#call`); proc yang dipanggil dari variabel lokal benar.
 - Jalan reduksi (Rencana 6 Fase 1): program blog (1.661 baris setelah di-flatten) → tanpa server/CLI/migrasi/POST (1.241) → bisection per lapisan (Client, Dispatcher, dan controller tidak dibutuhkan; proc tersimpan wajib) → framework DB + `Endpoint` saja → sintetis tanpa SQLite → 37 baris.
 - Temuan sampingan: di program blog, proc `{ |c, r| c.db.query_first(…) { |row| row.int(0) }.nil? ? 404 : 200 }` membuat spinel menolak `src/controllers/posts.rb:53` dengan `unsupported condition (non-bool)`. Ini sekeluarga dengan K-007/K-014, dan belum diisolasi.
-- Klasifikasi: bug-compiler (dugaan: variabel lokal yang ditangkap blok bersarang, ditulis dari dalam, tidak terlihat oleh method saat method itu di-dispatch poly)
+- **Mekanisme (Rencana 6 Fase 2, 2026-09-30 ~01:00 WIB, dibuktikan dengan instrumentasi):** tipe nilai `yield` dihitung `yield_value_type` (`src/analyze_util.c`) dari blok di tiap call site yang di-resolve `yvt_callee_index`, yang hanya me-resolve receiver bertipe objek. Satu-satunya pemanggil `query_first` adalah parameter proc (receiver `poly`, efek K-012), jadi call site dilewati dan nilai yield tetap `UNKNOWN`. `found` lalu bertipe dari penulisan lainnya saja (`nil`), return method `nil`, dan fungsi C di-emit `void` sehingga nilai `found` dibuang. Codegen tetap mengirim panggilan ke `sp_Pool_query_first` lewat `switch (cls_id)` dan membaca nilai yield sebagai poly.
+- **Koreksi syarat:** blok bersarang dua level **tidak** diperlukan. Yang menentukan: receiver poly, dan tidak ada jalur lain yang memberi tipe ke lokal itu. `conn = @idle.last` menyembunyikan bug (panggilan bertipe `conn.query` memberi `found` tipe poly lewat jalur lain); `@idle.pop` memunculkannya.
+- **Perbaikan:** `yield_value_type` mencatat call site yang dilewati bila receiver-nya poly dan namanya sama dengan method instance itu; bila tidak ada call site ter-resolve yang memberi tipe, nilai yield = poly. Tes `test/yield_value_through_poly_receiver.rb` merah sebelum (`nil`/`true`/`nil`), hijau sesudah, lulus di bawah `SPINEL_GC_STRESS=1`. `make check` RC=0 (4.741 pass; 25 timeout dalam satu jendela 90 dtk, lulus saat diulang). C yang di-emit untuk 62 benchmark + optcarrot identik (optcarrot 1128 fps). Commit `76c9df044`, **PR https://github.com/matz/spinel/pull/6008** (dibuka 2026-09-30).
+- Klasifikasi: bug-compiler (tipe nilai `yield` saat semua pemanggil lewat receiver poly)
 - Solusi yang dipakai: `query_first` mengumpulkan ke array (`found << yield(row) if found.empty?`, lalu `found.first`), pola yang sama dengan `query_all` yang terbukti benar
 - Biaya: nol
 - Upstream: kandidat laporan setelah repro minimal; belum dilaporkan
