@@ -1,0 +1,4 @@
+ok the client uses the dispatcher the hooks give
+ok by default the dispatcher is the route table
+ok apply_override turns POST with _method=patch into PATCH
+ok apply_override leaves POST with _method=get alone

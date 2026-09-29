@@ -4,7 +4,7 @@ module Kilau
     # urlencoded, and PATCH/DELETE go as POST + _method.
     class Client
       def initialize(hooks, app_context)
-        @dispatcher = Dispatcher.new(hooks.routes, app_context)
+        @dispatcher = hooks.dispatcher(app_context)
       end
 
       def get(path) = perform("GET", path, {})

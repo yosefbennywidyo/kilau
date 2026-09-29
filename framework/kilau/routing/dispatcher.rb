@@ -10,7 +10,7 @@ module Kilau
     end
 
     def call(request)
-      override_method(request)
+      Dispatcher.apply_override(request)
       @routes.each do |route|
         next unless route.verb == request.request_method
         params = route.match_path(request.path)
@@ -32,10 +32,8 @@ module Kilau
       Response.new(status, "text/html; charset=utf-8", body)
     end
 
-    private
-
     # A browser form can only POST; _method=patch|put|delete says what it meant.
-    def override_method(request)
+    def self.apply_override(request)
       return nil unless request.request_method == "POST"
       wanted = request.form_value("_method")
       return nil if wanted.nil?

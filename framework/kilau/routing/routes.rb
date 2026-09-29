@@ -61,12 +61,14 @@ module Kilau
 
     def self.with_default_routes
       defaults = Routes.new
-        .add("/_ping", Controller.get { |app_context, request| Format.json("{\"ok\":true}") })
-        .add("/_health", Controller.get { |app_context, request| AppRoutes.health(app_context) })
+        .add("/_ping", Controller.get { |app_context, request| AppRoutes.ping(app_context, request) })
+        .add("/_health", Controller.get { |app_context, request| AppRoutes.health(app_context, request) })
       new.add(defaults)
     end
 
-    def self.health(app_context)
+    def self.ping(app_context, request) = Format.json("{\"ok\":true}")
+
+    def self.health(app_context, request)
       app_context.db.query_first("SELECT 1", Kilau::DB::Binds.new) { |row| row.int(0) }
       Format.json("{\"ok\":true}")
     rescue Kilau::DB::Error
