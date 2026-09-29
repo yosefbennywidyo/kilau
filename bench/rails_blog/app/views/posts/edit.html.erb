@@ -1,0 +1,5 @@
+<% content_for :title, "Edit post" %>
+<h1>Edit post</h1>
+<form method="post" action="/posts/<%= @post.id %>"><input type="hidden" name="_method" value="patch">
+<%= render "form", post: @post %>
+</form>

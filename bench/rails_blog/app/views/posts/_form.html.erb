@@ -1,0 +1,10 @@
+<% if post.errors.any? %>
+<ul class="errors">
+<% post.errors.group_by_attribute.each do |field, errors| %>
+<li><%= field %> <%= errors.map(&:message).join(", ") %></li>
+<% end %>
+</ul>
+<% end %>
+<p><label>Title <input name="post[title]" value="<%= post.title %>"></label></p>
+<p><label>Content <textarea name="post[content]"><%= post.content %></textarea></label></p>
+<button>Save</button>

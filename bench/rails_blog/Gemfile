@@ -1,0 +1,10 @@
+# Rails comparison app for the Kilau benchmark (spec §6.1). Only the
+# frameworks the blog uses: no asset pipeline, mailer, jobs or cable.
+source "https://rubygems.org"
+
+gem "railties", "8.1.4"
+gem "activerecord", "8.1.4"
+gem "actionpack", "8.1.4"
+gem "actionview", "8.1.4"
+gem "puma", "8.0.2"
+gem "sqlite3", "2.9.6"

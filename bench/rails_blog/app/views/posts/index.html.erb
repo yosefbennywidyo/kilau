@@ -1,0 +1,8 @@
+<% content_for :title, "Posts" %>
+<h1>Posts</h1>
+<p><a href="/posts/new">New post</a></p>
+<ul>
+<% @posts.each do |post| %>
+<li><a href="/posts/<%= post.id %>"><%= post.title %></a></li>
+<% end %>
+</ul>
