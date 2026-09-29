@@ -21,10 +21,11 @@ module Kilau
       touch(Time.now.to_i)
       if id.nil?
         self.id = db.insert(insert_sql, insert_binds)
-      else
-        changed = db.execute(update_sql, update_binds)
+      elsif db.execute(update_sql, update_binds) == 0
         # The row went away since it was loaded (another request deleted it).
-        raise Kilau::Error::NotFound, "row #{id.to_s} no longer exists" if changed.to_i == 0
+        # This shape needs spinel >= dca09ca13; older ones ran update_binds
+        # on the insert path too (K-017).
+        raise Kilau::Error::NotFound, "row #{id.to_s} no longer exists"
       end
       true
     end

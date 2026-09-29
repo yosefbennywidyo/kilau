@@ -11,7 +11,7 @@ Entri terbaru di atas.
 - **K-018 (baru):** `spin test` yang dipanggil lewat PATH tidak melihat mtime compiler, sehingga setelah upgrade compiler semua tes tetap `(cached)` dan hasil hijaunya palsu. `Makefile` sekarang memakai `SPIN ?= $(shell command -v spin)`. Detail di `docs/CATALOG.md` K-018.
 
 **Langkah berikutnya**
-1. Opsional: kembalikan `Model#save` ke bentuk `elsif` (aman untuk spinel ≥ `dca09ca13`).
+1. ~~Kembalikan `Model#save` ke bentuk `elsif`~~ selesai 2026-09-29 23:20 WIB; suite hijau.
 2. K-018: kandidat PR upstream kecil di `tools/spin.rb` (`spinel_bin` me-resolve `"spinel"` lewat `which`). Perlu izin pengguna.
 3. Lanjutkan dari entri sebelumnya: Fase 2 K-016 → K-015 → K-004/K-013/K-007 → K-014.
 

@@ -350,7 +350,7 @@ Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 
 - Reduksi (Rencana 6 Fase 1): program tes (framework penuh) → reduksi per file (cukup DB + model + entity) → repro sintetis 50 baris → pemangkasan kumulatif (37) → tanpa superclass (33) + trace.
 - Klasifikasi: bug-compiler (sensitivitas inferensi seluruh program; sekeluarga dengan K-015/K-016)
 - **Verifikasi (2026-09-29 23:10 WIB)**: dengan spinel `6626c0f05` (berisi `dca09ca13`), `repro/k017_elsif_argument_evaluated_early.rb` keluar 0 dengan output sama persis dengan CRuby; `1ba12fb74` masih `nil given to int`. Suite Kilau hijau (14/14, 8/8, 4/4, CRuby 26/26).
-- Solusi yang dipakai: bentuk `else` + variabel + `to_i` (masih dipakai; kembali ke `elsif` sekarang aman untuk spinel ≥ `dca09ca13`)
+- Solusi yang dipakai: dulu bentuk `else` + variabel + `to_i`. Sejak 2026-09-29 23:20 WIB `Model#save` kembali ke bentuk `elsif … == 0` (butuh spinel ≥ `dca09ca13`); suite 14/14, 8/8, 4/4, CRuby 26/26.
 - Biaya: nol
 - Upstream: **diperbaiki** (matz/spinel#5789)
 
