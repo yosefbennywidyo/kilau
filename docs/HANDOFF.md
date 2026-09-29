@@ -2,6 +2,26 @@
 
 Entri terbaru di atas.
 
+## 2026-09-30 04:38 WIB — K-015/K-019 merged; K-004 direvisi (CI hijau); K-013 di CI fork; survei ivar
+
+**Status**
+- Upstream merged: #5789 (K-017), #5983+#5997 (K-018), #6008 (K-016), **#6027 (K-015)**, **#6028 (K-019)**. Kamu: 6 commit, peringkat ~29/63.
+- **#6029 (K-004)** terbuka, CI hijau di `602e30b52` setelah tiga revisi atas CodeRabbit (instance method dulu, `module_function`, helper `scope_uses_ivars` + reject test). Satu temuan CodeRabbit (ivar di blok bersarang) tak bisa direproduksi, sudah dibalas.
+- **K-013**: perbaikan di branch `k013-builtin-name-untyped-recv` (`705e36969`), CI di PR fork #4. PR ke matz menunggu CI + persetujuan pengguna.
+- Survei ~129 daftar jenis node ivar di analyzer: tidak ada bug yang bisa direproduksi; tidak membuka PR refactor. Laporan: `docs/review/survei-daftar-ivar-analyzer.md` (gitignored).
+- Kilau masih memakai spinel `6626c0f05`.
+
+**Pelajaran proses (juga di skill `spinel-notes`)**
+- `git fetch` **tepat sebelum** membuat branch dari `origin/master`; cek ulang merge ke master terbaru sebelum PR.
+- Setelah menukar source (`git show`, `stash`, `checkout`), hapus `.o` terkait sebelum `make`, lalu buktikan compiler mana yang aktif lewat tes (dua kali tertipu build yang tak rebuild).
+- Setiap temuan CodeRabbit diverifikasi dulu terhadap kode: dari 8 temuan di PR kita, 4 valid, 4 tidak.
+
+**Langkah berikutnya**
+1. CI PR fork #4 hijau → minta izin → buka PR K-013 ke matz, tutup PR fork.
+2. Pantau merge #6029 (K-004) dan PR K-013.
+3. Setelah merge: naikkan compiler Kilau, jalankan ulang repro, cabut workaround (K-015 `Binds`, K-016 pola array, K-004 helper tes, K-013 nama `match_path` bisa kembali ke `match`).
+4. Sisa: K-007 (diagnostik `unless yield`), K-014 (susun ulang bentuk lama dari riwayat git `migrator.rb`).
+
 ## 2026-09-30 ~03:20 WIB — Rencana 6 Fase 2: PR K-015, K-019, K-004 terbuka; alur CI di fork
 
 **Status**
