@@ -18,6 +18,9 @@
 # runs it and stops if the apps disagree.
 set -u
 source "$(dirname "$0")/lib.sh"
+# An interrupted or failing session must not leave an app on the port.
+trap stop_app EXIT
+trap 'exit 130' INT TERM
 APPS=${APPS:-"kilau kilau-routes rails"}
 SCENARIOS=${SCENARIOS:-"s1 s2 s3 s4"}
 CONCURRENCY=${CONCURRENCY:-"1 16 64"}

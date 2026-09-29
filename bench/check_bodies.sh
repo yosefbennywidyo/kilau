@@ -3,6 +3,9 @@
 # with the same bytes and S4 with 303 to the same place. Exit 1 if not.
 set -u
 source "$(dirname "$0")/lib.sh"
+# An interrupted or failing run must not leave an app on the port.
+trap stop_app EXIT
+trap 'exit 130' INT TERM
 make_seed_db || { echo "FAIL: cannot build the seed database"; exit 1; }
 DIR=/tmp/kilau-bench-bodies
 rm -rf "$DIR"; mkdir -p "$DIR"

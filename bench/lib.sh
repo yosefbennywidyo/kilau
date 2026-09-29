@@ -74,11 +74,15 @@ tree_rss() {
   echo $total
 }
 
+# Stops APP_PID and its children: Puma forwards TERM to its workers, but
+# a KILL of the master alone would orphan them on the port.
 stop_app() {
   [ -z "$APP_PID" ] && return 0
+  local children
+  children=$(pgrep -P "$APP_PID" | tr '\n' ' ')
   kill "$APP_PID" 2>/dev/null
   for _ in $(seq 100); do kill -0 "$APP_PID" 2>/dev/null || break; sleep 0.1; done
-  kill -9 "$APP_PID" 2>/dev/null
+  kill -9 "$APP_PID" $children 2>/dev/null
   wait "$APP_PID" 2>/dev/null
   APP_PID=""
 }
