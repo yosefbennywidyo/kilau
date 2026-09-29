@@ -1,6 +1,6 @@
 # Katalog batas AOT
 
-Compiler: spinel 2026.09.12+2124 (1ba12fb74) sejak 2026-09-29 13:45 WIB. Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
+Compiler: spinel 2026.09.12+2237 (6626c0f05) sejak 2026-09-29 23:08 WIB (sebelumnya `1ba12fb74` sejak 13:45 WIB). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
 Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRuby
 4.0.6 sebagai pembanding.
 
@@ -25,7 +25,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 | K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
 | K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **masih ada**; repro minimal (user-defined `each` + array campuran) |
 | K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **masih ada**; repro minimal 37 baris |
-| K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **diperbaiki upstream** (matz/spinel#5789, di-merge 2026-09-29 17:49 WIB, `dca09ca13`); belum ada di compiler Kilau `1ba12fb74` |
+| K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **diperbaiki upstream** (matz/spinel#5789, di-merge 2026-09-29 17:49 WIB, `dca09ca13`); diverifikasi di `6626c0f05`: repro sama dengan CRuby |
 
 Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 26/26;
 `make e2e` 11/11 untuk kedua binary. Tidak ada regresi.
@@ -349,6 +349,16 @@ Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 
 - **Perbaikan (Rencana 6 Fase 2, 2026-09-29 17:11 WIB)**: di spinel, `emit_if` (`src/codegen_stmt.c`) kini menangkap prelude predikat `elsif` dan meng-emit-nya di dalam blok `else` milik `elsif` itu, sama seperti yang sudah dilakukan emitter lengan `case`/ternary. Tes baru `test/elsif_condition_args_wait_for_their_branch.rb` (+ snapshot CRuby) gagal sebelum dan lulus sesudah perbaikan. `make check`: 4.597 pass, 0 fail, `alloc-report-test`, `infer-test`, dan `spin-e2e` hijau. Commit `05a5ebef6` di branch `elsif-condition-args-in-branch` (fork `yosefbennywidyo/spinel`). **PR upstream: https://github.com/matz/spinel/pull/5789** (dibuka 2026-09-29), **di-merge oleh matz 2026-09-29 17:49 WIB** (merge commit `dca09ca13`). CI hijau (gcc, clang, macOS, wasm32-wasi); CodeRabbit tanpa temuan (cek Docstring Coverage "inconclusive" diabaikan, repo tidak memakai docstring).
 - Reduksi (Rencana 6 Fase 1): program tes (framework penuh) → reduksi per file (cukup DB + model + entity) → repro sintetis 50 baris → pemangkasan kumulatif (37) → tanpa superclass (33) + trace.
 - Klasifikasi: bug-compiler (sensitivitas inferensi seluruh program; sekeluarga dengan K-015/K-016)
-- Solusi yang dipakai: bentuk `else` + variabel + `to_i`
+- **Verifikasi (2026-09-29 23:10 WIB)**: dengan spinel `6626c0f05` (berisi `dca09ca13`), `repro/k017_elsif_argument_evaluated_early.rb` keluar 0 dengan output sama persis dengan CRuby; `1ba12fb74` masih `nil given to int`. Suite Kilau hijau (14/14, 8/8, 4/4, CRuby 26/26).
+- Solusi yang dipakai: bentuk `else` + variabel + `to_i` (masih dipakai; kembali ke `elsif` sekarang aman untuk spinel ≥ `dca09ca13`)
 - Biaya: nol
-- Upstream: perlu isolasi
+- Upstream: **diperbaiki** (matz/spinel#5789)
+
+## K-018: `spin test` memakai ulang binary tes lama setelah compiler di-upgrade
+- Lapisan: tooling (`spin`)
+- Yang terjadi: setelah `sudo make install` spinel `6626c0f05` (2026-09-29 23:08 WIB), `make test` melaporkan 26/26 lulus, tetapi **semua** tes bertanda `(cached)`. Binary tesnya dari 13:43, lebih tua dari compiler, jadi hasil hijau itu masih milik compiler lama.
+- Mekanisme (`tools/spin.rb`, `spinel_bin`, di spinel `6626c0f05`): `spin` mencari compiler di `<dir dari $0>/spinel`. Kalau dipanggil lewat PATH (`spin test`), `$0` hanya `spin`, sehingga `File.expand_path` menunjuk ke direktori kerja. Kandidat itu tidak ada, dan fungsi mengembalikan nama polos `"spinel"`. `File.exist?("spinel")` false, sehingga mtime compiler dianggap 0 dan tidak pernah membuat cache basi (batas kesegaran #3202).
+- Bukti: `cd framework && /usr/local/bin/spin test` → 0 `(cached)`, 14 tes dikompilasi ulang.
+- Solusi yang dipakai: `Makefile` Kilau memakai `SPIN ?= $(shell command -v spin)` (path absolut).
+- Klasifikasi: bug-tooling
+- Upstream: kandidat laporan/PR (belum dilaporkan). Perbaikan yang mungkin: resolve `"spinel"` lewat PATH (fungsi `which` sudah ada di `spin.rb`) sebelum stat.

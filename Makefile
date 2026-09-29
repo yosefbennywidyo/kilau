@@ -5,7 +5,12 @@
 # package directory, as spin test runs it. Both first generate the blog's
 # templates and routes, which its views and blog_routes require (spec §4,
 # §2.2).
-SPIN ?= spin
+# spin resolves its compiler as <dir of $0>/spinel. Invoked by bare name
+# through PATH, $0 carries no directory, so spin falls back to the name
+# "spinel", finds no such file to stat, and never counts the compiler's mtime:
+# after a compiler upgrade every test binary is reused as "(cached)". An
+# absolute path keeps the upgrade visible (K-018).
+SPIN ?= $(shell command -v spin)
 RUBY ?= ruby
 PACKAGES ?= framework tool examples/blog
 KILAU ?= tool/build/bin/kilau
