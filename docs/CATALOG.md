@@ -4,6 +4,32 @@ Compiler: spinel 2026.09.12+1379 (38dc57dd). Format entri: spec §6.3.
 Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRuby
 4.0.6 sebagai pembanding.
 
+## Status di spinel terbaru (Rencana 6 Fase 0, 2026-09-29 13:29 WIB)
+
+Diuji dengan spinel `2026.09.12+2124 (1ba12fb74)`, yang 745 commit di depan `38dc57dd`.
+Spinel baru dibuat di worktree terpisah, sedangkan instalasi `/usr/local/bin/spinel`
+tetap `38dc57dd`. Repro mandiri di-compile dengan `--require-gate` dan output-nya
+dibandingkan dengan CRuby. Untuk K-014 s.d. K-017, bentuk kode lama dipasang ulang
+dari riwayat pra-publik, dan tes yang dulu memicunya dijalankan dengan kedua versi.
+Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid.
+
+| K | `38dc57dd` | `1ba12fb74` | Status |
+|---|---|---|---|
+| K-004 | link gagal (`Undefined symbols`) | link gagal | **masih ada** |
+| K-007 | `unsupported condition (non-bool)` | sama | **masih ada** |
+| K-009 | link gagal (izin `root 0640`) | lulus dari worktree | soal instalasi, bukan compiler |
+| K-010 | C gagal (`no member named 'cls_id'`) | sama dengan CRuby | **diperbaiki upstream** |
+| K-011 | `%zz` → NUL | sama dengan CRuby (`ArgumentError`) | **diperbaiki upstream** |
+| K-012 | pelebaran app 30 (`blog`) / 11 (`blog_routes`) | 30 / 11 | tidak berubah |
+| K-013 | C gagal (`sp_MatchData *`) | sama | **masih ada** |
+| K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
+| K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **masih ada** |
+| K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **masih ada** |
+| K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **masih ada** |
+
+Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 26/26;
+`make e2e` 11/11 untuk kedua binary. Tidak ada regresi.
+
 ## Jawaban riset
 
 | ID | Pertanyaan | Status | Bukti |
