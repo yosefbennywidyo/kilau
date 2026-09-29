@@ -2,6 +2,48 @@
 
 Entri terbaru di atas.
 
+## 2026-09-29 09:33 WIB — Rencana 3 selesai: template ter-compile, R4 terjawab
+
+**Status repo**
+- `main` = `7314530` (Rencana 2 + dokumen Rencana 3).
+- Branch `plan-3-templates`: commit Rencana 3 di atas `main`, **belum di-merge** (keputusan merge di pengguna).
+- Semua hijau di ujung branch:
+  - `make test` (spinel): framework 13/13, tool 6/6, blog 3/3
+  - `make test-cruby`: 22/22 (sekarang dijalankan per direktori paket, seperti `spin test`)
+  - `cd examples/blog && make e2e`: 11/11
+- Rencana: `docs/superpowers/plans/2026-09-29-kilau-rencana-3-template.md`. Keputusan baru: D-020 (subset sintaks), D-021 (lokasi hasil + golden yang dijalankan).
+
+**Menjalankan blog**
+```
+cd examples/blog
+make                        # kilau gen templates . lalu spin build blog
+./build/bin/blog db migrate
+./build/bin/blog start      # http://127.0.0.1:5150
+```
+Setelah mengubah `assets/views/**`, jalankan `make` lagi (atau `make templates`). `build/gen/templates.rb` tidak di-commit.
+Kalau generator sengaja diubah, perbarui golden `tool/test/fixtures/templates.rb` (caranya ada di Rencana 3, Task 3).
+
+**Langkah berikutnya**
+1. Pengguna memutuskan merge `plan-3-templates` ke `main`, lalu hapus branch-nya.
+2. **Rencana 4**: benchmark vs Rails 8 (spec §6.1–6.2, `oha`) dan `FINDINGS.md`, menjawab sisa **R6**. Keputusan `kilau gen routes` (dispatch tanpa proc) sekarang punya manfaat tambahan: parameter `Templates.posts_list/show/edit` ikut boxed karena K-012 (lihat R4), dan akan menyempit bersama handler.
+3. Minor yang ditunda (tetap dari entri sebelumnya):
+   - `Migrator#migrate` memakai `done.include?(migration.version)` tanpa `.to_s`.
+   - `connection_cruby.rb` `values(binds)` tidak punya cabang `Binds::NULL` eksplisit.
+   - Dari Rencana 1: `ROLLBACK` yang gagal menutupi error asli.
+
+**Pertanyaan riset**
+
+| ID | Status |
+|---|---|
+| R1 | tidak (K-012) |
+| R2 | sebagian |
+| R3 | ya |
+| R4 | ya, buffernya; nilai ikut boxed dari handler (K-012) |
+| R5 | ya |
+| R6 | sebagian (Rencana 4) |
+
+Kandidat laporan upstream dan bacaan wajib: sama seperti entri di bawah.
+
 ## 2026-09-28 17:12 WIB — akhir sesi: Rencana 2 selesai, menunggu keputusan merge
 
 **Status repo**
