@@ -1,0 +1,21 @@
+ok a nested path becomes a method name
+ok args are read from the first line
+ok filter_of finds safe
+ok || is not a filter
+ok free identifiers skip methods, constants, keys and strings
+ok a missing args line is refused
+ok an undeclared variable is refused with its line
+ok a loop variable leaves scope at endfor
+ok an unknown filter is refused
+ok an unclosed if names its line
+ok an unclosed delimiter is refused
+ok an unknown tag is refused
+ok a missing include target is refused
+ok an include needs its args in scope
+ok an include cycle is refused
+ok text outside a block of a child is refused
+ok a child block the layout lacks is refused
+ok extends after other content is refused
+ok two templates with one method name are refused
+ok buf is reserved
+ok a loop variable may not shadow an argument
