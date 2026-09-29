@@ -30,6 +30,14 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 26/26;
 `make e2e` 11/11 untuk kedua binary. Tidak ada regresi.
 
+**Uji ulang 2026-09-30 ~01:10 WIB** (`repros.sh`) dengan spinel `6626c0f05` (terpasang)
+dan `c5898078e` (`master` upstream saat itu): hasilnya sama di kedua compiler.
+K-009, K-010, K-011, dan K-017 sama dengan CRuby. K-004 (link), K-007 (`unsupported
+condition`), dan K-013 (C tidak valid) masih gagal compile. K-015 masih segfault
+(`bind: String`, rc 139) dan K-016 masih mencetak `404`, bukan `200`. Batas
+K-001/002/003/006 tidak berubah. K-014 tidak diuji ulang karena `old_shapes.sh`
+butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
+
 ## Jawaban riset
 
 | ID | Pertanyaan | Status | Bukti |
