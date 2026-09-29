@@ -12,7 +12,7 @@ module Kilau
     def self.split(path) = path.split("/").reject { |segment| segment.empty? }
 
     # The :name segments of a matching path, or nil.
-    def match_path(path)
+    def match(path)
       parts = path.split("/")
       parts.shift
       return nil if parts.size != @segments.size && !(parts.empty? && @segments.empty?)

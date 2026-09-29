@@ -64,7 +64,7 @@ di kedua engine.
 | K-010 | override method di subclass exception, dipanggil setelah `rescue Base => e`, gagal compile | DX | kandidat laporan |
 | K-011 | `%zz` didekode menjadi NUL diam-diam | **keamanan** | di-workaround di `Form.unescape`; kandidat laporan |
 | K-012 | proc tersimpan memutus inferensi tipe | performa (terasa di S3) | batas inferensi |
-| K-013 | nama method bawaan pada receiver untyped menghasilkan C tidak valid | DX | perbaikan diajukan: PR matz/spinel#6063 |
+| K-013 | nama method bawaan pada receiver untyped menghasilkan C tidak valid | DX | **diperbaiki upstream** (matz/spinel#6063); workaround dicabut |
 | K-014 | kode mati dengan receiver untyped ditolak, tergantung program lain | DX | butuh isolasi |
 | K-015 | Integer di array campuran terbaca sebagai String, lalu **segfault** | **crash** | di-workaround (D-019); **diperbaiki upstream** (matz/spinel#6027) |
 | K-016 | penugasan dari blok bersarang hilang, sehingga **nilai salah diam-diam** | **nilai salah** | di-workaround; **diperbaiki upstream** (matz/spinel#6008, merged 2026-09-30) |

@@ -1,6 +1,6 @@
 # Katalog batas AOT
 
-Compiler: spinel 2026.09.12+2237 (6626c0f05) sejak 2026-09-29 23:08 WIB (sebelumnya `1ba12fb74` sejak 13:45 WIB). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
+Compiler: spinel 2026.09.12+2606 (35ddccadb) sejak 2026-09-30 06:43 WIB (sebelumnya `6626c0f05` sejak 2026-09-29 23:08, `1ba12fb74` sejak 13:45). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
 Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRuby
 4.0.6 sebagai pembanding.
 
@@ -21,7 +21,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 | K-010 | C gagal (`no member named 'cls_id'`) | sama dengan CRuby | **diperbaiki upstream** |
 | K-011 | `%zz` → NUL | sama dengan CRuby (`ArgumentError`) | **diperbaiki upstream** |
 | K-012 | pelebaran app 30 (`blog`) / 11 (`blog_routes`) | 30 / 11 | tidak berubah |
-| K-013 | C gagal (`sp_MatchData *`) | sama | **masih ada**; perbaikan diajukan: matz/spinel#6063 |
+| K-013 | C gagal (`sp_MatchData *`) | sama | **diperbaiki upstream** (matz/spinel#6063, di-merge 2026-09-30 06:32 WIB, `35ddccadb`); workaround `match_path` dicabut |
 | K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
 | K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **diperbaiki upstream** (matz/spinel#6027, di-merge 2026-09-30 03:26 WIB) |
 | K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **diperbaiki upstream** (matz/spinel#6008, di-merge 2026-09-30 02:21 WIB, `fe642d488`); compiler Kilau `6626c0f05` belum berisi perbaikan ini |
@@ -254,10 +254,10 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
   - Repro minimal: `k013.rb:12: error: assigning to 'sp_RbVal' from incompatible type 'sp_MatchData *'`. CRuby jalan normal.
 - Repro: repro/k013_builtin_name_on_untyped_receiver.rb
 - Klasifikasi: bug-compiler
-- Solusi yang dipakai: `Route#match` → `Route#match_path`. **Aturan umum:** hindari nama method yang sama dengan method bawaan String/Array/Hash (`match`, `size`, `each`, `call`, ...) pada kelas framework yang bisa tidak terpakai di sebagian program.
+- Solusi yang dipakai: `Route#match` → `Route#match_path` (sampai 2026-09-30; **dicabut** setelah matz/spinel#6063 di-merge dan compiler Kilau naik ke `35ddccadb`: nama kembali `match`, suite hijau dari build bersih, sedangkan compiler lama `6626c0f05` gagal 11/14 dengan error K-013). **Aturan umum:** hindari nama method yang sama dengan method bawaan String/Array/Hash (`match`, `size`, `each`, `call`, ...) pada kelas framework yang bisa tidak terpakai di sebagian program.
 - Biaya: nol (ganti nama)
 - Upstream: kandidat laporan; belum dilaporkan
-- **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** analyzer (`an_user_defines_or_reads`) menghitung setiap kelas yang mendefinisikan `match`, sedangkan codegen (`user_defines_or_reads`) hanya kelas yang bisa dijangkau. Karena `Route` tak pernah dibuat, codegen memakai `match` bawaan (`sp_MatchData *`) ke slot yang analyzer beri tipe poly, dan C gagal. Arm `match` di `codegen_call_recv.c` kini mem-box hasil bawaan bila analyzer mengetik panggilan itu poly (`match?`/`=~` sudah aman; `size` dicek aman). Tes `test/untyped_receiver_builtin_match_beside_user_match.rb` merah sebelum, hijau sesudah, GC stress lulus, C benchmark identik. Commit `705e36969`, CI hijau + CodeRabbit bersih di PR fork #4, lalu **PR https://github.com/matz/spinel/pull/6063** (dibuka 2026-09-30 05:44 WIB; CodeRabbit upstream: tanpa temuan).
+- **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** analyzer (`an_user_defines_or_reads`) menghitung setiap kelas yang mendefinisikan `match`, sedangkan codegen (`user_defines_or_reads`) hanya kelas yang bisa dijangkau. Karena `Route` tak pernah dibuat, codegen memakai `match` bawaan (`sp_MatchData *`) ke slot yang analyzer beri tipe poly, dan C gagal. Arm `match` di `codegen_call_recv.c` kini mem-box hasil bawaan bila analyzer mengetik panggilan itu poly (`match?`/`=~` sudah aman; `size` dicek aman). Tes `test/untyped_receiver_builtin_match_beside_user_match.rb` merah sebelum, hijau sesudah, GC stress lulus, C benchmark identik. Commit `705e36969`, CI hijau + CodeRabbit bersih di PR fork #4, lalu **PR https://github.com/matz/spinel/pull/6063** (dibuka 2026-09-30 05:44 WIB; CodeRabbit upstream: tanpa temuan), **di-merge oleh matz 2026-09-30 06:32 WIB** (`35ddccadb`).
 
 ## K-014: kode mati dengan receiver untyped bisa ditolak, bergantung pada isi program lain
 - Lapisan: model (terpicu dari tes HTTP server)

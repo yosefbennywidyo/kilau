@@ -2,6 +2,20 @@
 
 Entri terbaru di atas.
 
+## 2026-09-30 06:43 WIB — Compiler Kilau naik ke `35ddccadb`; workaround K-013 dicabut
+
+**Status**
+- Kilau memakai spinel **`35ddccadb`** (`/usr/local`, K-009 chmod sudah). Suite dari build bersih: 14/14, 8/8, 4/4, CRuby 26/26.
+- Upstream merged: 8 PR (K-017, K-018×2, K-016, K-015, K-019, K-004, **K-013 #6063**). Terbuka: #6092 (K-020), #6093 (K-007).
+- `Route#match_path` → kembali `match` (K-013). Compiler lama `6626c0f05` gagal 11/14 dengan kode ini, jadi compiler ≥ `35ddccadb` **wajib**.
+- Jebakan K-018 arah sebaliknya: setelah build dengan compiler baru, tes dengan compiler lama terlihat lulus karena memakai binary cache; `spin clean` dulu sebelum membandingkan compiler.
+- Pembersihan: branch lokal & fork yang sudah merged dihapus; worktree `spinel-latest` dipertahankan sampai #6092/#6093 merged.
+
+**Langkah berikutnya**
+1. Cabut workaround lain yang kini didukung compiler: K-015 (`Kilau::DB::Binds`), K-016 (pola array `query_first`), K-004 (helper tes method modul). Satu per satu, suite hijau tiap langkah.
+2. Pantau #6092/#6093; setelah merge hapus worktree `spinel-latest` + branch.
+3. Sisa: K-014.
+
 ## 2026-09-30 06:20 WIB — K-004 merged; PR K-013, K-007, K-020 terbuka
 
 **Status**

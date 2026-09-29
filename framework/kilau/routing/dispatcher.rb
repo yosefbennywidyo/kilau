@@ -13,7 +13,7 @@ module Kilau
       Dispatcher.apply_override(request)
       @routes.each do |route|
         next unless route.verb == request.request_method
-        params = route.match_path(request.path)
+        params = route.match(request.path)
         next if params.nil?
         request.path_params = params
         return route.endpoint.call(@app_context, request)
