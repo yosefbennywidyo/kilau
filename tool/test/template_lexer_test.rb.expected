@@ -1,0 +1,22 @@
+2 text "<p>"
+2 expr "post.title"
+2 text "</p>\n"
+--
+2 text "<ul>\n"
+3 tag "for x in xs"
+4 text "  <li>"
+4 expr "x"
+4 text "</li>\n"
+5 tag "endfor"
+6 text "</ul>"
+--
+3 text "a b\n"
+--
+2 tag "if a"
+2 text "x"
+2 tag "endif"
+2 text "\n"
+--
+ok an unclosed {{ names the file and line
+ok an empty tag is refused
+ok an empty body has no tokens
