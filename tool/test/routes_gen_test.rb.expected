@@ -1,0 +1,12 @@
+ok generate returns the file it wrote
+ok the output matches the committed fixture
+ok a well-formed app renders
+ok a block over several lines is refused with its line
+ok a do block is refused
+ok an unknown verb is refused
+ok a block with one parameter is refused
+ok a composed controller without routes is refused
+ok an app without with_default_routes is refused
+ok an inline group in the composition is refused
+ok routes in a nested class are refused
+ok a missing src directory is refused

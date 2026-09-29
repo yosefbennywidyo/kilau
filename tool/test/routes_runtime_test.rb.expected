@@ -1,0 +1,12 @@
+ok the table matches the app's routes
+ok a route declared in the app answers
+ok the prefix alone reaches its / route
+ok a trailing slash matches as in the table
+ok a path parameter is bound
+ok two path parameters are bound, and braces in a body survive
+ok _method=delete reaches the DELETE route
+ok an unknown path is 404
+ok a verb without a route is 404
+ok an empty segment does not bind a parameter
+ok _ping answers
+ok _health answers
