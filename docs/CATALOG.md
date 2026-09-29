@@ -284,6 +284,12 @@ Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 
   | `save` di proc biasa dengan ctx untyped | lulus |
   | salinan rantai yang sama tanpa framework (/tmp) | lulus |
 - Repro: repro/k015_endpoint_save_crash.rb (butuh app blog; cara pakai di header file). **Belum minimal**; isolasi dihentikan pada batas waktu yang disepakati pengguna.
+- **Isolasi lanjutan (Rencana 6 Fase 1, 2026-09-29 14:48 WIB, spinel `1ba12fb74`)**: masih crash (exit 139) di bentuk kode lama (`d8de580` + file app dari `4f4d93b`). Syarat yang terbukti:
+  1. endpoint dibuat dari **blok yang ditangkap lewat `&handler`** (`Kilau::Controller.post { |c, r| … }`). Literal `proc { … }` yang dioper ke `Endpoint.new` tidak crash, dan panggilan `PostsController.add` langsung juga tidak;
+  2. di dalam blok, `Post.new` + `post.save(c)`, dengan `c` = pool (argumen proc untyped). `Testing::Client`, `Dispatcher`, `AppContext`, dan route table **tidak** dibutuhkan;
+  3. **kode mati** harus ikut di-compile: `model/migration` + `model/migrator` + `migration/migrator.rb` app (Migrator tidak pernah dibuat, dan `@conn` di dalamnya untyped; ia memanggil `@conn.execute(sql, [migration.version])` dan `@conn.query(...)`) serta `http/request` (yang punya `Request#query(name)`, bernama sama dengan `Connection#query`). Tanpa salah satunya, crash hilang;
+  4. lapisan lain framework (server, parser, Config, Format, Routes, Dispatcher, Testing, CLI) dan kode app lain tidak dibutuhkan.
+- Program minimal per file: 724 baris setelah di-flatten (framework DB/model/controller + migrasi + Request + model Post). Replika sintetis dengan unsur-unsur di atas **belum** crash, jadi ada detail lain yang belum teridentifikasi. Reduksi otomatis (`spinel-reduce`, oracle: CRuby 303 + spinel exit 139) berjalan dari 724 baris itu. Batas 6–8 giliran untuk K-015 sudah tercapai.
 - Klasifikasi: bug-compiler/runtime (pembacaan elemen array poly salah tag), serius (crash)
 - Solusi yang dipakai: binder bertipe `Kilau::DB::Binds` menggantikan array binds campuran (D-019). Tidak ada lagi `PolyArray` di jalur SQL.
 - Biaya: perubahan API `execute/query/insert(sql, binds)` di Rencana 1 (binds kini `Binds`, bukan Array). Sekaligus menghapus pelebaran K-005.
