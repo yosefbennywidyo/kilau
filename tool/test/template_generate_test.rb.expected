@@ -1,0 +1,6 @@
+ok generate returns the file it wrote
+ok the output matches the committed fixture
+ok an app without assets/views is refused
+ok an empty views directory is refused
+ok a broken template names itself
+ok nothing is written when a template fails

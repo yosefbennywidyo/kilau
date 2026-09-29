@@ -1,0 +1,30 @@
+<title>Items</title>
+<main>
+<ul>
+<li>&lt;a&gt;</li>
+<li>b &amp; c</li>
+</ul>
+<p>&lt;i&gt; | <i></p>
+
+</main>
+<title>Items</title>
+<main>
+<ul>
+<li>z</li>
+</ul>
+<p class="n">#{raw} 4</p>
+
+</main>
+title: &lt;x&gt;
+body: ok
+<title>Kilau</title>
+<main>
+<p>plain</p>
+</main>
+ok an expression is escaped
+ok | safe is not escaped
+ok elif takes its branch
+ok if takes its branch
+ok a filled block replaces the layout default
+ok an unfilled block keeps the layout default
+ok text holding #{ stays literal

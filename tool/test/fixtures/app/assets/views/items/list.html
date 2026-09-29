@@ -1,0 +1,17 @@
+{#- args: items, note -#}
+{% extends "layout.html" %}
+{% block title %}Items{% endblock %}
+{% block content %}
+<ul>
+{% for item in items %}
+  {% include "items/_item.html" %}
+{% endfor %}
+</ul>
+{% if note.empty? %}
+<p>none</p>
+{% elif note == "x" || note.start_with?("<") %}
+<p>{{ note }} | {{ note | safe }}</p>
+{% else %}
+<p class="n">#{raw} {{ note.size }}</p>
+{% endif %}
+{% endblock %}
