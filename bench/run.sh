@@ -1,22 +1,28 @@
 #!/bin/bash
-# The benchmark session (spec §6.2). For every app × scenario × concurrency
-# cell: a fresh copy of the seed database, a fresh app process (its time
-# to first 200 is recorded), one warm-up run, then REPS measured runs of
-# oha, each saved as JSON, while the app's peak RSS is sampled.
+# The benchmark session (spec §6.2). For every scenario × concurrency ×
+# app cell: a fresh copy of the seed database, a fresh app process (its
+# time to first 200 is recorded), one warm-up run, then REPS measured runs
+# of oha, each saved as JSON, while the app's peak RSS is sampled.
 #
-#   bench/run.sh                 the full session (about 75 minutes)
+# The apps are the innermost loop, and every cell starts after COOLDOWN
+# seconds of rest: on a fanless laptop the CPU slows as a session heats
+# it, so running each app as one block handed the later apps a hotter,
+# slower machine (a first session measured kilau-routes at half kilau's
+# S1 speed that way). Side by side, the apps of a cell meet the same heat.
+#
+#   bench/run.sh                 the full session (about 95 minutes)
 #   QUICK=1 bench/run.sh         1 s warm-up, 3 s runs, 1 rep: a smoke test
 #
-# Knobs: APPS, SCENARIOS, CONCURRENCY, REPS, WARMUP, DURATION (seconds),
-# OUT (results directory). Run bench/check_bodies.sh first; this script
+# Knobs: APPS, SCENARIOS, CONCURRENCY, REPS, WARMUP, DURATION, COOLDOWN
+# (seconds), OUT (results directory). Run bench/check_bodies.sh first; this script
 # runs it and stops if the apps disagree.
 set -u
 source "$(dirname "$0")/lib.sh"
 APPS=${APPS:-"kilau kilau-routes rails"}
 SCENARIOS=${SCENARIOS:-"s1 s2 s3 s4"}
 CONCURRENCY=${CONCURRENCY:-"1 16 64"}
-if [ "${QUICK:-0}" = 1 ]; then REPS=${REPS:-1}; WARMUP=${WARMUP:-1}; DURATION=${DURATION:-3}
-else REPS=${REPS:-3}; WARMUP=${WARMUP:-10}; DURATION=${DURATION:-30}; fi
+if [ "${QUICK:-0}" = 1 ]; then REPS=${REPS:-1}; WARMUP=${WARMUP:-1}; DURATION=${DURATION:-3}; COOLDOWN=${COOLDOWN:-0}
+else REPS=${REPS:-3}; WARMUP=${WARMUP:-10}; DURATION=${DURATION:-30}; COOLDOWN=${COOLDOWN:-20}; fi
 OHA=${OHA:-$(mise which oha)}
 OUT=${OUT:-$BENCH/results/$(date +%Y%m%d-%H%M)}
 PORT=5198
@@ -38,6 +44,8 @@ mkdir -p "$OUT"
   echo "warmup=$WARMUP"
   echo "duration=$DURATION"
   echo "pool=$POOL"
+  echo "cooldown=$COOLDOWN"
+  echo "order=scenario, concurrency, app (apps interleaved)"
   echo "artifact_kilau_bytes=$(stat -f %z "$BLOG/build/bin/blog")"
   echo "artifact_kilau_routes_bytes=$(stat -f %z "$BLOG/build/bin/blog_routes")"
   echo "artifact_rails_kb=$(du -sk -I log -I tmp "$BENCH/rails_blog" | cut -f1)"
@@ -61,9 +69,10 @@ oha_run() {
   "$OHA" --no-tui --output-format json --redirect 0 -z "${3}s" -c "$2" ${extra[@]+"${extra[@]}"} "$(url_of "$1")" > "$4" 2> "$4.err"
 }
 
-for app in $APPS; do
-  for s in $SCENARIOS; do
-    for c in $CONCURRENCY; do
+for s in $SCENARIOS; do
+  for c in $CONCURRENCY; do
+    for app in $APPS; do
+      sleep "$COOLDOWN"
       cell="$app-$s-c$c"
       db="/tmp/kilau-bench-cell.sqlite3"
       fresh_db "$db"

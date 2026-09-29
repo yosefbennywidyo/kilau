@@ -44,6 +44,7 @@ puts "- Sesi: #{meta["date"]}, commit Kilau `#{meta["kilau_sha"]}`"
 puts "- Mesin: #{meta["machine"]}, #{meta["os"]}"
 puts "- Versi: #{meta["spinel"]}; #{meta["ruby"]}; Rails #{meta["rails"]}; #{meta["puma"]}; #{meta["oha"]}"
 puts "- Prosedur: pemanasan #{meta["warmup"]} dtk, lalu #{meta["reps"]} × #{meta["duration"]} dtk per sel; angka = median. Pool DB #{meta["pool"]}. Setiap sel memakai salinan baru DB seed (100 post) dan proses app baru."
+puts "- Urutan: #{meta.fetch("order", "app, scenario, concurrency (per blok)")}; jeda sebelum tiap sel #{meta.fetch("cooldown", "0")} dtk."
 puts "- `kilau` = route table dengan proc (Rencana 2); `kilau-routes` = `kilau gen routes`; `rails` = Rails + Puma (workers = core, 5 thread), YJIT."
 puts "- Data mentah: `#{dir}`"
 puts
