@@ -69,7 +69,7 @@ di kedua engine.
 | K-015 | Integer di array campuran terbaca sebagai String, lalu **segfault** | **crash** | di-workaround (D-019); butuh repro minimal |
 | K-016 | penugasan dari blok bersarang hilang, sehingga **nilai salah diam-diam** | **nilai salah** | di-workaround; butuh repro minimal |
 | K-017 | `elsif` + `raise` merusak jalur lain | nilai salah | di-workaround; **diperbaiki upstream** (matz/spinel#5789, merged 2026-09-29; terverifikasi di `6626c0f05`) |
-| K-018 | `spin test` via PATH mengabaikan mtime compiler → tes lama `(cached)` | hasil tes palsu | di-workaround di `Makefile`; PR matz/spinel#5983 |
+| K-018 | `spin test` via PATH mengabaikan mtime compiler → tes lama `(cached)` | hasil tes palsu | di-workaround di `Makefile`; **diperbaiki upstream** (matz/spinel#5983, merged 2026-09-30); tindak lanjut #5997 |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa
