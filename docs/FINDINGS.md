@@ -58,7 +58,7 @@ di kedua engine.
 
 | K | Masalah | Dampak | Status |
 |---|---|---|---|
-| K-004 | method yang menerima blok, lewat `include` top level, tidak di-emit (link error) | DX | kandidat laporan |
+| K-004 | method yang menerima blok, lewat `include` top level, tidak di-emit (link error) | DX | perbaikan diajukan: PR matz/spinel#6029 |
 | K-007 | pemanggilan method tak terdefinisi di `unless yield` menghasilkan error tak jelas | DX | kandidat laporan |
 | K-008 | method yang mengembalikan hasil blok melebar ke untyped | performa: sisa pelebaran R4/D-022 | batas inferensi |
 | K-010 | override method di subclass exception, dipanggil setelah `rescue Base => e`, gagal compile | DX | kandidat laporan |
@@ -66,11 +66,11 @@ di kedua engine.
 | K-012 | proc tersimpan memutus inferensi tipe | performa (terasa di S3) | batas inferensi |
 | K-013 | nama method bawaan pada receiver untyped menghasilkan C tidak valid | DX | kandidat laporan |
 | K-014 | kode mati dengan receiver untyped ditolak, tergantung program lain | DX | butuh isolasi |
-| K-015 | Integer di array campuran terbaca sebagai String, lalu **segfault** | **crash** | di-workaround (D-019); butuh repro minimal |
+| K-015 | Integer di array campuran terbaca sebagai String, lalu **segfault** | **crash** | di-workaround (D-019); perbaikan diajukan: PR matz/spinel#6027 |
 | K-016 | penugasan dari blok bersarang hilang, sehingga **nilai salah diam-diam** | **nilai salah** | di-workaround; **diperbaiki upstream** (matz/spinel#6008, merged 2026-09-30) |
 | K-017 | `elsif` + `raise` merusak jalur lain | nilai salah | di-workaround; **diperbaiki upstream** (matz/spinel#5789, merged 2026-09-29; terverifikasi di `6626c0f05`) |
 | K-018 | `spin test` via PATH mengabaikan mtime compiler → tes lama `(cached)` | hasil tes palsu | di-workaround di `Makefile`; **diperbaiki upstream** (matz/spinel#5983, merged 2026-09-30); tindak lanjut #5997 (merged 2026-09-30) |
-| K-019 | alias dari method yang `yield` di blok bersarang menghasilkan C tidak valid | DX (gagal compile) | belum direduksi; kandidat PR |
+| K-019 | value object yang di-`yield` ke blok berbentuk proc menghasilkan C tidak valid (bukan soal alias) | DX (gagal compile) | perbaikan diajukan: PR matz/spinel#6028 |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa

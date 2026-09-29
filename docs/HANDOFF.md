@@ -2,6 +2,20 @@
 
 Entri terbaru di atas.
 
+## 2026-09-30 ~03:20 WIB — Rencana 6 Fase 2: PR K-015, K-019, K-004 terbuka; alur CI di fork
+
+**Status**
+- Upstream sudah merge: #5789 (K-017), #5983 + #5997 (K-018), #6008 (K-016).
+- PR terbuka ke matz: **#6027 (K-015)**, **#6028 (K-019)**, **#6029 (K-004)**. Ketiganya sudah hijau di CI fork sebelum dibuka.
+- K-019 ternyata bukan soal alias: value object (struct) di ABI proc form dan di temp dispatch poly. Judul entri katalog sudah dikoreksi.
+- Alur verifikasi baru: CI lewat PR di dalam fork (~12 mnt) menggantikan `make check` lokal (~55 mnt). Yang tetap lokal: uji merah, GC stress, perbandingan C benchmark (detail di skill `spinel-notes`, bagian Verification). Uji merah wajib memakai compiler yang terbukti dibangun ulang (pernah tertipu binary yang tidak di-rebuild).
+- Kilau masih memakai spinel `6626c0f05`; belum berisi #6008 dan PR yang masih terbuka.
+
+**Langkah berikutnya**
+1. Pantau review #6027, #6028, #6029.
+2. Setelah merge: naikkan compiler Kilau, jalankan ulang repro K-004/K-015/K-016/K-019, dan pertimbangkan mencabut workaround (K-015: `Kilau::DB::Binds`; K-016: pola array di `query_first`; K-004: helper tes berbasis method modul).
+3. Sisa Fase 2: K-013, K-007, lalu K-014 (butuh bentuk kode lama; `kilau-old` sudah tidak ada).
+
 ## 2026-09-29 23:10 WIB — Compiler naik ke `6626c0f05`; K-017 terverifikasi; K-018 ditemukan
 
 **Status**

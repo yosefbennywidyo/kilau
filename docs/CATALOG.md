@@ -15,7 +15,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 
 | K | `38dc57dd` | `1ba12fb74` | Status |
 |---|---|---|---|
-| K-004 | link gagal (`Undefined symbols`) | link gagal | **masih ada** |
+| K-004 | link gagal (`Undefined symbols`) | link gagal | **masih ada**; perbaikan diajukan: matz/spinel#6029 |
 | K-007 | `unsupported condition (non-bool)` | sama | **masih ada** |
 | K-009 | link gagal (izin `root 0640`) | lulus dari worktree | soal instalasi; akar masalah ditemukan 2026-09-29 13:45 WIB, lihat entri K-009 |
 | K-010 | C gagal (`no member named 'cls_id'`) | sama dengan CRuby | **diperbaiki upstream** |
@@ -23,7 +23,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 | K-012 | pelebaran app 30 (`blog`) / 11 (`blog_routes`) | 30 / 11 | tidak berubah |
 | K-013 | C gagal (`sp_MatchData *`) | sama | **masih ada** |
 | K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
-| K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **masih ada**; repro minimal (user-defined `each` + array campuran) |
+| K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **masih ada**; repro minimal (user-defined `each` + array campuran); perbaikan diajukan: matz/spinel#6027 |
 | K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **diperbaiki upstream** (matz/spinel#6008, di-merge 2026-09-30 02:21 WIB, `fe642d488`); compiler Kilau `6626c0f05` belum berisi perbaikan ini |
 | K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **diperbaiki upstream** (matz/spinel#5789, di-merge 2026-09-29 17:49 WIB, `dca09ca13`); diverifikasi di `6626c0f05`: repro sama dengan CRuby |
 
@@ -100,6 +100,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Solusi yang dipakai: `Kilau::Testing` memakai method modul, dan tes memanggil `T.check(...)` dengan `T = Kilau::Testing`
 - Biaya: nol untuk runtime; tes sedikit lebih verbose
 - Upstream: kandidat laporan ke spinel dengan repro di atas; belum dilaporkan (menunggu persetujuan pengguna)
+- **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** method yang `yield` hanya ada dalam bentuk inline, jadi fungsinya tidak pernah di-emit. `emit_inline_call_x` (`src/codegen_iter.c`) mencari panggilan tanpa receiver di kelas pembungkus dan fungsi top level, tapi tidak di modul yang di-`include` di top level. Panggilan jatuh ke jalur top-level-include di `emit_call`, yang memanggil `sp_<Modul>_<method>(NULL, …)`, fungsi yang tidak ada, sehingga link gagal. Kini inliner juga mencari lewat `comp_included_method_index`; method yang memakai ivar tetap ke jalur lama (ditolak dengan diagnostik #3775). Tes `test/toplevel_include_yielding_method.rb` (yield, `&blk`, modul bersarang, dipanggil dari method top level) merah sebelum, hijau sesudah, GC stress lulus; C benchmark identik; CI penuh hijau di PR fork. Commit `471ed6171`, **PR https://github.com/matz/spinel/pull/6029**. Riwayat terkait: #5117 (gejala sama lewat clone proc form saat modul di-include dua kali).
 
 ## K-005: array binds campuran melebar ke untyped
 - Lapisan: db
@@ -314,6 +315,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Solusi yang dipakai: binder bertipe `Kilau::DB::Binds` menggantikan array binds campuran (D-019). Tidak ada lagi `PolyArray` di jalur SQL.
 - Biaya: perubahan API `execute/query/insert(sql, binds)` di Rencana 1 (binds kini `Binds`, bukan Array). Sekaligus menghapus pelebaran K-005.
 - Upstream: **diperbaiki** (matz/spinel#6008)
+- **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** `Pool#insert` hanya dijangkau lewat receiver yang tidak diikat call site bertipe, jadi parameternya `UNKNOWN` selama fixpoint dan baru dilebarkan ke `POLY` oleh backstop "never bound" (`src/analyze.c`) sesudahnya; pengikatan parameter tidak dijalankan ulang, sehingga `Connection#execute`'s `binds` hanya diberi tipe oleh call site mati `[migration.version]` → `StrArray`. Saat jalan, `sp_poly_as_str_array` membaca tiap elemen sebagai `v.s` tanpa cek tag → Integer jadi pointer string → segfault. (`Errors#each` hanya menentukan apakah literal mati bertipe `StrArray` atau `PolyArray`.) Backstop kini dua tahap: (1) lebarkan parameter method yang bisa dijangkau panggilan (self implisit, receiver kelasnya/turunannya, atau receiver poly/belum ditentukan) lalu ikat ulang parameter sampai stabil; (2) baru lebarkan parameter method yang tak dipanggil siapa pun. Versi pertama (ikat ulang setelah melebarkan semua) gagal `infer-test` #4889 di CI fork dan diperbaiki. Tes `test/widened_param_reaches_its_callee.rb` segfault sebelum, hijau sesudah; CI penuh hijau di PR fork; C benchmark identik. Commit `592036080`, **PR https://github.com/matz/spinel/pull/6027**. CodeRabbit: satu temuan (`is_descendant` untuk kelas yang sama) tidak valid, dibalas.
 
 ## K-016: `Pool#query_first` mengembalikan `nil` saat dipanggil dari handler; penugasan dari blok bersarang hilang
 - Lapisan: db
@@ -375,7 +377,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Upstream: **PR https://github.com/matz/spinel/pull/5983 di-merge oleh matz 2026-09-30 00:23 WIB** (merge commit `c5898078e`; dibuka ~00:20 WIB, commit `265ed2fea`, branch `spin-compiler-mtime-through-path`). `spinel_bin` sekarang mencari `$0` polos lewat PATH (fungsi `which` di `spin.rb`) sebelum `expand_path`. Tes baru di `tools/spin_e2e.sh` gagal sebelum dan lulus sesudah perbaikan. `make check`: semua leg lulus; corpus 4.647 pass, 1 fail (`hash_store_operand_gc_root`, timeout 10 dtk saat run paralel, lulus 5/5 bila dijalankan sendiri).
 - Tindak lanjut: CodeRabbit menemukan bahwa `which` melewati komponen PATH kosong (`:` di awal/akhir, `::`), padahal shell membacanya sebagai direktori kerja. Sejak #5983, `spinel_bin` bisa memakai compiler di sebelah `spin` lain yang lebih belakang di PATH. Perbaikan (`split(":", -1)`, komponen kosong → `.`) + tes e2e dengan `spin` decoy yang compiler-nya selalu gagal (merah sebelum, hijau sesudah): **PR https://github.com/matz/spinel/pull/5997 di-merge oleh matz 2026-09-30 01:24 WIB** (commit `4fafd9ba4`; CI hijau, CodeRabbit tanpa temuan). Hanya `spin-check` yang dijalankan (tidak ada perubahan di `src/`/`lib/`).
 
-## K-019: alias dari method yang `yield` di dalam blok bersarang gagal dikompilasi
+## K-019: value object yang di-`yield` ke blok berbentuk proc gagal dikompilasi (awalnya dikira soal alias)
 - Lapisan: compiler (codegen alias + yield)
 - Yang terjadi: `alias find first_match`, dengan `first_match` yang `yield` di dalam `with { |conn| conn.query { |row| found = yield(row) } }`, menghasilkan C tidak valid: `non-pointer operand type 'sp_Row' incompatible with NULL` / `operand of type 'sp_Row' where arithmetic or pointer type is required` di baris alias dan di `yield` terdalam. CRuby mencetak 7.
 - Repro: **repro/k019_alias_of_nested_yield_method.rb** (2026-09-30).
@@ -384,4 +386,5 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Ditemukan saat menanggapi CodeRabbit di matz/spinel#6008.
 - Klasifikasi: bug-compiler
 - Solusi yang dipakai: tidak ada (Kilau tidak memakai alias seperti ini)
-- Upstream: kandidat laporan/PR setelah direduksi
+- Upstream: PR matz/spinel#6028
+- **Koreksi & perbaikan (Rencana 6 Fase 2, 2026-09-30):** alias tidak berperan; memanggil `first_match` langsung gagal sama. Pemicu minimal: kelas kecil read-only (`Row`) dikompilasi sebagai *value object* (struct), lalu di-`yield` ke blok yang harus jadi proc sungguhan (blok menulis lokal luar dan receiver berasal dari Array). Tiga tempat memperlakukan struct sebagai pointer: (1) `emit_proc_call_args` mengecek `proc_slot_is_ptr` (benar untuk semua objek) sebelum cek by-value → cast `(sp_int)(uintptr_t)` struct, dan temp di-root sebagai pointer; (2) parameter blok tanpa argumen default `NULL`; (3) temp hasil `emit_poly_method_dispatch` diinisialisasi `NULL`. Helper baru `default_value_from_compiler` (nama usulan pengguna) memberi `(sp_X){0}` untuk value object, dipakai hanya di tiga tempat itu. Emitter (3) ditemukan dengan instrumentasi backtrace sementara di `buf_putn` setelah pencarian teks gagal. Tes `test/value_object_yielded_through_a_proc_block.rb` merah sebelum, hijau sesudah, GC stress lulus; CI penuh hijau di PR fork; C benchmark identik. Commit `58fc6b8e4`, **PR https://github.com/matz/spinel/pull/6028**.
