@@ -20,7 +20,7 @@ Entri terbaru di atas.
 - Rencana 6 **Fase 2** (perbaikan di spinel):
   - **K-017 diperbaiki.** Di `emit_if` (`src/codegen_stmt.c`), prelude predikat `elsif` sekarang di-emit di dalam cabangnya. Tes `test/elsif_condition_args_wait_for_their_branch.rb`, `make check` hijau (4.597 pass).
   - Commit `05a5ebef6` di branch `elsif-condition-args-in-branch` (fork `yosefbennywidyo/spinel`).
-  - **PR terbuka: https://github.com/matz/spinel/pull/5789.** Menunggu review; CI butuh persetujuan maintainer.
+  - **PR https://github.com/matz/spinel/pull/5789 di-merge oleh matz** (2026-09-29 17:49 WIB, merge commit `dca09ca13`). CI hijau.
 
 **Lingkungan**
 - Worktree spinel terbaru: `~/apps/me/gems/spinel-latest`, sedang di branch `elsif-condition-args-in-branch`. Remote `fork` = `git@github.com:yosefbennywidyo/spinel.git`. Untuk perbaikan berikutnya, buat branch baru dari `origin/master`.
@@ -36,7 +36,7 @@ Entri terbaru di atas.
   - bisection per file atau per method jauh lebih cepat daripada ddmin per baris.
 
 **Langkah berikutnya (urutan disarankan)**
-1. **Pantau PR #5789**: tanggapi review, dan rebase ke `origin/master` kalau diminta (saat dibuat branch ini 82 commit di belakang, tapi masih bisa di-merge tanpa konflik).
+1. ~~Pantau PR #5789~~ di-merge 2026-09-29 17:49 WIB. Sisa: naikkan compiler Kilau ke spinel yang berisi `dca09ca13`, jalankan ulang `repro/k017_elsif_argument_evaluated_early.rb`, dan pertimbangkan kembali ke bentuk `elsif` di `Model#save`.
 2. **Fase 2 K-016** (nilai salah diam-diam): mulai dari repro 37 baris. Ini bug inferensi/penangkapan variabel di blok bersarang yang diakses lewat proc tersimpan; periksa C yang di-emit untuk `found` (sel yang ditangkap).
 3. **Fase 2 K-015** (segfault): mulai dari repro. Tebakan awal: dispatch poly `each` yang ikut mempertimbangkan `each` buatan pengguna salah membaca tag elemen. Periksa C untuk `binds.each` di `check_binds`.
 4. **Fase 2 K-004 / K-013 / K-007**: repro minimalnya sudah ada.
