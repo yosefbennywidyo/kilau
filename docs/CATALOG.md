@@ -1,6 +1,6 @@
 # Katalog batas AOT
 
-Compiler: spinel 2026.09.12+1379 (38dc57dd). Format entri: spec §6.3.
+Compiler: spinel 2026.09.12+2124 (1ba12fb74) sejak 2026-09-29 13:45 WIB. Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
 Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRuby
 4.0.6 sebagai pembanding.
 
@@ -8,7 +8,7 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 
 Diuji dengan spinel `2026.09.12+2124 (1ba12fb74)`, yang 745 commit di depan `38dc57dd`.
 Spinel baru dibuat di worktree terpisah, sedangkan instalasi `/usr/local/bin/spinel`
-tetap `38dc57dd`. Repro mandiri di-compile dengan `--require-gate` dan output-nya
+tetap `38dc57dd` saat tabel ini dibuat (lalu dinaikkan, lihat baris compiler di atas). Repro mandiri di-compile dengan `--require-gate` dan output-nya
 dibandingkan dengan CRuby. Untuk K-014 s.d. K-017, bentuk kode lama dipasang ulang
 dari riwayat pra-publik, dan tes yang dulu memicunya dijalankan dengan kedua versi.
 Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid.
@@ -17,7 +17,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 |---|---|---|---|
 | K-004 | link gagal (`Undefined symbols`) | link gagal | **masih ada** |
 | K-007 | `unsupported condition (non-bool)` | sama | **masih ada** |
-| K-009 | link gagal (izin `root 0640`) | lulus dari worktree | soal instalasi, bukan compiler |
+| K-009 | link gagal (izin `root 0640`) | lulus dari worktree | soal instalasi; akar masalah ditemukan 2026-09-29 13:45 WIB, lihat entri K-009 |
 | K-010 | C gagal (`no member named 'cls_id'`) | sama dengan CRuby | **diperbaiki upstream** |
 | K-011 | `%zz` → NUL | sama dengan CRuby (`ArgumentError`) | **diperbaiki upstream** |
 | K-012 | pelebaran app 30 (`blog`) / 11 (`blog_routes`) | 30 / 11 | tidak berubah |
@@ -172,6 +172,20 @@ Kilau `main` dengan spinel baru: `make test` 14/14, 8/8, 4/4; `make test-cruby` 
 - Solusi yang dipakai: tes memakai `FakeIO` sendiri (framework/test/support/fake_io.rb). Perbaikan permanen yang butuh izin pengguna: `sudo chmod a+r /usr/local/lib/spinel/packages/*/*.o`, atau install ulang dengan umask 022.
 - Biaya: nol untuk Kilau
 - Upstream: kandidat (installer sebaiknya memaksa mode 0644); belum dilaporkan
+- **Akar masalah (2026-09-29 13:45 WIB):**
+  - `common.mk` spinel otomatis membungkus `cc` dengan **sccache** kalau sccache
+    terpasang.
+  - sccache menulis `.o` dengan mode `0640`, meskipun umask-nya `022`. Contohnya
+    `build/regexp/*.o` dan `packages/*/*.o` di worktree.
+  - `make install` menyalin `packages` dengan `cp -r`, sehingga mode itu ikut
+    terbawa, dengan pemilik root.
+  - Akibatnya 14 `.o` di 7 paket (json, openssl, strscan, stringio, zlib, tmpdir,
+    base64) tidak bisa dibaca user biasa. `umask 022` saat install **tidak**
+    menolong.
+  - Perbaikan lokal: `sudo chmod a+r /usr/local/lib/spinel/packages/*/*.o`, sudah
+    dijalankan pengguna. Setelahnya repro k009 ter-link dan sama dengan CRuby.
+  - Kandidat upstream: installer sebaiknya memakai `install -m 0644` atau `chmod`
+    setelah `cp`, atau build tanpa sccache (`NO_CCACHE=1`) untuk install.
 
 ## K-010: method yang di-override subclass exception, dipanggil setelah `rescue Base => e`, gagal compile
 - Lapisan: controller

@@ -58,8 +58,11 @@ generators are themselves compiled by Spinel.
 ## Requirements
 
 - **Spinel**, built from [matz/spinel](https://github.com/matz/spinel). Kilau was
-  developed against commit `38dc57dd` (`2026.09.12+1379`). Newer commits may change
-  behaviour; see `docs/HANDOFF.md`.
+  developed against `38dc57dd` and now runs on `1ba12fb74` (`2026.09.12+2124`).
+  Newer commits may change behaviour; see `docs/CATALOG.md` and `docs/HANDOFF.md`.
+  If sccache is installed, Spinel's build writes package objects as `0640`;
+  after `sudo make install`, run `sudo chmod a+r /usr/local/lib/spinel/packages/*/*.o`
+  (see K-009 in `docs/CATALOG.md`).
   Install it so that `spinel` and `spin` are on `PATH`
   (`make deps && make && sudo make install` in the Spinel checkout).
 - A C toolchain and SQLite 3 (the system library on macOS).
