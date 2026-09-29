@@ -2,6 +2,52 @@
 
 Entri terbaru di atas.
 
+## 2026-09-29 12:39 WIB — Rencana 4 selesai: gen routes, benchmark vs Rails, FINDINGS
+
+**Status repo**
+- `main` = `f17d41f` (Rencana 3). Branch `plan-4-routes-bench` berisi Rencana 4 + dokumen Rencana 5/6, **belum di-merge**.
+- Suite di ujung branch: `make test` framework 14/14, tool 8/8, blog 4/4. `make test-cruby` 26/26. `make e2e` 11/11 untuk `blog` dan `blog_routes`.
+- Hasil: `bench/RESULTS.md` (sesi `bench/results/20260929-1108`) dan `docs/FINDINGS.md`. D-022 (`gen routes`) dan D-023 (adopsi ditunda) tercatat.
+
+**Menjalankan**
+```
+make gen                               # templates + routes untuk blog (akar repo)
+cd examples/blog && make               # build/bin/blog (route table) dan build/bin/blog_routes (gen routes)
+bench/check_bodies.sh                  # gerbang: ketiga app menjawab identik
+bench/run.sh                           # sesi penuh ~95 menit; QUICK=1 untuk smoke
+ruby bench/summarize.rb bench/results/<stamp> > bench/RESULTS.md
+```
+Sebelum `bench/run.sh`: tutup app berat. Mesin tanpa kipas: urutan selang-seling dan jeda 20 dtk sudah bawaan.
+
+**Hasil singkat (c64)**
+- S1 `_ping`: kilau 17.128 / kilau-routes 17.156 / rails 9.122 req/s.
+- S2: 16.339 / 16.389 / 5.815.
+- S3 (100 baris): 2.530 / 3.304 / 3.256.
+- S4 (POST): 8.815 / 8.818 / 2.990.
+- Start 54 ms vs 1,4 dtk. RSS 33 MB vs 910 MB.
+
+**Langkah berikutnya**
+1. Pengguna memutuskan merge `plan-4-routes-bench`.
+2. **Rencana 6 Fase 0** (`docs/superpowers/plans/2026-09-29-kilau-rencana-6-bug-compiler.md`): build spinel `origin/master` (740 commit di depan) di worktree terpisah, uji ulang semua repro K dan suite. Lalu ukur ulang S3 untuk D-023.
+3. **Rencana 5** Fase A–C (`…-rencana-5-kualitas-route.md`).
+4. Benchmark tahap berikutnya dengan k6, dari mesin terpisah (FINDINGS §8).
+5. Minor yang ditunda:
+   - dari Rencana 1–2: `Migrator#migrate` `.to_s`, cabang `Binds::NULL`, `ROLLBACK` yang menutupi error;
+   - dari Rencana 3: CRLF di template, `{{ a | b }}` bitwise, `{{{ x }}}`.
+
+**Pertanyaan riset: semua terjawab**
+
+| ID | Status |
+|---|---|
+| R1 | tidak (K-012); eksperimen `gen routes`: 30 → 11 pelebaran, S3 +34% |
+| R2 | sebagian |
+| R3 | ya |
+| R4 | ya (buffer); nilai boxed dari handler |
+| R5 | ya |
+| R6 | ya (0 `SQLITE_BUSY` di semua sel Kilau) |
+
+**Kandidat upstream** (belum dilaporkan; cek dulu di spinel terbaru): K-004, K-007, K-010, K-011, K-013, K-015, K-016, K-017.
+
 ## 2026-09-29 09:33 WIB — Rencana 3 selesai: template ter-compile, R4 terjawab
 
 **Status repo**
