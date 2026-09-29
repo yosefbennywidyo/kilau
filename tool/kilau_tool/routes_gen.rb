@@ -79,11 +79,17 @@ module KilauTool
       current = ""
       source.split("\n", -1).each_with_index do |line, i|
         where = "#{path}:#{i + 1}"
-        text = line.strip
+        # A commented-out route must stay out, even after live code.
+        text = strip_comment(line).strip
         indent = line.size - line.lstrip.size
         if text.start_with?("class ")
           name = text[6, text.size - 6].split(" ")[0].to_s
           klass = indent == 0 ? name : ""
+        elsif indent == 0 && (text.start_with?("module ") || text == "end")
+          # Leaving a top-level class, or entering a module: no class owns
+          # what follows, so routes there are refused rather than given to
+          # the last class seen.
+          klass = ""
         end
         if method_indent >= 0 && indent == method_indent && text == "end"
           method_indent = -1
@@ -162,6 +168,9 @@ module KilauTool
       close = matching_brace(text, bar + 1, where)
       body = text[bar + 1, close - bar - 1].strip
       raise ArgumentError, "#{where}: an empty route block" if body.empty?
+      # A heredoc's text is on the following lines, which the copy would
+      # leave behind, so the generated file would not parse.
+      raise ArgumentError, "#{where}: a route block cannot open a heredoc" if heredoc?(body)
       after = skip_space(text, close + 1)
       raise ArgumentError, "#{where}: expected ) after the route block" unless text[after] == ")"
       full = group.prefix + (path == "/" ? "" : path)
@@ -193,6 +202,35 @@ module KilauTool
       close = text.index("\"", i + 1)
       raise ArgumentError, "#{where}: unclosed string" if close.nil?
       text[i + 1, close - i - 1]
+    end
+
+    # The line without a trailing # comment; a # inside a string literal
+    # stays.
+    def self.strip_comment(line)
+      i = 0
+      while i < line.size
+        c = line[i]
+        if c == "\"" || c == "'"
+          i = TemplateCompile.after_string(line, i)
+        elsif c == "#"
+          return line[0, i]
+        else
+          i += 1
+        end
+      end
+      line
+    end
+
+    HEREDOC_MARKS = ["~", "-", "\"", "'", "`"]
+
+    def self.heredoc?(body)
+      at = body.index("<<")
+      until at.nil?
+        mark = body[at + 2].to_s
+        return true if HEREDOC_MARKS.include?(mark) || (mark >= "A" && mark <= "Z")
+        at = body.index("<<", at + 2)
+      end
+      false
     end
 
     def self.skip_space(text, i)

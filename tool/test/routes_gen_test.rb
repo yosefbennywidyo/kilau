@@ -47,3 +47,18 @@ T.check("a missing src directory is refused") do
     e.message == "no source directory at /tmp/kilau-no-app/src"
   end
 end
+T.check("a commented-out route stays out") do
+  scan = KilauTool::RoutesGen::Scan.new
+  KilauTool::RoutesGen.scan_file("src/a.rb", APP, scan)
+  KilauTool::RoutesGen.scan_file("src/c.rb", controller(".add(\"/x\", get { |a, r| x(a, r) })\n      # .add(\"/hidden\", get { |a, r| leak(a, r) })"), scan)
+  !KilauTool::RoutesGen.render(scan).include?("/hidden")
+end
+T.check("a comment after a route is ignored") do
+  gen_error({ "src/a.rb" => APP, "src/c.rb" => controller(".add(\"/x\", get { |a, r| x(a, r) }) # .add(\"/y\", get { |a, r| y })") }) == ""
+end
+T.check("a heredoc in a route body is refused with its line") do
+  gen_error({ "src/a.rb" => APP, "src/c.rb" => controller(".add(\"/x\", get { |a, r| Kilau::Format.render(<<~HTML) })") }).include?("src/c.rb:4: a route block cannot open a heredoc")
+end
+T.check("routes in a top-level module are refused with their line") do
+  gen_error({ "src/a.rb" => "class A < Kilau::Hooks\nend\nmodule M\n  def self.routes\n  end\nend\n" }).include?("src/a.rb:4: gen routes needs routes declared in a top-level class")
+end

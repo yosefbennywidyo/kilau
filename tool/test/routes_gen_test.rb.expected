@@ -10,3 +10,7 @@ ok an app without with_default_routes is refused
 ok an inline group in the composition is refused
 ok routes in a nested class are refused
 ok a missing src directory is refused
+ok a commented-out route stays out
+ok a comment after a route is ignored
+ok a heredoc in a route body is refused with its line
+ok routes in a top-level module are refused with their line
