@@ -2,6 +2,20 @@
 
 Entri terbaru di atas.
 
+## 2026-09-30 09:12 WIB — Rencana 7 Fase 4: `spinel-sqlite` publik, Kilau memakai dependency git
+
+**Status**
+- Repo publik **github.com/yosefbennywidyo/spinel-sqlite** (MIT): README (contoh, API, alasan `Binds`), tag **`v0.1.0`** (`deea921`).
+- Kilau: `framework/spin.toml` → `sqlite = { git = "…/spinel-sqlite", ref = "v0.1.0" }`; `spin.lock` di-commit di `framework`, `tool` dan `examples/blog` (pin SHA `deea921`).
+- Tanpa `spin.lock`, spin meng-`git clone --branch <ref>` **setiap** perintah (jaringan tiap build + noise "detached HEAD" untuk tag annotated); dengan lock, cache dicocokkan per SHA dan `SPIN_OFFLINE=1` jalan.
+- Makefile: runner CRuby mengambil `-I` dari `spin flags` (`RUBY_INCLUDES`), bukan checkout tetangga; override dengan `RUBY_INCLUDES=` untuk mencoba checkout lokal.
+- Build bersih + `SPIN_OFFLINE=1`: 13/13, 8/8, 4/4, CRuby 25/25, e2e blog lulus (200 req @32 konkuren).
+
+**Langkah berikutnya**
+1. Ditunda: `spin publish` → PR ke `matz/spin-index` (Fase 4 langkah 3).
+2. K-021 (PR spinel), catatan katalog merge K-007/K-020, naikkan compiler Kilau ke yang berisi #6092/#6093.
+3. Mengubah package: kerjakan di `~/apps/me/gems/spinel-sqlite`, tag versi baru, lalu `spin lock` di ketiga package Kilau.
+
 ## 2026-09-30 07:01 WIB — Semua PR spinel merged; rencana 7: ekstrak Kilau::DB → `spinel-sqlite`
 
 **Status**

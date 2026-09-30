@@ -12,9 +12,12 @@
 # absolute path keeps the upgrade visible (K-018).
 SPIN ?= $(shell command -v spin)
 RUBY ?= ruby
-# The spinel-sqlite package root, which the CRuby runner needs on -I; spin
-# resolves it from framework/spin.toml.
-SQLITE_DIR ?= $(CURDIR)/../spinel-sqlite
+# The CRuby runner needs the same load path spin gives the compiler: the
+# framework plus its dependencies (the sqlite package, fetched from git into
+# spin's cache at the pinned ref). `spin flags` prints it as absolute -I pairs;
+# keep only those. To try a local spinel-sqlite checkout, override with
+# RUBY_INCLUDES="-I $(CURDIR)/framework -I ../spinel-sqlite".
+RUBY_INCLUDES ?= $(shell cd framework && $(SPIN) flags 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($$i == "-I") printf "-I %s ", $$(i + 1)}')
 PACKAGES ?= framework tool examples/blog
 KILAU ?= tool/build/bin/kilau
 
@@ -27,7 +30,7 @@ test-cruby: gen
 	@mkdir -p build; fail=0; \
 	for pkg in $(PACKAGES); do \
 	  for t in $$(cd $$pkg && ls test/*_test.rb); do \
-	    if (cd $$pkg && $(RUBY) -I $(CURDIR)/framework -I $(SQLITE_DIR) $$t) > build/cruby.out 2>&1 && diff -u $$pkg/$$t.expected build/cruby.out > build/cruby.diff; then \
+	    if (cd $$pkg && $(RUBY) $(RUBY_INCLUDES) $$t) > build/cruby.out 2>&1 && diff -u $$pkg/$$t.expected build/cruby.out > build/cruby.diff; then \
 	      echo "ok   $$pkg/$$t"; \
 	    else \
 	      echo "FAIL $$pkg/$$t"; head -40 build/cruby.diff; fail=1; \

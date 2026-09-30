@@ -66,6 +66,10 @@ generators are themselves compiled by Spinel.
   Install it so that `spinel` and `spin` are on `PATH`
   (`make deps && make && sudo make install` in the Spinel checkout).
 - A C toolchain and SQLite 3 (the system library on macOS).
+- Network access on the first build: the database layer is the
+  [spinel-sqlite](https://github.com/yosefbennywidyo/spinel-sqlite) spin package,
+  which spin fetches into its cache at the commit pinned in each `spin.lock`.
+  Later builds, and `SPIN_OFFLINE=1`, use the cache.
 - For the CRuby test oracle: CRuby 4.0 and the `sqlite3` gem.
 - For the end-to-end test: `curl`.
 - For the benchmark: `oha`, `sqlite3` (CLI), `perl`, and Bundler. The Rails app
