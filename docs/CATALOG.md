@@ -1,6 +1,6 @@
 # Katalog batas AOT
 
-Compiler: spinel 2026.09.12+2606 (35ddccadb) sejak 2026-09-30 06:43 WIB (sebelumnya `6626c0f05` sejak 2026-09-29 23:08, `1ba12fb74` sejak 13:45). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
+Compiler: spinel 2026.09.12+2826 (ea9feecfe) sejak 2026-09-30 14:29 WIB (sebelumnya `35ddccadb` sejak 06:43, `6626c0f05` sejak 2026-09-29 23:08, `1ba12fb74` sejak 13:45). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
 Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRuby
 4.0.6 sebagai pembanding.
 
@@ -414,7 +414,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Tidak memicu: lewat modul (`T.check { T.raises? { raise … } }`), `raises?` tanpa receiver dengan blok yang tidak raise, `check` tanpa receiver dengan blok biasa.
 - Repro: **repro/k021_include_rescue_yield_raising_block.rb**
 - Klasifikasi: bug-compiler
-- Solusi yang dipakai: tes Kilau memanggil `Kilau::Testing.raises_db_error?` lewat modul untuk bentuk ini
+- Solusi yang dipakai: tes Kilau memanggil `Kilau::Testing.raises_db_error?` lewat modul untuk bentuk ini; **dicabut** 2026-09-30 14:29 WIB (compiler `ea9feecfe`). Compiler terpasang lama `35ddccadb` gagal dengan error K-021 yang sama pada tes tanpa workaround, dan compiler baru lulus.
 - Mekanisme (2026-09-30): dua tempat di spinel tidak me-resolve pemanggilan tanpa receiver ke modul yang di-`include` di top level, padahal inliner (#6029) melakukannya. (1) Codegen `call_targets_yielding_method` menganggap ekor blok bukan pemanggilan yang di-inline → bentuk statement → blok bernilai `void`. (2) Analyzer `yvt_callee_index` tidak mencocokkan blok call site ke `yield` method itu → nilai yang dipakai (`n = twice { 2 }`) bertipe nil; sebelumnya gagal link, sesudah perbaikan (1) saja jadi `nil` diam-diam. Keduanya kini jatuh ke `comp_included_method_index`.
 - Upstream: **matz/spinel#6151 merged** (2026-09-30), commit `c6cff7c76`; tes `test/toplevel_include_yield_value_tail.rb`. C benchmark + optcarrot identik.
 

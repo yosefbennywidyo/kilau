@@ -58,8 +58,11 @@ generators are themselves compiled by Spinel.
 ## Requirements
 
 - **Spinel**, built from [matz/spinel](https://github.com/matz/spinel). Kilau was
-  developed against `38dc57dd` and now runs on `1ba12fb74` (`2026.09.12+2124`).
-  Newer commits may change behaviour; see `docs/CATALOG.md` and `docs/HANDOFF.md`.
+  developed against `38dc57dd` and now runs on `ea9feecfe` (`2026.09.12+2826`).
+  It needs at least `c6cff7c76` (matz/spinel#6151): Kilau's own tests call a
+  yielding helper bare after `include Kilau::Testing`, which older compilers
+  reject. Newer commits may change behaviour; see `docs/CATALOG.md` and
+  `docs/HANDOFF.md`.
   If sccache is installed, Spinel's build writes package objects as `0640`;
   after `sudo make install`, run `sudo chmod a+r /usr/local/lib/spinel/packages/*/*.o`
   (see K-009 in `docs/CATALOG.md`).
