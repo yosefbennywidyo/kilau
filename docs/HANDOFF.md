@@ -2,6 +2,21 @@
 
 Entri terbaru di atas.
 
+## 2026-09-30 14:19 WIB — K-021 dan K-023 merged; CI upstream ternyata kosong sejak 28 Sep (diperbaiki); PR FFI
+
+**Status**
+- Upstream merged hari ini (lanjutan): **#6151** (K-021: nilai pemanggilan method `yield` dari modul yang di-`include` di top level), **#6160** (fix CI `shard_pick`), **#6162** (K-023: subclass `BasicObject` tidak lagi menjangkau modul top-level include). Terbuka: **#6172** (FFI `MemoryPointer` yang tak bisa dialokasikan → `NoMemoryError`; temuan GuardRails, CodeRabbit bersih).
+- **CI upstream kosong 2026-09-28 ~04:00Z s.d. #6160:** daftar tes > 128 KiB (`MAX_ARG_STRLEN` Linux), `shard_pick` gagal "Argument list too long", tiap lane hanya menjalankan tes paket (~174) tapi tetap hijau. Run #6160 membuktikan master saat itu lulus korpus penuh (4.873). Pelajaran: baca baris `Tests: N pass` di log CI, jangan percaya centang hijau saja.
+- K-022 (method `yield` + blok bertipe berbeda → C tidak valid) tercatat, repro `repro/k022_*`. Tindak lanjut K-023: `def` top level masih terjangkau dari `BasicObject` (`comp_method_index`).
+- Kilau masih di compiler `35ddccadb`: belum berisi #6092, #6093, #6151, #6162.
+- GuardRails (hanya di fork): temuan `analyze_desugar.c:10383–10384` direkomendasikan *won't fix*; `sp_ffi.c:84` false positive.
+
+**Langkah berikutnya**
+1. Naikkan compiler Kilau ke master terbaru (build + install, `chmod` K-009), suite dari build bersih, cabut workaround K-021 (`raises_db_error?` lewat modul).
+2. K-022: reduksi + PR spinel.
+3. Setelah #6172 merge: hapus worktree `../spinel-ffi` + branch.
+4. Tertunda: `spin publish` sqlite (Rencana 7 Fase 4 langkah 3), Rencana 5, K-014.
+
 ## 2026-09-30 09:12 WIB — Rencana 7 Fase 4: `spinel-sqlite` publik, Kilau memakai dependency git
 
 **Status**

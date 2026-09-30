@@ -59,7 +59,7 @@ di kedua engine.
 | K | Masalah | Dampak | Status |
 |---|---|---|---|
 | K-004 | method yang menerima blok, lewat `include` top level, tidak di-emit (link error) | DX | **diperbaiki upstream** (matz/spinel#6029); workaround dicabut (helper `module_function`) |
-| K-007 | pemanggilan method tak terdefinisi di `unless yield` menghasilkan error tak jelas | DX | perbaikan diajukan: PR matz/spinel#6093 |
+| K-007 | pemanggilan method tak terdefinisi di `unless yield` menghasilkan error tak jelas | DX | **diperbaiki upstream** (matz/spinel#6093) |
 | K-008 | method yang mengembalikan hasil blok melebar ke untyped | performa: sisa pelebaran R4/D-022 | batas inferensi |
 | K-010 | override method di subclass exception, dipanggil setelah `rescue Base => e`, gagal compile | DX | kandidat laporan |
 | K-011 | `%zz` didekode menjadi NUL diam-diam | **keamanan** | di-workaround di `Form.unescape`; kandidat laporan |
@@ -71,8 +71,10 @@ di kedua engine.
 | K-017 | `elsif` + `raise` merusak jalur lain | nilai salah | di-workaround; **diperbaiki upstream** (matz/spinel#5789, merged 2026-09-29; terverifikasi di `6626c0f05`) |
 | K-018 | `spin test` via PATH mengabaikan mtime compiler → tes lama `(cached)` | hasil tes palsu | di-workaround di `Makefile`; **diperbaiki upstream** (matz/spinel#5983, merged 2026-09-30); tindak lanjut #5997 (merged 2026-09-30) |
 | K-019 | value object yang di-`yield` ke blok berbentuk proc menghasilkan C tidak valid (bukan soal alias) | DX (gagal compile) | **diperbaiki upstream** (matz/spinel#6028) |
-| K-020 | nilai `next` diabaikan saat mengetik panggilan `yield`: **nilai salah diam-diam** / C gagal | **nilai salah** | perbaikan diajukan: PR matz/spinel#6092 |
-| K-021 | `module_function` yield+rescue via top-level include, blok selalu raise → C tidak valid | DX (gagal compile) | di-workaround (panggil lewat modul); kandidat PR |
+| K-020 | nilai `next` diabaikan saat mengetik panggilan `yield`: **nilai salah diam-diam** / C gagal | **nilai salah** | **diperbaiki upstream** (matz/spinel#6092) |
+| K-021 | `module_function` yield+rescue via top-level include, blok selalu raise → C tidak valid | DX (gagal compile) | **diperbaiki upstream** (matz/spinel#6151); workaround (panggil lewat modul) masih ada sampai compiler Kilau naik |
+| K-022 | method `yield` dengan blok bertipe berbeda di call site berbeda → C tidak valid | DX (gagal compile) | kandidat PR (repro ada) |
+| K-023 | subclass `BasicObject` menjangkau method modul yang di-`include` di top level | nilai salah (program yang di CRuby raise malah berjalan) | **diperbaiki upstream** (matz/spinel#6162) |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa

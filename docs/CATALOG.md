@@ -16,7 +16,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 | K | `38dc57dd` | `1ba12fb74` | Status |
 |---|---|---|---|
 | K-004 | link gagal (`Undefined symbols`) | link gagal | **diperbaiki upstream** (matz/spinel#6029, di-merge 2026-09-30 05:41 WIB, `eb340a6ab`) |
-| K-007 | `unsupported condition (non-bool)` | sama | **masih ada**; perbaikan diajukan: matz/spinel#6093 |
+| K-007 | `unsupported condition (non-bool)` | sama | **diperbaiki upstream** (matz/spinel#6093, di-merge 2026-09-30 06:53 WIB, `c9b672e05`) |
 | K-009 | link gagal (izin `root 0640`) | lulus dari worktree | soal instalasi; akar masalah ditemukan 2026-09-29 13:45 WIB, lihat entri K-009 |
 | K-010 | C gagal (`no member named 'cls_id'`) | sama dengan CRuby | **diperbaiki upstream** |
 | K-011 | `%zz` → NUL | sama dengan CRuby (`ArgumentError`) | **diperbaiki upstream** |
@@ -147,7 +147,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Klasifikasi: bug-compiler (kualitas diagnostik; bukan perilaku runtime)
 - Solusi yang dipakai: tidak perlu. Di fase RED, baca error ini sebagai "method belum ada".
 - Biaya: kebingungan saat TDD
-- Upstream: PR matz/spinel#6093
+- Upstream: **matz/spinel#6093 merged** (2026-09-30 06:53 WIB)
 - **Perbaikan (Rencana 6 Fase 2, 2026-09-30):** node `yield` dipakai bersama semua call site, jadi tipenya diambil dari blok call site lain. Hanya satu call site → tak bertipe → ditolak "non-bool"; di samping call site berblok bool → tipe bool, lalu blok yang melempar (`({ sp_raise_nomethod(...); })`, `sp_RbVal`) di-negasi `!` → C gagal (gejala "program besar"). Di samping blok poly sudah benar (`sp_poly_truthy`). `emit_cond` (`codegen_stmt.c`) kini, sebelum dispatch tipe, melihat blok yang di-inline di call site ini: bila tail-nya tak bertipe, `block_tail_is_unresolved` (dipindah dari `codegen_fold.c` jadi helper bersama), dan tidak ada `next v` → kondisi `((yield), 0)` (bentuk sama dengan #5096). Versi pertama lupa syarat tail tak bertipe (blok `1 + 1 == 2` ikut dianggap falsy); temuan CodeRabbit di fork menambah syarat `next`. Tes `test/yield_condition_block_calls_missing_method.rb` merah sebelum, hijau sesudah, GC stress lulus, CI fork hijau, C benchmark identik. Commit `9198a689d`, **PR https://github.com/matz/spinel/pull/6093**.
 
 ## K-008: method yang mengembalikan hasil blok melebar ke untyped, termasuk `Post.all`
@@ -405,7 +405,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Perbaikan: `method_call_ret` menggabungkan tipe `next` dengan tail (void → nil); inliner blok (`codegen_iter.c`) menjalankan tail panggilan tak bertipe sebagai `(void)(...)` (ia melempar, atau placeholder nil, dan slot sudah nil). Tes `test/next_value_types_a_yield_call.rb` merah sebelum, hijau sesudah, GC stress lulus, CI fork hijau, C benchmark identik. Review CodeRabbit di fork terlewat karena kuota. Commit `f3d38f439`, **PR https://github.com/matz/spinel/pull/6092**.
 - Klasifikasi: bug-compiler (nilai salah diam-diam + C gagal)
 - Solusi yang dipakai: tidak perlu di Kilau (pola ini tidak dipakai)
-- Upstream: PR matz/spinel#6092
+- Upstream: **matz/spinel#6092 merged** (2026-09-30 06:53 WIB)
 
 ## K-021: method `module_function` yang `yield` + `rescue`, dipanggil tanpa receiver setelah `include` top level dengan blok yang selalu raise, menghasilkan C tidak valid
 - Lapisan: compiler (inline method modul via top-level include, jalur baru dari matz/spinel#6029)
