@@ -425,7 +425,8 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Repro: **repro/k022_yield_blocks_of_different_types.rb**
 - Klasifikasi: bug-compiler
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
-- Upstream: kandidat PR (belum direduksi/diperbaiki)
+- Mekanisme (2026-09-30): `infer_uncached` sudah mengetik `yield` sebagai poly bila nilai blok berbeda antar call site dan nilainya mengalir ke local/ivar/gvar/cvar, elemen array, atau frame rescue/ensure. Posisi argumen dan receiver pemanggilan tidak tercakup, sehingga `yield` mengambil tipe site pertama. Varian lain yang juga kena: `show(yield)` (argumen ke method pengguna) terkompilasi tapi `TypeError` saat runtime.
+- Upstream: **matz/spinel#6185** (dibuka 2026-09-30) memperbaiki posisi argumen ke method pengguna (commit `de67ce84d`, CI korpus penuh 2.448 + 2.447 / 4.895, 0 fail). **Sisa:** `yield + yield` / `yield * 2` (operator builtin) masih gagal compile; analyzer bisa dibuat poly, tapi codegen menurunkan operator per site ke bentuk konkret lalu memasukkannya ke slot poly tanpa box. Kandidat PR terpisah.
 
 
 ## K-023: pemanggilan tanpa receiver di subclass `BasicObject` ter-resolve ke method modul yang di-`include` di top level
