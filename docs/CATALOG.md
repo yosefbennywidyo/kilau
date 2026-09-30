@@ -426,7 +426,7 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Klasifikasi: bug-compiler
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
 - Mekanisme (2026-09-30): `infer_uncached` sudah mengetik `yield` sebagai poly bila nilai blok berbeda antar call site dan nilainya mengalir ke local/ivar/gvar/cvar, elemen array, atau frame rescue/ensure. Posisi argumen dan receiver pemanggilan tidak tercakup, sehingga `yield` mengambil tipe site pertama. Varian lain yang juga kena: `show(yield)` (argumen ke method pengguna) terkompilasi tapi `TypeError` saat runtime.
-- Upstream: **matz/spinel#6185** (dibuka 2026-09-30) memperbaiki posisi argumen ke method pengguna (commit `de67ce84d`, CI korpus penuh 2.448 + 2.447 / 4.895, 0 fail). **Sisa:** `yield + yield` / `yield * 2` (operator builtin) masih gagal compile; analyzer bisa dibuat poly, tapi codegen menurunkan operator per site ke bentuk konkret lalu memasukkannya ke slot poly tanpa box. Kandidat PR terpisah.
+- Upstream: **matz/spinel#6185** (dibuka 2026-09-30) memperbaiki posisi argumen ke method pengguna (commit `de67ce84d`, CI korpus penuh 2.448 + 2.447 / 4.895, 0 fail). **Sisa:** `yield + yield` / `yield * 2` (operator builtin) masih gagal compile; analyzer bisa dibuat poly, tapi codegen menurunkan operator per site ke bentuk konkret lalu memasukkannya ke slot poly tanpa box. Kandidat PR terpisah. **Perbaikan penuh 2026-09-30:** branch fork `k022-yield-operator` (commit `ceaa1111c`, ditumpuk di atas #6185, fork PR #11): analyzer mengetik `yield` poly bila menjadi receiver operator aritmetika builtin (`+ - * / %`, satu argumen), dan `sp_yield_site_type` menjawab tipe per site operator itu (String+String, String*Integer → String; Float/Integer campuran → Float; Integer+Integer → Integer kecuali mode promote), sehingga nilainya di-box ke slot poly. C benchmark + optcarrot identik; 675 tes korpus terkait lulus.
 
 
 ## K-023: pemanggilan tanpa receiver di subclass `BasicObject` ter-resolve ke method modul yang di-`include` di top level
@@ -441,3 +441,13 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Perbaikan (2026-09-30): `comp_included_method_index` kini menerima node pemanggil dan tidak menjawab apa pun dari method instance (atau blok di dalamnya) milik kelas turunan `BasicObject`; semua 10 caller berubah bersama. Method kelas tetap menjangkau modul (self-nya `Class`). Hasil: `hello` tanpa kurung → `NameError` saat runtime (sama dengan CRuby); `hello()` / `twice { }` → ditolak di barisnya (perilaku Spinel untuk pemanggilan ke method yang tidak ada). `class_is_blank_slate` pindah ke `compiler.c`. C benchmark + optcarrot identik.
 - Tindak lanjut: `def` top level juga masuk ke `Object`, dan subclass `BasicObject` masih menjangkaunya (`comp_method_index`, 69 caller); di luar cakupan PR ini.
 - Upstream: **matz/spinel#6162 merged** (2026-09-30), commit `c07b5c8c4` (ikut mengubah pemanggil baru `an_call_targets_nonunique`). CI dengan korpus penuh: gcc 2.439 + 2.438, clang 4.877, 0 fail.
+
+## K-024: method builtin pada receiver `yield` dengan blok bertipe berbeda: nilai salah diam-diam atau C tidak valid
+- Lapisan: compiler (codegen per site untuk nilai `yield`)
+- Ditemukan: 2026-09-30 saat memperbaiki sisa K-022 (operator).
+- Yang terjadi (spinel `2f2f59763`): `def w = yield.abs` dengan blok `-3` lalu `-2.5` mencetak `3` dan **`2`** (CRuby: `2.5`), jadi nilai salah tanpa error. `def w = yield.first` dengan blok Array lalu String-chars gagal compile (`incompatible pointer to integer conversion`).
+- Mekanisme: sama dengan K-022. Codegen menurunkan method per site dari tipe blok site itu (`sp_yield_site_type`), tapi slot nilai method bertipe dari site pertama. Perbaikan K-022 hanya mencakup operator aritmetika; method lain butuh tipe hasil per site yang lebih umum.
+- Repro: bentuk di atas (belum ada file repro).
+- Klasifikasi: bug-compiler (**nilai salah** untuk `abs`)
+- Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
+- Upstream: kandidat PR
