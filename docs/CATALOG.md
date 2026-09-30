@@ -415,5 +415,28 @@ butuh `kilau-old` (riwayat sebelum publik), yang sudah tidak ada di `phase1/`.
 - Repro: **repro/k021_include_rescue_yield_raising_block.rb**
 - Klasifikasi: bug-compiler
 - Solusi yang dipakai: tes Kilau memanggil `Kilau::Testing.raises_db_error?` lewat modul untuk bentuk ini
+- Mekanisme (2026-09-30): dua tempat di spinel tidak me-resolve pemanggilan tanpa receiver ke modul yang di-`include` di top level, padahal inliner (#6029) melakukannya. (1) Codegen `call_targets_yielding_method` menganggap ekor blok bukan pemanggilan yang di-inline → bentuk statement → blok bernilai `void`. (2) Analyzer `yvt_callee_index` tidak mencocokkan blok call site ke `yield` method itu → nilai yang dipakai (`n = twice { 2 }`) bertipe nil; sebelumnya gagal link, sesudah perbaikan (1) saja jadi `nil` diam-diam. Keduanya kini jatuh ke `comp_included_method_index`.
+- Upstream: **matz/spinel#6151 merged** (2026-09-30), commit `c6cff7c76`; tes `test/toplevel_include_yield_value_tail.rb`. C benchmark + optcarrot identik.
+
+## K-022: method yang `yield` dengan blok bertipe berbeda di call site berbeda menghasilkan C tidak valid
+- Lapisan: compiler (tipe nilai yield / inline per call site)
+- Ditemukan: 2026-09-30 09:25 WIB saat memperbaiki K-021.
+- Yang terjadi: `def twice = yield + yield`; `twice { "a" }` lalu `twice { 1.5 }` → `assigning to 'const char *' from incompatible type 'sp_float'` di `yield + yield`. CRuby: `"aa"`, `3.0`. Sama untuk fungsi top level, `T.twice` lewat modul, dan pemanggilan tanpa receiver setelah `include`; sudah ada sebelum perbaikan K-021.
+- Repro: **repro/k022_yield_blocks_of_different_types.rb**
+- Klasifikasi: bug-compiler
+- Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
 - Upstream: kandidat PR (belum direduksi/diperbaiki)
 
+
+## K-023: pemanggilan tanpa receiver di subclass `BasicObject` ter-resolve ke method modul yang di-`include` di top level
+- Lapisan: compiler (resolusi pemanggilan tanpa receiver)
+- Ditemukan: 2026-09-30 09:36 WIB, diangkat CodeRabbit di yosefbennywidyo/spinel#7 (perbaikan K-021), diverifikasi di spinel `8fec82476` tanpa perbaikan K-021.
+- Yang terjadi: `include T` di top level menambahkan T ke `Object`, yang tidak diwarisi subclass `BasicObject`. CRuby: `hello()` dan `twice { … }` di dalam `B < BasicObject` → `NoMethodError`. Spinel: `hello()` → `"hi"`, `twice` di-inline dan berjalan.
+- Mekanisme: semua resolver pemanggilan tanpa receiver (`infer_uncached`, cabang top-level-include `emit_call`, `emit_inline_call_x`, dan sejak perbaikan K-021 juga `yvt_callee_index` serta `call_targets_yielding_method`) memakai `comp_included_method_index` tanpa scope pemanggil.
+- Arah perbaikan: beri `comp_included_method_index` scope pemanggil dan tolak bila kelas pemanggil turunan `BasicObject` tanpa `Object` di rantainya, supaya semua resolver berubah bersama; tes `BasicObject`.
+- Repro: **repro/k023_basicobject_resolves_toplevel_include.rb**
+- Klasifikasi: bug-compiler (program yang di CRuby raise malah berjalan)
+- Solusi yang dipakai: tidak dibutuhkan Kilau (tidak memakai `BasicObject`)
+- Perbaikan (2026-09-30): `comp_included_method_index` kini menerima node pemanggil dan tidak menjawab apa pun dari method instance (atau blok di dalamnya) milik kelas turunan `BasicObject`; semua 10 caller berubah bersama. Method kelas tetap menjangkau modul (self-nya `Class`). Hasil: `hello` tanpa kurung → `NameError` saat runtime (sama dengan CRuby); `hello()` / `twice { }` → ditolak di barisnya (perilaku Spinel untuk pemanggilan ke method yang tidak ada). `class_is_blank_slate` pindah ke `compiler.c`. C benchmark + optcarrot identik.
+- Tindak lanjut: `def` top level juga masuk ke `Object`, dan subclass `BasicObject` masih menjangkaunya (`comp_method_index`, 69 caller); di luar cakupan PR ini.
+- Upstream: branch fork `k023-basicobject-include`, commit `833ef8a71` (di-rebase ke master setelah #6151 merge; ikut mengubah pemanggil baru `an_call_targets_nonunique`). Korpus penuh lokal sebelum rebase: 4.851 pass, 0 fail. PR upstream belum dibuka.
