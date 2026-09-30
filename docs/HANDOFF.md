@@ -2,6 +2,22 @@
 
 Entri terbaru di atas.
 
+## 2026-09-30 07:01 WIB — Semua PR spinel merged; rencana 7: ekstrak Kilau::DB → `spinel-sqlite`
+
+**Status**
+- Upstream merged: **10 PR** — #5789 (K-017), #5983 + #5997 (K-018), #6008 (K-016), #6027 (K-015), #6028 (K-019), #6029 (K-004), #6063 (K-013), **#6092 (K-020)**, **#6093 (K-007)**. Tidak ada PR terbuka.
+- Branch lokal & fork yang merged dihapus; worktree `spinel-latest` dihapus (buat ulang dengan `git worktree add` bila perlu).
+- Kilau di spinel `35ddccadb` belum berisi #6092/#6093 (K-020/K-007) — naikkan compiler lagi bila perlu.
+- Sisa bug spinel: **K-021** (repro ada, belum dikerjakan), K-014 (butuh bentuk kode lama).
+
+**Rencana 7 (baru)**: ekstrak `Kilau::DB` (385 baris, 6 file, tanpa ketergantungan ke bagian Kilau lain; 24 file Kilau merujuknya) menjadi spin package `spinel-sqlite` (package `sqlite`), sejajar dengan `pg`/`redis` di spin-index. Detail + keputusan D1–D6 (nama, gaya API vs gem `sqlite3`, lokasi repo, migrasi, cakupan, lisensi): `docs/superpowers/plans/2026-09-30-kilau-rencana-7-spinel-sqlite.md` (lokal, gitignored).
+
+**Langkah berikutnya**
+1. Rencana 7 Fase 0: pengguna memutuskan D1–D6.
+2. Fase 1–3 (lokal): scaffold → pindahkan kode + tes → Kilau memakai package via path; hijau dari build bersih.
+3. Fase 4 (dengan persetujuan): repo GitHub publik, dependency git, opsional `spin publish`.
+4. Paralel/berikutnya: K-021 (PR spinel), catatan katalog merge K-007/K-020.
+
 ## 2026-09-30 06:43 WIB — Compiler Kilau naik ke `35ddccadb`; workaround K-013 dicabut
 
 **Status**
