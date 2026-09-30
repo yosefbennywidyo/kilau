@@ -2,6 +2,20 @@
 
 Entri terbaru di atas.
 
+## 2026-09-30 17:47 WIB — K-022 merged (argumen + operator); lanjutan #6226 terbuka; K-024 tercatat
+
+**Status**
+- Upstream merged: **#6172** (FFI `MemoryPointer` → `NoMemoryError`), **#6185** (K-022: `yield` sebagai argumen method pengguna; aturan sadar-receiver setelah review CodeRabbit), **#6219** (K-022: operator aritmetika `+ - * / %` pada `yield`, di-merge di `fff8bdd49`).
+- Terbuka: **#6226** (lanjutan #6219: String `+`/`*` dengan argumen yang dikonversi/ditolak, mis. `yield * 2.0`, `yield + 1`). Temuan ketiga CodeRabbit masuk saat #6219 sedang di-merge; force-push perbaikannya jatuh ke PR yang sudah merge, jadi dibawa lewat PR baru. Komentar penjelasan dipasang di #6219.
+- Kilau di compiler `ea9feecfe` (belum berisi #6185/#6219/#6226); workaround K-021 sudah dicabut.
+- **K-024 (terbuka, nilai salah diam-diam):** `yield.abs` dengan blok Integer lalu Float mencetak `2` untuk `-2.5.abs`; `yield.first` gagal compile. Repro `repro/k024_yield_receiver_builtin_method.rb`; penunjuk kode dan arah perbaikan di entri K-024 `docs/CATALOG.md`.
+
+**Langkah berikutnya**
+1. Tunggu #6226 merge → hapus worktree `../spinel-k022op` + branch `k022-yield-operator`, `k022-yield-string-operator-args` (lokal & fork); tandai K-022 selesai di katalog/FINDINGS.
+2. K-024: perluas analyzer + hook `sp_yield_site_type` ke method builtin pada receiver `yield` (lihat CATALOG). Analyzer dan hook harus mencakup himpunan yang sama; uji di mode default **dan** promote lewat `make`, termasuk semua `promote_*`.
+3. Naikkan compiler Kilau setelah #6226 merge.
+4. Tertunda: `spin publish` sqlite, Rencana 5, K-014; tindak lanjut K-023 (`def` top level dari `BasicObject`).
+
 ## 2026-09-30 14:19 WIB — K-021 dan K-023 merged; CI upstream ternyata kosong sejak 28 Sep (diperbaiki); PR FFI
 
 **Status**

@@ -73,8 +73,9 @@ di kedua engine.
 | K-019 | value object yang di-`yield` ke blok berbentuk proc menghasilkan C tidak valid (bukan soal alias) | DX (gagal compile) | **diperbaiki upstream** (matz/spinel#6028) |
 | K-020 | nilai `next` diabaikan saat mengetik panggilan `yield`: **nilai salah diam-diam** / C gagal | **nilai salah** | **diperbaiki upstream** (matz/spinel#6092) |
 | K-021 | `module_function` yield+rescue via top-level include, blok selalu raise → C tidak valid | DX (gagal compile) | **diperbaiki upstream** (matz/spinel#6151); workaround dicabut (compiler `ea9feecfe`) |
-| K-022 | method `yield` dengan blok bertipe berbeda di call site berbeda → C tidak valid | DX (gagal compile) / nilai salah (argumen: `TypeError` saat runtime) | posisi argumen diajukan: matz/spinel#6185; `yield + yield` masih terbuka |
+| K-022 | method `yield` dengan blok bertipe berbeda di call site berbeda → C tidak valid | DX (gagal compile) / nilai salah (argumen: `TypeError` saat runtime) | **diperbaiki upstream**: argumen (#6185), operator aritmetika (#6219); String `+`/`*` dengan argumen dikonversi: #6226 terbuka |
 | K-023 | subclass `BasicObject` menjangkau method modul yang di-`include` di top level | nilai salah (program yang di CRuby raise malah berjalan) | **diperbaiki upstream** (matz/spinel#6162) |
+| K-024 | method builtin pada receiver `yield` (`yield.abs`, `yield.first`) dengan blok bertipe berbeda | **nilai salah diam-diam** (`-2.5.abs` → `2`) / C gagal | kandidat PR; repro `repro/k024_*`, penunjuk kode di CATALOG |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa
