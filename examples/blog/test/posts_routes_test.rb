@@ -6,7 +6,7 @@ require_relative "../src/app"
 require_relative "../build/gen/routes"
 T = Kilau::Testing
 
-db = Kilau::DB::Pool.new(":memory:", 1)
+db = Sqlite::Pool.new(":memory:", 1)
 db.with { |conn| Kilau::Migrator.new(conn, MIGRATIONS).migrate }
 app_context = Kilau::AppContext.new(db, Kilau::Config.parse("app:\n  name: blog\n", "test.yaml"), "test")
 client = Kilau::Testing::Client.new(RoutedApp.new, app_context)

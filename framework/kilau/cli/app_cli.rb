@@ -17,13 +17,13 @@ module Kilau
         $stderr.puts USAGE
         2
       end
-    rescue Config::Error, Kilau::DB::Error => e
+    rescue Config::Error, Sqlite::Error => e
       $stderr.puts "error: #{e.message}"
       1
     end
 
     def self.start(hooks, config, environment)
-      pool = Kilau::DB::Pool.new(config.string("database.path"), config.int("database.pool"))
+      pool = Sqlite::Pool.new(config.string("database.path"), config.int("database.pool"))
       app_context = AppContext.new(pool, config, environment)
       host = config.string("server.host")
       dispatcher = hooks.dispatcher(app_context)

@@ -26,8 +26,8 @@ module Entities
     def insert_sql = INSERT_SQL
     def update_sql = UPDATE_SQL
     def delete_sql = DELETE_SQL
-    def insert_binds = Kilau::DB::Binds.new.text(@name).text_or_nil(@note).int(@created_at).int(@updated_at)
-    def update_binds = Kilau::DB::Binds.new.text(@name).text_or_nil(@note).int(@created_at).int(@updated_at).int(@id)
+    def insert_binds = Sqlite::Binds.new.text(@name).text_or_nil(@note).int(@created_at).int(@updated_at)
+    def update_binds = Sqlite::Binds.new.text(@name).text_or_nil(@note).int(@created_at).int(@updated_at).int(@id)
 
     def touch(now)
       @created_at = now if @created_at.nil?

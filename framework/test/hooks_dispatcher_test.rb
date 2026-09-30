@@ -16,7 +16,7 @@ class TableApp < Kilau::Hooks
   def routes = Kilau::AppRoutes.with_default_routes
 end
 
-db = Kilau::DB::Pool.new(":memory:", 1)
+db = Sqlite::Pool.new(":memory:", 1)
 app_context = Kilau::AppContext.new(db, Kilau::Config.parse("app:\n  name: hooks\n", "test.yaml"), "test")
 
 T.check("the client uses the dispatcher the hooks give") { Kilau::Testing::Client.new(FixedApp.new, app_context).get("/x").body == "fixed GET /x" }

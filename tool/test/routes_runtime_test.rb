@@ -5,7 +5,7 @@ T = Kilau::Testing
 
 # Runs the committed output of routes_gen_test.rb: the generated dispatcher
 # must answer as the route table would.
-db = Kilau::DB::Pool.new(":memory:", 1)
+db = Sqlite::Pool.new(":memory:", 1)
 app_context = Kilau::AppContext.new(db, Kilau::Config.parse("app:\n  name: notes\n", "test.yaml"), "test")
 client = Kilau::Testing::Client.new(RoutedNotesApp.new, app_context)
 

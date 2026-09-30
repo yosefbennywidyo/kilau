@@ -32,7 +32,7 @@ module Kilau
 
     def destroy(db)
       return false if id.nil?
-      db.execute(delete_sql, Kilau::DB::Binds.new.int(id)) == 1
+      db.execute(delete_sql, Sqlite::Binds.new.int(id)) == 1
     end
   end
 end

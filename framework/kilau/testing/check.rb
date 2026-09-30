@@ -16,7 +16,7 @@ module Kilau
     def raises_db_error?
       yield
       false
-    rescue Kilau::DB::Error
+    rescue Sqlite::Error
       true
     end
   end

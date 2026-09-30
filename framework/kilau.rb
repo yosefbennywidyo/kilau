@@ -4,12 +4,7 @@ module Kilau
 end
 
 require_relative "kilau/testing/check"
-require_relative "kilau/db/base"
-require_relative "kilau/db/binds"
-require_relative "kilau/db/native"
-require_relative "kilau/db/connection_spinel"
-require_relative "kilau/db/connection_cruby"
-require_relative "kilau/db/pool"
+require "sqlite"   # the spinel-sqlite package: Sqlite::Connection, Binds, Pool
 require_relative "kilau/model/errors"
 require_relative "kilau/model/model"
 require_relative "kilau/model/migration"

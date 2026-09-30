@@ -44,18 +44,18 @@ end
 
 def table_exists?(conn, name)
   found = false
-  conn.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", Kilau::DB::Binds.new.text(name)) { |row| found = true }
+  conn.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?", Sqlite::Binds.new.text(name)) { |row| found = true }
   found
 end
 
-conn = Kilau::DB::Connection.open(":memory:")
+conn = Sqlite::Connection.open(":memory:")
 migrator = Kilau::Migrator.new(conn, [M2Gadgets.new, M1Widgets.new])
 T.check("migrate applies pending migrations in version order") { migrator.migrate == ["20260101000001", "20260101000002"] }
 T.check("migrate again applies nothing") { migrator.migrate.empty? }
 T.check("status lists every migration as up") { migrator.status_lines == ["up   20260101000001", "up   20260101000002"] }
 
 columns = []
-conn.query("PRAGMA table_info(widgets)", Kilau::DB::Binds.new) { |row| columns << "#{row.text(1)} #{row.text(2)} #{row.int(3)}" }
+conn.query("PRAGMA table_info(widgets)", Sqlite::Binds.new) { |row| columns << "#{row.text(1)} #{row.text(2)} #{row.int(3)}" }
 T.check("create_table maps column types") do
   columns == ["id INTEGER 0", "name TEXT 1", "note TEXT 0", "qty INTEGER 1", "price REAL 1", "created_at INTEGER 1", "updated_at INTEGER 1"]
 end
@@ -64,7 +64,7 @@ T.check("rollback undoes the newest migration") { migrator.rollback == "20260101
 T.check("status shows the rolled back migration as down") { migrator.status_lines == ["up   20260101000001", "down 20260101000002"] }
 T.check("the rolled back table is gone") { !table_exists?(conn, "gadgets") }
 
-empty = Kilau::Migrator.new(Kilau::DB::Connection.open(":memory:"), [])
+empty = Kilau::Migrator.new(Sqlite::Connection.open(":memory:"), [])
 T.check("rollback with nothing applied returns nil") { empty.rollback.nil? }
 
 duplicate = begin

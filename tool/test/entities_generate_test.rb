@@ -8,7 +8,7 @@ out_dir = base + "-out"
 File.delete(db_path) if File.exist?(db_path)
 Dir.mkdir(out_dir) unless File.directory?(out_dir)
 
-conn = Kilau::DB::Connection.open(db_path)
+conn = Sqlite::Connection.open(db_path)
 conn.exec_script(
   "CREATE TABLE posts (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);" \
   "CREATE TABLE tags (id INTEGER PRIMARY KEY AUTOINCREMENT, label TEXT NOT NULL);" \

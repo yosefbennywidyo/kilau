@@ -9,11 +9,11 @@ class Widget < Entities::Widget
     errors.add("name", "must be at least 2 characters") if name.to_s.length < 2
   end
 
-  def self.find_by_id(db, id) = db.query_first(select_sql + " WHERE id = ? LIMIT 1", Kilau::DB::Binds.new.int(id)) { |row| from_row(row) }
-  def self.all(db) = db.query_all(select_sql + " ORDER BY id", Kilau::DB::Binds.new) { |row| from_row(row) }
+  def self.find_by_id(db, id) = db.query_first(select_sql + " WHERE id = ? LIMIT 1", Sqlite::Binds.new.int(id)) { |row| from_row(row) }
+  def self.all(db) = db.query_all(select_sql + " ORDER BY id", Sqlite::Binds.new) { |row| from_row(row) }
 end
 
-db = Kilau::DB::Pool.new(":memory:", 1)
+db = Sqlite::Pool.new(":memory:", 1)
 db.exec_script("CREATE TABLE widgets (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, note TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)")
 
 widget = Widget.new
@@ -42,7 +42,7 @@ T.check("all returns rows in id order") { Widget.all(db).map { |w| w.name } == [
 T.check("destroy removes the row") { second.destroy(db) && Widget.find_by_id(db, 2).nil? }
 T.check("destroying an unsaved record is false") { Widget.new.destroy(db) == false }
 gone = Widget.find_by_id(db, 1)
-db.execute("DELETE FROM widgets WHERE id = ?", Kilau::DB::Binds.new.int(1))
+db.execute("DELETE FROM widgets WHERE id = ?", Sqlite::Binds.new.int(1))
 gone.name = "renamed"
 vanished = begin
   gone.save(db)

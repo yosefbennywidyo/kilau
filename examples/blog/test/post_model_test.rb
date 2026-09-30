@@ -3,7 +3,7 @@ require_relative "../migration/migrator"
 require_relative "../src/models/posts"
 T = Kilau::Testing
 
-db = Kilau::DB::Pool.new(":memory:", 1)
+db = Sqlite::Pool.new(":memory:", 1)
 db.with { |conn| Kilau::Migrator.new(conn, MIGRATIONS).migrate }
 
 post = Post.new

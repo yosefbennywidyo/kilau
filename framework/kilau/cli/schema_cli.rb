@@ -27,8 +27,8 @@ module Kilau
       end
 
       conn = begin
-        Kilau::DB::Connection.open(db_path)
-      rescue Kilau::DB::Error => e
+        Sqlite::Connection.open(db_path)
+      rescue Sqlite::Error => e
         $stderr.puts "error: #{e.message}"
         return 1
       end
@@ -44,7 +44,7 @@ module Kilau
         else
           migrator.status_lines.each { |line| puts line }
         end
-      rescue Kilau::DB::Error => e
+      rescue Sqlite::Error => e
         $stderr.puts "error: #{e.message}"
         return 1
       ensure

@@ -12,7 +12,7 @@ module KilauTool
         @primary_key = primary_key
       end
 
-      # The Kilau::DB::Row reader for this column. A NOT NULL column (and
+      # The Sqlite::Row reader for this column. A NOT NULL column (and
       # the primary key) reads as its plain type, so it stays narrow.
       def reader
         base = case @sql_type
@@ -75,8 +75,8 @@ module KilauTool
       lines << "    def insert_sql = INSERT_SQL"
       lines << "    def update_sql = UPDATE_SQL"
       lines << "    def delete_sql = DELETE_SQL"
-      lines << "    def insert_binds = Kilau::DB::Binds.new#{insert_chain}"
-      lines << "    def update_binds = Kilau::DB::Binds.new#{update_chain}"
+      lines << "    def insert_binds = Sqlite::Binds.new#{insert_chain}"
+      lines << "    def update_binds = Sqlite::Binds.new#{update_chain}"
       lines << ""
       lines << "    def touch(now)"
       lines << "      @created_at = now if @created_at.nil?" if names.include?("created_at")
@@ -95,14 +95,14 @@ module KilauTool
     def self.generate(db_path, out_dir)
       raise ArgumentError, "no database at #{db_path}" unless File.exist?(db_path)
       raise ArgumentError, "no directory at #{out_dir}" unless File.directory?(out_dir)
-      conn = Kilau::DB::Connection.open(db_path)
+      conn = Sqlite::Connection.open(db_path)
       written = []
       begin
         tables = []
-        conn.query(TABLES_SQL, Kilau::DB::Binds.new) { |row| tables << row.text(0) }
+        conn.query(TABLES_SQL, Sqlite::Binds.new) { |row| tables << row.text(0) }
         tables.each do |table|
           columns = []
-          conn.query("PRAGMA table_info(#{table})", Kilau::DB::Binds.new) do |row|
+          conn.query("PRAGMA table_info(#{table})", Sqlite::Binds.new) do |row|
             columns << Column.new(row.text(1), row.text(2).upcase, row.int(3) == 1, row.int(5) > 0)
           end
           path = "#{out_dir}/#{table}.rb"

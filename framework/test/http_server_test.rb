@@ -37,7 +37,7 @@ def one_shot(port, raw)
   answer
 end
 
-app_context = Kilau::AppContext.new(Kilau::DB::Pool.new(":memory:", 1), Kilau::Config.parse("app:\n  name: hello\n", "test.yaml"), "test")
+app_context = Kilau::AppContext.new(Sqlite::Pool.new(":memory:", 1), Kilau::Config.parse("app:\n  name: hello\n", "test.yaml"), "test")
 server = Kilau::HTTP::Server.new(Kilau::Dispatcher.new(HelloApp.new.routes, app_context), "127.0.0.1", 0, false)
 port = server.bind
 T.check("bind on port 0 picks a free port") { port > 0 }

@@ -69,9 +69,9 @@ module Kilau
     def self.ping(app_context, request) = Format.json("{\"ok\":true}")
 
     def self.health(app_context, request)
-      app_context.db.query_first("SELECT 1", Kilau::DB::Binds.new) { |row| row.int(0) }
+      app_context.db.query_first("SELECT 1", Sqlite::Binds.new) { |row| row.int(0) }
       Format.json("{\"ok\":true}")
-    rescue Kilau::DB::Error
+    rescue Sqlite::Error
       Format.json("{\"ok\":false}", status: 503)
     end
 

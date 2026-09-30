@@ -21,7 +21,7 @@ def kilau_main(argv)
     $stderr.puts USAGE
     2
   end
-rescue ArgumentError, Kilau::DB::Error => e
+rescue ArgumentError, Sqlite::Error => e
   $stderr.puts "kilau: #{e.message}"
   1
 end
