@@ -475,3 +475,14 @@ masih raise saat runtime, dengan pesan yang lebih jelas. K-002 dan K-003 tetap b
   - `dig`: hasilnya bergantung jumlah indeks (kedalaman), dan di promote bahkan `IntArray#dig(0)` = `poly`. Bukan aturan "ikut receiver".
   - Issue terkait tapi berbeda posisi: matz/spinel#7010 (yield divergen di ABI proc, `next []`, nilai blok ke method user, inline `super`). Programnya tetap gagal dengan 4 error yang sama dengan K-024b; tidak diperbaiki dan tidak diperburuk.
 - **Catatan untuk refactor umum** (diputuskan user 2026-10-02: belum dikerjakan): tabel ini tetap daftar tangan. Solusi menyeluruh adalah memisahkan logika "tipe hasil builtin untuk receiver bertipe `rt`" dari `infer_call` (`src/analyze_infer.c`, kira-kira baris 1650 sampai 6400, tersebar di `infer_array_call`, `infer_numeric_call`, `infer_hash_call`, `infer_poly_call` dan arm inline) menjadi fungsi murni tanpa tulis cache. Dengan begitu hook codegen bisa memanggilnya dengan `rt` per site dan semua method tertutup sekaligus. Hambatannya: fungsi-fungsi itu menerima `Compiler *` non-const, membaca `infer_type` (yang mengisi cache), dan menghitung `rt` dari node receiver di dalam fungsi. Risiko regresinya besar, jadi layak didiskusikan dulu dengan Matz (issue), bukan langsung PR.
+
+## K-025: method builtin yang dibuka ulang di Array/Hash diabaikan; reopen scalar lewat `yield` gagal compile
+- Lapisan: compiler (dispatch reopen kelas builtin)
+- Ditemukan: 2026-10-02 saat memverifikasi temuan CodeRabbit di matz/spinel#7063.
+- Yang terjadi (master `7ba5b1e10`): `class Array; def first = "arr-first"; end` lalu `[1, 2].first` mencetak `1` (CRuby `"arr-first"`). Hal yang sama berlaku untuk `sort`/`last` Array dan `size` Hash. `def w = yield.abs` dengan `Integer#abs` dibuka ulang menjadi String, dengan blok Integer dan Float, gagal compile.
+- Mekanisme: reopen scalar (Integer/String/Float/...) sudah memiliki nama builtin sejak `ce2d5c1c2`. Reopen Array/Hash hanya dicapai oleh dispatch di akhir `emit_call_body`, padahal nama builtin sudah lebih dulu diambil arm builtin. Analyzer juga mengetik call itu sebagai builtin. Hook `yield_builtin_method_site_type` (#7024) menjawab tipe builtin untuk site yang kelasnya dibuka ulang.
+- Repro: **repro/k025_reopened_builtin_method.rb**
+- Verifikasi asal-usul (build bersih): bug Array/Hash sudah ada sebelum #7024 (`28e34cee3`). Untuk reopen scalar lewat `yield`, #7024 mengubah nilai salah menjadi C gagal pada dua bentuk, dan tidak membuat kasus yang benar menjadi salah.
+- Klasifikasi: bug-compiler (nilai salah diam-diam untuk Array/Hash)
+- Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
+- Upstream: fix di branch spinel `k025-reopened-builtin-method` (`71895e74c`), fork PR yosefbennywidyo/spinel#17 (CI). Bersinggungan dengan #7063: siapa pun yang merge kedua memakai hook versi tabel #7063, lalu mengubah aturan "tolak site Array/Hash" menjadi "jawab ret reopen".
