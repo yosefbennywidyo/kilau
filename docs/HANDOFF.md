@@ -2,6 +2,20 @@
 
 Entri terbaru di atas.
 
+## 2026-10-02 13:15 WIB — K-009, K-014(b), K-024b, K-025(b bag. 1) merged; K-025b bag. 2 terbuka (#7158)
+
+**Status**
+- Merged 09:33 WIB: **#7062** (K-009, `make install` membuat paket terbaca), **#7063** (K-024b, tabel per site), **#7064** (K-014, method yang selalu raise), **#7078** (K-025, reopen Array/Hash memiliki nama builtin; Matz menyusulkan `f018966dc` yang memindah arm ke helper).
+- Merged 12:22 WIB: **#7095** (K-014b, operator/call/rantai pada method yang selalu raise), **#7096** (K-025b bag. 1).
+- Terbuka: **#7158** (K-025b bag. 2: site lain di samping reopen dijawab builtin-nya sendiri; juga memperbaiki `yield.succ` pada blok String yang menjalankan reopen `Integer#succ`). Gate: https://github.com/yosefbennywidyo/spinel/actions/runs/36971021776.
+- Aturan upstream baru (2026-10-02, matz/spinel#7082 + CONTRIBUTING.md): setiap PR menyertakan ringkasan `make gate` atas branch yang di-merge dengan master; gagal gate atau konflik dengan master = PR dikembalikan. `.expected` harus sama dengan CRuby 4.0 `--enable-frozen-string-literal`. Fungsi > 1.000 baris tidak boleh bertambah (#7033). Detail di skill `spinel-notes`.
+- Kilau masih di compiler `ea9feecfe`: **belum** berisi perbaikan-perbaikan di atas.
+
+**Langkah berikutnya**
+1. Naikkan compiler Kilau ke master spinel terbaru (build + install). Dengan #7062, `chmod` K-009 tidak diperlukan lagi untuk instalasi baru.
+2. Cabut workaround K-014 (`.to_s` di `framework/kilau/model/migrator.rb` baris 30, 41, 53), jalankan suite dari build bersih (`make test`, `make test-cruby`, `make e2e`).
+3. Setelah #7158 merge: tandai K-025 selesai penuh di `docs/CATALOG.md` dan `docs/FINDINGS.md`.
+
 ## 2026-09-30 17:47 WIB — K-022 merged (argumen + operator); lanjutan #6226 terbuka; K-024 tercatat
 
 **Status**

@@ -17,12 +17,12 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 |---|---|---|---|
 | K-004 | link gagal (`Undefined symbols`) | link gagal | **diperbaiki upstream** (matz/spinel#6029, di-merge 2026-09-30 05:41 WIB, `eb340a6ab`) |
 | K-007 | `unsupported condition (non-bool)` | sama | **diperbaiki upstream** (matz/spinel#6093, di-merge 2026-09-30 06:53 WIB, `c9b672e05`) |
-| K-009 | link gagal (izin `root 0640`) | lulus dari worktree | soal instalasi; akar masalah ditemukan 2026-09-29 13:45 WIB, lihat entri K-009 |
+| K-009 | link gagal (izin `root 0640`) | lulus dari worktree | **diperbaiki upstream** (matz/spinel#7062, di-merge 2026-10-02 09:33 WIB, `7339b7c43`); instalasi spinel lama tetap butuh `chmod` |
 | K-010 | C gagal (`no member named 'cls_id'`) | sama dengan CRuby | **diperbaiki upstream** |
 | K-011 | `%zz` → NUL | sama dengan CRuby (`ArgumentError`) | **diperbaiki upstream** |
 | K-012 | pelebaran app 30 (`blog`) / 11 (`blog_routes`) | 30 / 11 | tidak berubah |
 | K-013 | C gagal (`sp_MatchData *`) | sama | **diperbaiki upstream** (matz/spinel#6063, di-merge 2026-09-30 06:32 WIB, `35ddccadb`); workaround `match_path` dicabut |
-| K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **masih ada** |
+| K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **diperbaiki upstream** (matz/spinel#7064, di-merge 2026-10-02 09:33 WIB, `417abb662`; perluasan operator/call #7095, di-merge 12:22 WIB, `09e78f57a`); workaround `.to_s` belum dicabut |
 | K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **diperbaiki upstream** (matz/spinel#6027, di-merge 2026-09-30 03:26 WIB) |
 | K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **diperbaiki upstream** (matz/spinel#6008, di-merge 2026-09-30 02:21 WIB, `fe642d488`); compiler Kilau `6626c0f05` belum berisi perbaikan ini |
 | K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **diperbaiki upstream** (matz/spinel#5789, di-merge 2026-09-29 17:49 WIB, `dca09ca13`); diverifikasi di `6626c0f05`: repro sama dengan CRuby |
@@ -44,6 +44,26 @@ K-015 (`user_each`), K-016, K-017, K-019, K-021, K-022 dan K-024 sama dengan CRu
 K-023 ditolak saat compile, dan itu memang perilaku #6162 (lihat entrinya). K-001
 masih raise saat runtime, dengan pesan yang lebih jelas. K-002 dan K-003 tetap batasan.
 `k015_endpoint_save_crash` butuh `-I` ke lib kilau, jadi tidak diuji mandiri.
+
+**Status upstream 2026-10-02 ~13:15 WIB** (master `16cc41285`): di-merge pukul 09:33 WIB
+K-009 (#7062), K-014 (#7064), K-024b (#7063) dan K-025 (#7078); pukul 12:22 WIB K-014b
+(#7095) dan K-025b bagian 1 (#7096). Masih terbuka: K-025b bagian 2 (#7158). Compiler
+Kilau belum dinaikkan ke versi yang berisi perbaikan-perbaikan ini.
+
+**Uji ulang 2026-10-02 ~13:17 WIB** dengan spinel master `16cc41285` (build bersih di
+worktree terpisah, `--require-gate`, semua `repro/*.rb`, pembanding CRuby 4.0.6):
+
+| Hasil | K |
+|---|---|
+| sama dengan CRuby | K-004, K-009 (setelah paket di-build), K-010, K-011, K-013, K-015 (`user_each`), K-016, K-017, K-019, K-021, K-022, K-024, **K-025** |
+| sama secara makna | K-007: pesan `undefined method 'save' for an instance of Gadget (NoMethodError)` sama; hanya awalan backtrace CRuby yang berbeda |
+| batasan, sesuai harapan | K-001 (raise saat runtime: `undefined method 'parse' for class Time`), K-002 (`yaml` ditolak), K-003 (repro sengaja mencetak nama engine), K-006 (FFI hanya ada di spinel) |
+| ditolak saat compile, memang desainnya | K-023 (#6162) |
+| tidak diuji mandiri | `k015_endpoint_save_crash` (butuh `-I` ke lib kilau) |
+
+K-014 tidak punya file repro di `repro/`. Buktinya diambil dari test spinel di master
+yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#7064) dan
+`raise_only_method_more_positions` (#7095) semuanya PASS.
 
 ## Jawaban riset
 
@@ -189,7 +209,7 @@ masih raise saat runtime, dengan pesan yang lebih jelas. K-002 dan K-003 tetap b
 - Klasifikasi: lingkungan / instalasi. File `sp_stringio*.o` dimiliki `root:wheel` dengan mode `0640` setelah `sudo make install`.
 - Solusi yang dipakai: tes memakai `FakeIO` sendiri (framework/test/support/fake_io.rb). Perbaikan permanen yang butuh izin pengguna: `sudo chmod a+r /usr/local/lib/spinel/packages/*/*.o`, atau install ulang dengan umask 022.
 - Biaya: nol untuk Kilau
-- Upstream: **masih ada di master `cd9cc4146`** (2026-10-02). Akar masalahnya terverifikasi: sccache 0.17.0 menulis object `0640` apa pun umask-nya, termasuk saat cache hit (`cc` biasa menghasilkan `0644`), lalu `make install` menyalinnya dengan `cp -r`. Fix: `chmod -R a+rX` atas `packages/` dan `builtins/` yang terpasang. Commit `4ad0e9709`, branch spinel `k009-install-readable-packages`, PR upstream **matz/spinel#7062** (dibuka 2026-10-02 ~06:45 WIB; CI fork 5.478 lolos; fork #14 ditutup). Uji: install ke PREFIX scratch, resep lama menyisakan 16 object `0640`, resep baru 0.
+- Upstream: **diperbaiki**, matz/spinel#7062 di-merge 2026-10-02 09:33 WIB (`7339b7c43`). Sebelumnya masih ada di master `cd9cc4146`. Akar masalahnya terverifikasi: sccache 0.17.0 menulis object `0640` apa pun umask-nya, termasuk saat cache hit (`cc` biasa menghasilkan `0644`), lalu `make install` menyalinnya dengan `cp -r`. Fix: `chmod -R a+rX` atas `packages/` dan `builtins/` yang terpasang. Commit `4ad0e9709`, branch spinel `k009-install-readable-packages`, PR upstream **matz/spinel#7062** (dibuka 2026-10-02 ~06:45 WIB; CI fork 5.478 lolos; fork #14 ditutup). Uji: install ke PREFIX scratch, resep lama menyisakan 16 object `0640`, resep baru 0. `chmod` manual hanya perlu untuk instalasi spinel yang lebih lama dari `7339b7c43`.
 - **Akar masalah (2026-09-29 13:45 WIB):**
   - `common.mk` spinel otomatis membungkus `cc` dengan **sccache** kalau sccache
     terpasang.
@@ -289,9 +309,9 @@ masih raise saat runtime, dengan pesan yang lebih jelas. K-002 dan K-003 tetap b
 - Klasifikasi: bug-compiler (dugaan: receiver untyped di kode mati di-resolve ke tipe lain; sekeluarga dengan K-013)
 - Solusi yang dipakai: `m.version.to_s` sebelum `==` dan interpolasi, sehingga operand selalu `String`. **Aturan umum:** di kode framework yang bisa mati di sebagian program, paksa tipe primitif (`to_s`, `to_i`) sebelum `==` dan interpolasi pada nilai dari receiver generik.
 - Biaya: nol
-- Upstream: perlu isolasi lebih dulu sebelum layak dilaporkan
+- Upstream: **diperbaiki** (lihat Fix di bawah). Catatan lama: "perlu isolasi lebih dulu", sudah terisolasi 2026-10-02.
 - **Terisolasi 2026-10-02** (spinel master `2be1b3c59`): pemicunya adalah method yang **selalu raise** (`Migration#version` di kelas dasar), bukan kode mati. Analyzer mengetiknya `TY_VOID` ("ty1" di pesan penolakan). Codegen menolak `==`/`!=` dan interpolasi atas call VOID. Repro minimal (19 baris, receiver poly lewat `@ms.map { |m| ... }`) gagal compile di master, sedangkan CRuby mencetak `raised subclass` dua kali. Penolakan bergantung pada isi program lain karena subclass yang meng-override `version` (dengan String) membuat dispatch poly bertipe String, dan tes HTTP tidak punya migrasi.
-- **Fix**: `call_never_returns` (`src/codegen_util.c`), dipakai emitter interpolasi (diperlakukan seperti arm `sp_raise_*`, #4092) dan emitter `==`. VOID saja tidak cukup: `puts`/`print`/`p`/`warn` tanpa receiver juga VOID tapi mengembalikan nil (`puts(...) == nil` tetap `true`). Commit `62f363590`, branch spinel `k014-raise-only-method-value`, PR upstream **matz/spinel#7064** (dibuka 2026-10-02 ~07:10 WIB; fork #15 ditutup). Setelah fix ini masuk upstream, workaround `.to_s` di `migrator.rb` bisa dicabut. **Perluasan** ke operator, call method dan rantai (`m.version + "x"`, `< 3`, `.size`, `m.version - 1 > 2`): commit `adb3fb52d`, branch `k014b-raise-only-method-more-positions`, fork PR yosefbennywidyo/spinel#16 (stacked di atas #15). Local assignment `x = m.version` sudah berfungsi sejak awal.
+- **Fix**: `call_never_returns` (`src/codegen_util.c`), dipakai emitter interpolasi (diperlakukan seperti arm `sp_raise_*`, #4092) dan emitter `==`. VOID saja tidak cukup: `puts`/`print`/`p`/`warn` tanpa receiver juga VOID tapi mengembalikan nil (`puts(...) == nil` tetap `true`). Commit `62f363590`, branch spinel `k014-raise-only-method-value`, PR upstream **matz/spinel#7064**, **di-merge 2026-10-02 09:33 WIB** (`417abb662`). **Perluasan** ke operator, call method dan rantai (`m.version + "x"`, `< 3`, `.size`, `m.version - 1 > 2`): branch `k014b-raise-only-method-more-positions`, **matz/spinel#7095 di-merge 2026-10-02 12:22 WIB** (`09e78f57a`; fork #16 ditutup). Local assignment `x = m.version` sudah berfungsi sejak awal. Workaround `.to_s` di `migrator.rb` (baris 30, 41, 53) bisa dicabut **setelah** compiler Kilau dinaikkan ke spinel yang berisi `417abb662`.
 
 ## K-015: Integer di array binds campuran terbaca sebagai String, lalu segfault (jalur handler lewat `Endpoint#call`)
 - Lapisan: db / routing
@@ -467,14 +487,14 @@ masih raise saat runtime, dengan pesan yang lebih jelas. K-002 dan K-003 tetap b
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
 - Upstream (diperbarui 2026-10-02 ~07:05 WIB):
   - **Bagian 1** (`abs`, `-@`): **matz/spinel#7024 merged** (2026-10-01 23:49Z, merge commit `5360dc76c`). Menyusul `d3cd772e0` setelah temuan CodeRabbit: `-@` dengan site String (Int+String sebelumnya C gagal).
-  - **Bagian 2** (K-024b, branch spinel `k024b-yield-receiver-element-self`, commit `1b697faaa` + `a4fef1b72` setelah rebase ke merge #7024, PR upstream **matz/spinel#7063** (dibuka 2026-10-02 ~07:05 WIB; fork #13 ditutup)): tabel bersama `ty_recv_builtin_result` di `src/types.c`, dibaca analyzer (`yield_recv_builtin_every_site`, arm YU_RECEIVER + `infer_call`) dan hook codegen (`yield_builtin_method_site_type`). Dua kelas aturan: pembaca elemen (`first last min max pop shift [i]`) → elemen array; salinan/urutan ulang (`itself dup clone freeze sort reverse uniq compact to_a`, plus `abs magnitude -@` untuk Int/Float) → jenis receiver. Mengikuti rantai (`yield.sort.reverse.last`). Analyzer hanya melebarkan bila **semua** site terjawab tabel. Pelajaran: hook per site hanya boleh menjawab bila analyzer mengetik call itu poly. Kalau tidak, nilai site lain dibuang jadi nil oleh arm raise-tail.
+  - **Bagian 2** (K-024b, branch spinel `k024b-yield-receiver-element-self`, commit `1b697faaa` + `a4fef1b72` setelah rebase ke merge #7024, PR upstream **matz/spinel#7063**, **di-merge 2026-10-02 09:33 WIB** (`8d17c7db6`; fork #13 ditutup)): tabel bersama `ty_recv_builtin_result` di `src/types.c`, dibaca analyzer (`yield_recv_builtin_every_site`, arm YU_RECEIVER + `infer_call`) dan hook codegen (`yield_builtin_method_site_type`). Dua kelas aturan: pembaca elemen (`first last min max pop shift [i]`) → elemen array; salinan/urutan ulang (`itself dup clone freeze sort reverse uniq compact to_a`, plus `abs magnitude -@` untuk Int/Float) → jenis receiver. Mengikuti rantai (`yield.sort.reverse.last`). Analyzer hanya melebarkan bila **semua** site terjawab tabel. Pelajaran: hook per site hanya boleh menjawab bila analyzer mengetik call itu poly. Kalau tidak, nilai site lain dibuang jadi nil oleh arm raise-tail.
   - Matriks probe sebelum fix: ~20 method rusak (C gagal compile, atau nilai salah diam-diam untuk Int vs Float: `first`, `min`, `max`, `pop`, `shift`, `[0]`, `itself`, `magnitude`).
 - **Di luar cakupan bagian 2, dan alasannya** (ground truth `--emit-types`, 2026-10-02):
   - `sum`: `IntArray#sum` = `int` di mode raise tapi `poly` di promote (bisa jadi Bignum). Jadi tipenya ditentukan mode, bukan receiver. `StrArray#sum` di CRuby raise `TypeError` (`String can't be coerced into Integer`), dan emitter lewat jalur boxed `sp_RbVal`. Butuh aturan bergerbang mode plus arm raise, jebakan yang sama dengan #6219.
-  - `succ`: `Integer#succ` = `int` di raise, `poly` di promote (overflow ke Bignum, setara `+ 1`). `String#succ` = `string`. Bisa ditambah dengan gerbang `g_promote_mode` seperti `yield_operator_site_type`, tapi belum diverifikasi.
+  - `succ`: `Integer#succ` = `int` di raise, `poly` di promote (overflow ke Bignum, setara `+ 1`). `String#succ` = `string`. Bisa ditambah dengan gerbang `g_promote_mode` seperti `yield_operator_site_type`, tapi belum diverifikasi. (Hanya bila ada reopen pada rantai, `succ` dan nama lain di luar tabel kini terjawab per site oleh #7158; lihat K-025.)
   - `dig`: hasilnya bergantung jumlah indeks (kedalaman), dan di promote bahkan `IntArray#dig(0)` = `poly`. Bukan aturan "ikut receiver".
   - Issue terkait tapi berbeda posisi: matz/spinel#7010 (yield divergen di ABI proc, `next []`, nilai blok ke method user, inline `super`). Programnya tetap gagal dengan 4 error yang sama dengan K-024b; tidak diperbaiki dan tidak diperburuk.
-- **Catatan untuk refactor umum** (diputuskan user 2026-10-02: belum dikerjakan): tabel ini tetap daftar tangan. Solusi menyeluruh adalah memisahkan logika "tipe hasil builtin untuk receiver bertipe `rt`" dari `infer_call` (`src/analyze_infer.c`, kira-kira baris 1650 sampai 6400, tersebar di `infer_array_call`, `infer_numeric_call`, `infer_hash_call`, `infer_poly_call` dan arm inline) menjadi fungsi murni tanpa tulis cache. Dengan begitu hook codegen bisa memanggilnya dengan `rt` per site dan semua method tertutup sekaligus. Hambatannya: fungsi-fungsi itu menerima `Compiler *` non-const, membaca `infer_type` (yang mengisi cache), dan menghitung `rt` dari node receiver di dalam fungsi. Risiko regresinya besar, jadi layak didiskusikan dulu dengan Matz (issue), bukan langsung PR.
+- **Catatan untuk refactor umum** (diputuskan user 2026-10-02: belum dikerjakan): tabel ini tetap daftar tangan. Solusi menyeluruh adalah memisahkan logika "tipe hasil builtin untuk receiver bertipe `rt`" dari `infer_call` (`src/analyze_infer.c`, kira-kira baris 1650 sampai 6400, tersebar di `infer_array_call`, `infer_numeric_call`, `infer_hash_call`, `infer_poly_call` dan arm inline) menjadi fungsi murni tanpa tulis cache. Dengan begitu hook codegen bisa memanggilnya dengan `rt` per site dan semua method tertutup sekaligus. Hambatannya: fungsi-fungsi itu menerima `Compiler *` non-const, membaca `infer_type` (yang mengisi cache), dan menghitung `rt` dari node receiver di dalam fungsi. Risiko regresinya besar, jadi layak didiskusikan dulu dengan Matz (issue), bukan langsung PR. Perkembangan 2026-10-02: #7158 memakai *face re-inference* (`an_set_face_node` + `infer_call`, mekanisme dispatch receiver poly) sebagai sumber tipe per site, tapi hanya bila ada reopen pada rantai; arah upstream yang lebih luas ada di matz/spinel#7033 (tabel builtin) dan #7100 (`CallPlan`).
 
 ## K-025: method builtin yang dibuka ulang di Array/Hash diabaikan; reopen scalar lewat `yield` gagal compile
 - Lapisan: compiler (dispatch reopen kelas builtin)
@@ -485,4 +505,8 @@ masih raise saat runtime, dengan pesan yang lebih jelas. K-002 dan K-003 tetap b
 - Verifikasi asal-usul (build bersih): bug Array/Hash sudah ada sebelum #7024 (`28e34cee3`). Untuk reopen scalar lewat `yield`, #7024 mengubah nilai salah menjadi C gagal pada dua bentuk, dan tidak membuat kasus yang benar menjadi salah.
 - Klasifikasi: bug-compiler (nilai salah diam-diam untuk Array/Hash)
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
-- Upstream: fix di branch spinel `k025-reopened-builtin-method` (`71895e74c`), PR upstream **matz/spinel#7078** (dibuka 2026-10-02 ~08:05 WIB; CI fork 5.532 lolos; fork #17 ditutup). Bersinggungan dengan #7063: siapa pun yang merge kedua memakai hook versi tabel #7063, lalu mengubah aturan "tolak site Array/Hash" menjadi "jawab ret reopen".
+- Upstream: fix di branch spinel `k025-reopened-builtin-method` (`71895e74c`), PR upstream **matz/spinel#7078**, **di-merge 2026-10-02 09:33 WIB** (`b778f39e7`; fork #17 ditutup). Matz menyusulkan `f018966dc`: arm #7078 menambah 17 baris ke `emit_call_body` (melanggar aturan ukuran fungsi #7033) dan memanggil fungsi yang tidak dimiliki method yang yield, sehingga reopen yang yield tanpa blok gagal compile; arm dipindah ke helper.
+- **K-025b** (ditemukan 2026-10-02 ~09:50 WIB, setelah #7063 dan #7078 sama-sama masuk master): aturan "tolak site Array/Hash" #7063 tersisa, sehingga `yield.first` dengan reopen `Hash#first` dan site Array gagal compile; site yang kind-nya tidak ada di tabel per site (`size` di semua kind, `first` di Hash) di samping site reopen juga gagal compile, dan `yield.succ` pada blok String menjalankan reopen `Integer#succ` (nilai salah).
+  - Bagian 1 (hapus aturan tolak Array/Hash): **matz/spinel#7096 di-merge 2026-10-02 12:22 WIB** (`9d889fd26`).
+  - Bagian 2 (site lain dijawab builtin-nya sendiri lewat `an_yield_site_builtin_answer`, face re-inference, hanya bila ada reopen pada rantai): **matz/spinel#7158** (dibuka 2026-10-02 13:10 WIB, terbuka). Gate sharded di fork: https://github.com/yosefbennywidyo/spinel/actions/runs/36971021776 (corpus 5.583, rubyspec 2.446, bench 64, optcarrot 59662; C optcarrot dan 64 benchmark identik).
+  - Batas yang diketahui: `yield.include?(v)` dengan `v` argumen poly masih menjalankan reopen Array di site String (sama seperti master).
