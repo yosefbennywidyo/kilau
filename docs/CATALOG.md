@@ -485,4 +485,4 @@ masih raise saat runtime, dengan pesan yang lebih jelas. K-002 dan K-003 tetap b
 - Verifikasi asal-usul (build bersih): bug Array/Hash sudah ada sebelum #7024 (`28e34cee3`). Untuk reopen scalar lewat `yield`, #7024 mengubah nilai salah menjadi C gagal pada dua bentuk, dan tidak membuat kasus yang benar menjadi salah.
 - Klasifikasi: bug-compiler (nilai salah diam-diam untuk Array/Hash)
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
-- Upstream: fix di branch spinel `k025-reopened-builtin-method` (`71895e74c`), fork PR yosefbennywidyo/spinel#17 (CI). Bersinggungan dengan #7063: siapa pun yang merge kedua memakai hook versi tabel #7063, lalu mengubah aturan "tolak site Array/Hash" menjadi "jawab ret reopen".
+- Upstream: fix di branch spinel `k025-reopened-builtin-method` (`71895e74c`), PR upstream **matz/spinel#7078** (dibuka 2026-10-02 ~08:05 WIB; CI fork 5.532 lolos; fork #17 ditutup). Bersinggungan dengan #7063: siapa pun yang merge kedua memakai hook versi tabel #7063, lalu mengubah aturan "tolak site Array/Hash" menjadi "jawab ret reopen".
