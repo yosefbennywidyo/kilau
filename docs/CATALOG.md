@@ -1,10 +1,22 @@
 # Katalog batas AOT
 
-Compiler: spinel 2026.09.12+2826 (ea9feecfe) sejak 2026-09-30 14:29 WIB (sebelumnya `35ddccadb` sejak 06:43, `6626c0f05` sejak 2026-09-29 23:08, `1ba12fb74` sejak 13:45). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
+Compiler: spinel 2026.09.12+6323 (ae2c38c71) sejak 2026-10-07 ~11:10 WIB (sebelumnya `ea9feecfe` sejak 2026-09-30 14:29 WIB, `35ddccadb` sejak 06:43, `6626c0f05` sejak 2026-09-29 23:08, `1ba12fb74` sejak 13:45). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
 Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRuby
 4.0.6 sebagai pembanding.
 
 ## Status di spinel terbaru (Rencana 6 Fase 0, 2026-09-29 13:29 WIB)
+**Uji ulang 2026-10-07 ~11:12 WIB** dengan spinel `ae2c38c71` (terpasang lewat `sudo make install`; repro di-compile tanpa `--require-gate` karena regresi di bawah):
+
+| K | Hasil | Status |
+|---|---|---|
+| K-014 | `migrator.rb` tanpa `.to_s` dikompilasi; compiler lama menolak (`unsupported equality`) | diperbaiki, workaround dicabut |
+| K-018 | `spin test` dengan path absolut dan lewat PATH: run kedua `(cached)`, setelah `touch bin/spinel` dibangun ulang | diperbaiki |
+| K-020 | repro `next` di blok yield: `true`, `true`, `5`, sama dengan CRuby | diperbaiki |
+| K-005 | `--warn-widen` pada `sqlite/binds.rb` dan `connection_spinel.rb` masih melebar. File repro lama `db_connection_test.rb` sudah tidak ada | tidak berubah, diterima |
+| K-008 | `--warn-widen` masih melebar di `Pool#with`, `query_all`, `query_first`, dan `Model#destroy` | tidak berubah, diterima |
+
+**Regresi terbuka:** dengan `spinel` `ae2c38c71` dan flag `--require-gate` (yang disertakan `spin flags`), `Kernel.require "sqlite3"` di cabang `RUBY_ENGINE` yang mati ditolak (`cannot load such file -- sqlite3`). Compiler terpasang `2026.09.12+2826` menerimanya. Akibatnya `make test` di kilau gagal pada tahap `tool` (`spin build`). Repro minimal: `if RUBY_ENGINE == "spinel" ... else gem "sqlite3"; Kernel.require "sqlite3" end` dengan `spinel --require-gate`. Belum dilaporkan upstream.
+
 
 Diuji dengan spinel `2026.09.12+2124 (1ba12fb74)`, yang 745 commit di depan `38dc57dd`.
 Spinel baru dibuat di worktree terpisah, sedangkan instalasi `/usr/local/bin/spinel`
@@ -22,7 +34,7 @@ Semua kasus "masih ada" juga gagal dengan `38dc57dd`, jadi rekonstruksinya valid
 | K-011 | `%zz` → NUL | sama dengan CRuby (`ArgumentError`) | **diperbaiki upstream** |
 | K-012 | pelebaran app 30 (`blog`) / 11 (`blog_routes`) | 30 / 11 | tidak berubah |
 | K-013 | C gagal (`sp_MatchData *`) | sama | **diperbaiki upstream** (matz/spinel#6063, di-merge 2026-09-30 06:32 WIB, `35ddccadb`); workaround `match_path` dicabut |
-| K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **diperbaiki upstream** (matz/spinel#7064, di-merge 2026-10-02 09:33 WIB, `417abb662`; perluasan operator/call #7095, di-merge 12:22 WIB, `09e78f57a`); workaround `.to_s` belum dicabut |
+| K-014 | `unsupported equality` / `interpolation` (http_server_test, migrator tanpa `to_s`) | penolakan sama | **diperbaiki upstream** (matz/spinel#7064, di-merge 2026-10-02 09:33 WIB, `417abb662`; perluasan operator/call #7095, di-merge 12:22 WIB, `09e78f57a`); workaround `.to_s` **dicabut 2026-10-07** setelah uji ulang (lihat blok di bawah) |
 | K-015 | segfault (exit 139), CRuby 303 | segfault (exit 139) | **diperbaiki upstream** (matz/spinel#6027, di-merge 2026-09-30 03:26 WIB) |
 | K-016 | `query_first` bentuk lama → tes blog `show escapes the title` FAIL | FAIL sama | **diperbaiki upstream** (matz/spinel#6008, di-merge 2026-09-30 02:21 WIB, `fe642d488`); compiler Kilau `6626c0f05` belum berisi perbaikan ini |
 | K-017 | `elsif … == 0` + raise → `nil given to int` | sama | **diperbaiki upstream** (matz/spinel#5789, di-merge 2026-09-29 17:49 WIB, `dca09ca13`); diverifikasi di `6626c0f05`: repro sama dengan CRuby |
@@ -145,6 +157,8 @@ yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#706
 - Solusi yang dipakai: diterima. `bind` men-dispatch per nilai lewat `case`, sekali per parameter SQL.
 - Biaya: belum terukur. Diukur di benchmark S4 (Rencana 4). Kalau signifikan, alternatifnya binder bertipe (`bind_text(i, s)`) per kolom di entity hasil generate.
 - Upstream: tidak perlu
+- **Uji ulang 2026-10-07 ~11:12 WIB** (spinel `ae2c38c71`): `--warn-widen` pada paket sqlite `binds.rb` masih melebar (`int`, `text`, `int_or_nil`, dst.), jadi pelebaran tetap seperti dicatat di atas. File `framework/test/db_connection_test.rb` tidak ada lagi; pelebarannya sekarang terlihat di paket sqlite. Tidak berubah, diterima.
+
 
 ## K-006: `:ptr` dari `ffi_func` melebar ke untyped begitu dioper atau disimpan
 - Lapisan: db
@@ -195,6 +209,8 @@ yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#706
 - Solusi yang dipakai: diterima di Rencana 1, karena perilakunya benar di kedua engine.
 - Biaya: belum terukur. Kandidat perbaikan di Rencana 2/4 kalau benchmark S3 menunjukkan biaya: entity hasil generate menyediakan finder bertipe sendiri (`all`, `find_by_id`) yang memanggil `Connection#query` langsung, bukan lewat blok generik pool.
 - Upstream: tidak perlu (sifat inferensi return per method, bukan per pemanggilan)
+- **Uji ulang 2026-10-07 ~11:12 WIB** (spinel `ae2c38c71`): `--warn-widen` pada `examples/blog/test/post_model_test.rb` masih melaporkan `Pool#with`, `query_all`, `query_first` (paket sqlite) dan `Model#destroy`. Tidak berubah, diterima.
+
 
 ## K-009: `StringIO` gagal link karena izin file instalasi
 - Lapisan: testing (lingkungan)
@@ -310,6 +326,7 @@ yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#706
 - Solusi yang dipakai: `m.version.to_s` sebelum `==` dan interpolasi, sehingga operand selalu `String`. **Aturan umum:** di kode framework yang bisa mati di sebagian program, paksa tipe primitif (`to_s`, `to_i`) sebelum `==` dan interpolasi pada nilai dari receiver generik.
 - Biaya: nol
 - Upstream: **diperbaiki** (lihat Fix di bawah). Catatan lama: "perlu isolasi lebih dulu", sudah terisolasi 2026-10-02.
+- **Workaround dicabut 2026-10-07 ~11:12 WIB** (`framework/kilau/model/migrator.rb`, baris 30, 41, 53). Dengan `spinel` `ae2c38c71` (terpasang), `migrator_test`, `http_server_test`, `schema_cli_test` dan 13 tes framework lainnya lolos sama dengan `.expected`. Compiler lama `ea9feecfe` tidak lagi dipakai, jadi tidak ada uji silang.
 - **Terisolasi 2026-10-02** (spinel master `2be1b3c59`): pemicunya adalah method yang **selalu raise** (`Migration#version` di kelas dasar), bukan kode mati. Analyzer mengetiknya `TY_VOID` ("ty1" di pesan penolakan). Codegen menolak `==`/`!=` dan interpolasi atas call VOID. Repro minimal (19 baris, receiver poly lewat `@ms.map { |m| ... }`) gagal compile di master, sedangkan CRuby mencetak `raised subclass` dua kali. Penolakan bergantung pada isi program lain karena subclass yang meng-override `version` (dengan String) membuat dispatch poly bertipe String, dan tes HTTP tidak punya migrasi.
 - **Fix**: `call_never_returns` (`src/codegen_util.c`), dipakai emitter interpolasi (diperlakukan seperti arm `sp_raise_*`, #4092) dan emitter `==`. VOID saja tidak cukup: `puts`/`print`/`p`/`warn` tanpa receiver juga VOID tapi mengembalikan nil (`puts(...) == nil` tetap `true`). Commit `62f363590`, branch spinel `k014-raise-only-method-value`, PR upstream **matz/spinel#7064**, **di-merge 2026-10-02 09:33 WIB** (`417abb662`). **Perluasan** ke operator, call method dan rantai (`m.version + "x"`, `< 3`, `.size`, `m.version - 1 > 2`): branch `k014b-raise-only-method-more-positions`, **matz/spinel#7095 di-merge 2026-10-02 12:22 WIB** (`09e78f57a`; fork #16 ditutup). Local assignment `x = m.version` sudah berfungsi sejak awal. Workaround `.to_s` di `migrator.rb` (baris 30, 41, 53) bisa dicabut **setelah** compiler Kilau dinaikkan ke spinel yang berisi `417abb662`.
 
@@ -410,6 +427,8 @@ yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#706
 - Klasifikasi: bug-tooling
 - Upstream: **PR https://github.com/matz/spinel/pull/5983 di-merge oleh matz 2026-09-30 00:23 WIB** (merge commit `c5898078e`; dibuka ~00:20 WIB, commit `265ed2fea`, branch `spin-compiler-mtime-through-path`). `spinel_bin` sekarang mencari `$0` polos lewat PATH (fungsi `which` di `spin.rb`) sebelum `expand_path`. Tes baru di `tools/spin_e2e.sh` gagal sebelum dan lulus sesudah perbaikan. `make check`: semua leg lulus; corpus 4.647 pass, 1 fail (`hash_store_operand_gc_root`, timeout 10 dtk saat run paralel, lulus 5/5 bila dijalankan sendiri).
 - Tindak lanjut: CodeRabbit menemukan bahwa `which` melewati komponen PATH kosong (`:` di awal/akhir, `::`), padahal shell membacanya sebagai direktori kerja. Sejak #5983, `spinel_bin` bisa memakai compiler di sebelah `spin` lain yang lebih belakang di PATH. Perbaikan (`split(":", -1)`, komponen kosong → `.`) + tes e2e dengan `spin` decoy yang compiler-nya selalu gagal (merah sebelum, hijau sesudah): **PR https://github.com/matz/spinel/pull/5997 di-merge oleh matz 2026-09-30 01:24 WIB** (commit `4fafd9ba4`; CI hijau, CodeRabbit tanpa temuan). Hanya `spin-check` yang dijalankan (tidak ada perubahan di `src/`/`lib/`).
+- **Uji ulang 2026-10-07 ~11:12 WIB** (spinel `ae2c38c71`): `spin test` dengan path absolut dan dengan nama polos lewat PATH sama-sama membangun ulang setelah `bin/spinel` disentuh. Diuji dengan proyek spin kecil di scratch. Diperbaiki.
+
 
 ## K-019: value object yang di-`yield` ke blok berbentuk proc gagal dikompilasi (awalnya dikira soal alias)
 - Lapisan: compiler (codegen alias + yield)
@@ -435,6 +454,8 @@ yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#706
 - Klasifikasi: bug-compiler (nilai salah diam-diam + C gagal)
 - Solusi yang dipakai: tidak perlu di Kilau (pola ini tidak dipakai)
 - Upstream: **matz/spinel#6092 merged** (2026-09-30 06:53 WIB)
+- **Uji ulang 2026-10-07 ~11:12 WIB** (spinel `ae2c38c71`): repro tiga kasus (`next true`, `next 5`) sama dengan CRuby (`true`, `true`, `5`). Diperbaiki.
+
 
 ## K-021: method `module_function` yang `yield` + `rescue`, dipanggil tanpa receiver setelah `include` top level dengan blok yang selalu raise, menghasilkan C tidak valid
 - Lapisan: compiler (inline method modul via top-level include, jalur baru dari matz/spinel#6029)

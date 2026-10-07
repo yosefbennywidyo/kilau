@@ -27,7 +27,7 @@ module Kilau
         next if done.include?(migration.version)
         in_transaction do
           migration.up(@schema)
-          @conn.execute("INSERT INTO schema_migrations (version) VALUES (?)", Sqlite::Binds.new.text(migration.version.to_s))
+          @conn.execute("INSERT INTO schema_migrations (version) VALUES (?)", Sqlite::Binds.new.text(migration.version))
         end
         applied << migration.version
       end
@@ -38,7 +38,7 @@ module Kilau
     def rollback
       last = applied_versions.last
       return nil if last.nil?
-      migration = @migrations.find { |m| m.version.to_s == last }
+      migration = @migrations.find { |m| m.version == last }
       raise Sqlite::Error, "no migration defines applied version #{last}" if migration.nil?
       in_transaction do
         migration.down(@schema)
@@ -50,7 +50,7 @@ module Kilau
     def status_lines
       done = applied_versions
       @migrations.map do |m|
-        version = m.version.to_s
+        version = m.version
         state = done.include?(version) ? "up  " : "down"
         "#{state} #{version}"
       end
