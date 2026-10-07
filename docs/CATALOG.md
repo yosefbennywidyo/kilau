@@ -1,6 +1,6 @@
 # Katalog batas AOT
 
-Compiler: spinel 2026.09.12+6323 (ae2c38c71) sejak 2026-10-07 ~11:10 WIB (sebelumnya `ea9feecfe` sejak 2026-09-30 14:29 WIB, `35ddccadb` sejak 06:43, `6626c0f05` sejak 2026-09-29 23:08, `1ba12fb74` sejak 13:45). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
+Compiler: spinel 2026.09.12+6403 (f3da0151f) sejak 2026-10-07 ~16:27 WIB (sebelumnya `ae2c38c71` sejak 11:10, `ea9feecfe` sejak 2026-09-30 14:29 WIB, `35ddccadb` sejak 06:43, `6626c0f05` sejak 2026-09-29 23:08, `1ba12fb74` sejak 13:45). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
 Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRuby
 4.0.6 sebagai pembanding.
 
@@ -15,7 +15,10 @@ Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRub
 | K-005 | `--warn-widen` pada `sqlite/binds.rb` dan `connection_spinel.rb` masih melebar. File repro lama `db_connection_test.rb` sudah tidak ada | tidak berubah, diterima |
 | K-008 | `--warn-widen` masih melebar di `Pool#with`, `query_all`, `query_first`, dan `Model#destroy` | tidak berubah, diterima |
 
-**Regresi terbuka:** dengan `spinel` `ae2c38c71` dan flag `--require-gate` (yang disertakan `spin flags`), `Kernel.require "sqlite3"` di cabang `RUBY_ENGINE` yang mati ditolak (`cannot load such file -- sqlite3`). Compiler terpasang `2026.09.12+2826` menerimanya. Akibatnya `make test` di kilau gagal pada tahap `tool` (`spin build`). Repro minimal: `if RUBY_ENGINE == "spinel" ... else gem "sqlite3"; Kernel.require "sqlite3" end` dengan `spinel --require-gate`. Belum dilaporkan upstream.
+**Regresi K-003b (lihat entri K-003 di bawah untuk detail):** ditemukan 2026-10-07, fix terkirim
+sebagai **matz/spinel#7807** hari yang sama (gate ter-shard hijau penuh, CodeRabbit bersih) dan
+**di-merge Matz pukul 08:45:32Z** (`b4d30a1d3`, master `f3da0151f`). Compiler kilau belum
+dinaikkan ke versi yang berisi fix ini — langkah berikutnya.
 
 
 Diuji dengan spinel `2026.09.12+2124 (1ba12fb74)`, yang 745 commit di depan `38dc57dd`.
@@ -119,7 +122,30 @@ yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#706
 - Klasifikasi: batasan-terdokumentasi (require di-resolve saat parse, sebelum cabang dibuang)
 - Solusi yang dipakai: `gem "sqlite3"` lalu `Kernel.require "sqlite3"` di cabang CRuby. `Kernel.require` tidak di-resolve spinel saat parse. Tetapi `Kernel.require` adalah require inti yang melewati override RubyGems, jadi `gem` harus mengaktifkan load path gem lebih dulu. Tanpa itu, CRuby gagal dengan `cannot load such file -- sqlite3 (LoadError)`. Diverifikasi 2026-09-28 di kedua engine.
 - Biaya: nol; dua baris
-- Upstream: bisa diusulkan agar cabang `RUBY_ENGINE` yang mati tidak me-resolve `require`; belum dilaporkan
+- Upstream: diusulkan sebagian — lihat **K-003b** di bawah untuk workaround `Kernel.require` sendiri
+
+**K-003b — regresi pada workaround `Kernel.require` (ditemukan 2026-10-07, FIXED)**
+- Yang terjadi: dengan spinel master `ae2c38c71`, workaround `Kernel.require "sqlite3"` di atas
+  (dipakai persis begini oleh paket `spinel-sqlite` v0.1.0 yang dipakai kilau) sendiri mulai
+  ditolak di bawah `--require-gate` (yang selalu dipakai `spin build`/`spin test`):
+  `cannot load such file -- sqlite3`, walau cabangnya tidak pernah jalan. `make test` kilau
+  gagal di tahap `tool`.
+- Akar penyebab (dibuktikan lewat bisect): commit spinel `0c0f61fff` ("`Kernel.require "x"` is
+  the bare require", 2026-09-30) membuat `Kernel.require` diresolve sebagai require polos
+  secara tekstual, tapi skip cabang mati saat itu hanya menangkap bentuk `require` polos.
+  Perbaikan lain (`5fbdf2411`, 2026-10-01) menutup lubang untuk `require` polos tapi tidak
+  untuk `Kernel.require`, jadi tetap rusak sejak 2026-09-30.
+- Repro dan analisis lengkap: spinel `DRAFT_REQUIRE_GATE_REGRESSION.md` (repo root, status
+  RESOLVED).
+- Upstream: **matz/spinel#7807** (dibuka 2026-10-07, langsung sebagai PR tanpa issue terpisah —
+  CONTRIBUTING.md: "a pull request needs no issue"), branch fork `kernel-require-dead-branch`.
+  Gate ter-shard di fork hijau penuh (run 37585630372: korpus 6.251 test, infer-test,
+  scale-test, optcarrot, bench, rubyspec). **Di-merge Matz pukul 08:45:32Z** (`b4d30a1d3`,
+  master `f3da0151f`).
+- **Diuji ulang 2026-10-07 ~16:30 WIB** dengan compiler terpasang `f3da0151f`: `make test`
+  (13/13 framework, 8/8 tool, 4/4 blog), `make test-cruby` (semua `ok`), `make e2e` di
+  `examples/blog` (`blog` dan `blog_routes`, semua `ok` termasuk 200 request konkuren) —
+  semuanya lolos penuh tanpa workaround, dari build bersih. **K-003b: Fixed.**
 
 ## K-004: method yang menerima blok, lewat `include` di top level, tidak di-emit
 - Lapisan: testing (menimpa semua lapisan yang memakai helper modul)

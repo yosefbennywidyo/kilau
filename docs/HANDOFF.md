@@ -2,6 +2,64 @@
 
 Entri terbaru di atas.
 
+## 2026-10-07 ~15:50 WIB — matz/spinel#7807 MERGED
+
+**Status**
+- **Merge** pukul 08:45:32Z (`b4d30a1d3`), masuk master `f3da0151f`. Lihat entri di bawah untuk
+  detail regresi dan fix.
+- Branch `kernel-require-dead-branch` dan `gate/kernel-require-dead-branch` dihapus (lokal dan
+  fork), sesuai alur yang sudah dipakai untuk PR-PR sebelumnya.
+- Otomasi trailer `Gate:` yang ditambahkan ke `gate-shards-17job.yml` (job `trailer`: hitung
+  `git merge-tree` + jumlah test, amend commit, force-push ke fork — supaya check
+  `gate-trailer.yml` upstream memberi label `gate: verified`) **belum terbukti jalan sampai
+  akhir**: run pertama gagal karena bug kecil (`grep -oE ... -P`, flag bertentangan; sudah
+  diperbaiki jadi `-oP`), run kedua dibatalkan begitu diketahui PR sudah merge — push trailer
+  ke branch PR yang sudah ditutup jadi tidak berguna. Mekanismenya tersimpan di skill
+  `spinel-notes` untuk PR berikutnya, masih berstatus belum diverifikasi end-to-end.
+
+**Langkah berikutnya — selesai 2026-10-07 ~16:30 WIB**
+1. ~~`sudo make install` spinel master `f3da0151f`~~ selesai, compiler terpasang `f3da0151f`.
+2. ~~Jalankan `make test`/`make test-cruby`/`make e2e` penuh~~ selesai, **semua lolos tanpa
+   workaround**: `make test` 13/13 framework + 8/8 tool + 4/4 blog; `make test-cruby` semua
+   `ok`; `make e2e` (`blog` + `blog_routes`) semua `ok`. Build bersih (`rm -rf */build`
+   sebelum uji).
+3. ~~Tandai K-003b "Fixed"~~ sudah ditandai di `docs/CATALOG.md`.
+
+Tidak ada langkah tersisa dari upaya naikkan compiler ini. Memory soal otomasi trailer `Gate:`
+(belum diverifikasi end-to-end) tercatat di `feedback_spinel_gate_trailer_automation.md` untuk
+PR spinel berikutnya.
+
+## 2026-10-07 ~14:30 WIB — Upaya naikkan compiler menemukan regresi `--require-gate`; K-014 dicabut; fix terkirim (#7807)
+
+**Status**
+- Build spinel master `ae2c38c71` berhasil dan diinstal (`sudo make install`). Tapi `make test`
+  kilau gagal di tahap `tool` (`spin build`): `cannot load such file -- sqlite3`. Penyebabnya
+  **bukan** kode kilau — lihat **K-003b** di `docs/CATALOG.md`: `Kernel.require "sqlite3"` di
+  paket `spinel-sqlite` v0.1.0 (pola yang sama dianjurkan K-003 sendiri) ditolak di bawah
+  `--require-gate`, regresi dari commit spinel `0c0f61fff`.
+- Fix dikirim hari yang sama sebagai **matz/spinel#7807** (langsung PR, tanpa issue, sesuai
+  CONTRIBUTING.md upstream). Gate ter-shard di fork hijau penuh (korpus 6.251 test,
+  infer-test/scale-test/optcarrot/bench/rubyspec), CodeRabbit bersih. Menunggu Matz.
+- **Workaround K-014 (`.to_s` di `framework/kilau/model/migrator.rb` baris 30, 41, 53) sudah
+  dicabut** (commit kilau `429876e`) dan **diverifikasi lolos** — tapi lewat kompilasi langsung
+  per file (`spinel $(spin flags | sed 's/--require-gate//') ...`), bukan `make test`, karena
+  regresi di atas memblokir build `tool`. 13 tes framework, 16 tool, 8 blog semua cocok dengan
+  `.expected`.
+- K-018 dan K-020 juga diuji ulang dan dipastikan diperbaiki upstream (lihat `docs/CATALOG.md`).
+  K-005 dan K-008 tetap melebar sesuai desain yang diterima.
+- Compiler kilau **belum dinaikkan resmi**: compiler terpasang di `/usr/local` adalah `ae2c38c71`
+  tanpa fix #7807 (belum di-install ulang setelah fix ditulis, menunggu merge). `make test`
+  kilau tetap gagal sampai #7807 merge dan compiler di-install ulang.
+- Dicatat juga: draf analisis regresi dipindah dari scratchpad sesi ke
+  `~/apps/me/gems/spinel/DRAFT_REQUIRE_GATE_REGRESSION.md` (status RESOLVED, bukan lagi draf).
+
+**Langkah berikutnya**
+1. Tunggu #7807 merge di matz/spinel.
+2. `sudo make install` ulang spinel master yang berisi `#7807`.
+3. Jalankan `make test`/`make test-cruby`/`make e2e` penuh (sekarang seharusnya tidak lagi
+   diblokir regresi `--require-gate`).
+4. Tandai K-003b "Fixed" di `docs/CATALOG.md` setelah merge dan uji ulang.
+
 ## 2026-10-02 13:15 WIB — K-009, K-014(b), K-024b, K-025(b bag. 1) merged; K-025b bag. 2 terbuka (#7158)
 
 **Status**
