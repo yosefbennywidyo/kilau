@@ -102,7 +102,8 @@ yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#706
 - Klasifikasi: batasan-terdokumentasi (spinel docs/limitations.md: tambahan parsing `require "time"`)
 - Solusi yang dipakai: kolom INTEGER berisi epoch detik; dibaca dengan `Time.at`
 - Biaya: timestamp di CLI `sqlite3` perlu `datetime(col, 'unixepoch')` agar terbaca
-- Upstream: layak diusulkan agar compile menolak `Time.parse`; belum dilaporkan. Per 2026-10-02 (spinel `cd9cc4146`) runtime sudah raise `undefined method 'parse' for class Time (NoMethodError)` (dulu `to_i for unknown`), tapi compile masih diam.
+- Upstream: **diperbaiki** (matz/spinel#8029, di-merge 2026-10-08 10:13 WIB). `Time.parse`/`Time.strptime` sekarang ditolak saat compile, bukan `NoMethodError` saat runtime; penolakan dikunci ke rantai method `Time` sendiri (bukan sembarang kelas bernama `Time`). Follow-up **matz/spinel#8115** (di-merge 2026-10-08 21:50 WIB) membuat penolakan ini bisa dideferred lewat `--defer-refusals` seperti penolakan lain.
+- **Uji ulang 2026-10-09** dengan spinel master `961718cc9`: `repro/k001_time_parse.rb` kini ditolak saat compile (bukan lagi lolos tanpa peringatan). **K-001: Fixed.**
 
 ## K-002: `YAML` tidak tersedia
 - Lapisan: config
@@ -557,3 +558,13 @@ yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#706
   - Bagian 1 (hapus aturan tolak Array/Hash): **matz/spinel#7096 di-merge 2026-10-02 12:22 WIB** (`9d889fd26`).
   - Bagian 2 (site lain dijawab builtin-nya sendiri lewat `an_yield_site_builtin_answer`, face re-inference, hanya bila ada reopen pada rantai): **matz/spinel#7158** (dibuka 2026-10-02 13:10 WIB, terbuka). Gate sharded di fork: https://github.com/yosefbennywidyo/spinel/actions/runs/36971021776 (corpus 5.583, rubyspec 2.446, bench 64, optcarrot 59662; C optcarrot dan 64 benchmark identik).
   - Batas yang diketahui: `yield.include?(v)` dengan `v` argumen poly masih menjalankan reopen Array di site String (sama seperti master).
+
+## K-025c: `yield.include?(poly_arg)` dengan `Array#include?` dibuka ulang gagal compile C (lanjutan batas K-025b)
+- Lapisan: compiler (codegen per site untuk nilai `yield`, sama keluarga dengan K-024/K-025b)
+- Ditemukan: 2026-10-09, saat memeriksa batas "diketahui" yang dicatat K-025b.
+- Yang terjadi (spinel master `961718cc9`): `class Array; def include?(v) = "reopened-array"; end`, lalu method `w(arg) = yield.include?(arg)` dengan satu call site `w(arg) { "abcxdef" }` (site `yield` selalu `String`) dan `arg` poly (dibaca dari array campuran) → **gagal compile C**: `assigning to 'sp_RbVal' from incompatible type 'sp_bool' (aka 'bool')`. CRuby: `true`.
+- Mekanisme (diduga dari C yang di-emit): karena `Array#include?` dibuka ulang di tempat lain pada program, analyzer melebarkan tipe hasil pemanggilan ini ke poly (`sp_RbVal`), tapi emitter untuk site String tetap memanggil `sp_str_include` (native, `bool`) dan menugaskannya langsung ke slot `sp_RbVal` tanpa `sp_box_bool`. Sekeluarga dengan mekanisme K-024/K-025b: hook per site harus menjawab tipe boxed yang sesuai dengan slot yang dipilih analyzer, bukan tipe native method aslinya.
+- Repro: **repro/k025c_yield_include_poly_arg_reopen.rb**
+- Klasifikasi: bug-compiler (C tidak valid, bukan sekadar nilai salah)
+- Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
+- Upstream: belum dilaporkan; kandidat laporan berikutnya.
