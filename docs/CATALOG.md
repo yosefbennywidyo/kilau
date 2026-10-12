@@ -1,6 +1,11 @@
 # Katalog batas AOT
 
-Compiler: spinel 2026.09.12+6403 (f3da0151f) sejak 2026-10-07 ~16:27 WIB (sebelumnya `ae2c38c71` sejak 11:10, `ea9feecfe` sejak 2026-09-30 14:29 WIB, `35ddccadb` sejak 06:43, `6626c0f05` sejak 2026-09-29 23:08, `1ba12fb74` sejak 13:45). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
+Compiler: spinel master `46a9efb16` sejak 2026-10-12 ~17:30 WIB, dibangun bersih di worktree
+terpisah (bukan `/usr/local/bin/spinel` terpasang, lihat uji ulang di bawah untuk detail).
+Sebelumnya `f3da0151f` sejak 2026-10-07 ~16:27 WIB (sebelumnya `ae2c38c71` sejak 11:10,
+`ea9feecfe` sejak 2026-09-30 14:29 WIB, `35ddccadb` sejak 06:43, `6626c0f05` sejak 2026-09-29
+23:08, `1ba12fb74` sejak 13:45). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379
+(38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
 Repro dijalankan dengan `spinel --require-gate` (seperti `spin build`), dan CRuby
 4.0.6 sebagai pembanding.
 
@@ -79,6 +84,25 @@ worktree terpisah, `--require-gate`, semua `repro/*.rb`, pembanding CRuby 4.0.6)
 K-014 tidak punya file repro di `repro/`. Buktinya diambil dari test spinel di master
 yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#7064) dan
 `raise_only_method_more_positions` (#7095) semuanya PASS.
+
+**Uji ulang 2026-10-12 ~17:42 WIB** dengan spinel master `46a9efb16` (build bersih di
+worktree terpisah -- `rm -rf build lib/libspinel_rt.a bin/spinel`, lalu `make -j8
+bin/spinel lib/libspinel_rt.a` --, `--require-gate`, semua `repro/*.rb`, pembanding
+CRuby 4.0.6). Dipicu permintaan user "cek apakah ada regresi di kilau" setelah
+matz/spinel#8650 (generate `respond_to?` tables + self-check Range/Symbol/Proc/
+Exception) merge ke master:
+
+| Hasil | K |
+|---|---|
+| sama dengan CRuby | K-004, K-009, K-010, K-011, K-013, K-015 (`user_each`), K-016, K-019, K-021, K-022, K-024, K-025, K-025c |
+| sama secara makna | K-007 (pesan sama, backtrace beda) |
+| batasan, sesuai harapan | K-001, K-002, K-003, K-006 |
+| ditolak saat compile, memang desainnya | K-023 (#6162) |
+| tidak diuji mandiri | `k015_endpoint_save_crash` |
+| **REGRESI, lalu diperbaiki ulang** | **K-017** -- ditemukan 2026-10-12 ~17:50, diperbaiki dan merge sebagai matz/spinel#8679 pada hari yang sama (~21:37 WIB); lihat entrinya untuk akar masalah sesungguhnya (bukan "elsif dua argumen" seperti diagnosis awal) |
+| batasan tak berubah (bukan regresi baru) | K-026 -- masih `false/false/false/false`, persis seperti terakhir didokumentasikan |
+
+Tidak ada regresi baru di luar K-017.
 
 ## Jawaban riset
 
@@ -443,7 +467,59 @@ yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#706
 - **Verifikasi (2026-09-29 23:10 WIB)**: dengan spinel `6626c0f05` (berisi `dca09ca13`), `repro/k017_elsif_argument_evaluated_early.rb` keluar 0 dengan output sama persis dengan CRuby; `1ba12fb74` masih `nil given to int`. Suite Kilau hijau (14/14, 8/8, 4/4, CRuby 26/26).
 - Solusi yang dipakai: dulu bentuk `else` + variabel + `to_i`. Sejak 2026-09-29 23:20 WIB `Model#save` kembali ke bentuk `elsif … == 0` (butuh spinel ≥ `dca09ca13`); suite 14/14, 8/8, 4/4, CRuby 26/26.
 - Biaya: nol
-- Upstream: **diperbaiki** (matz/spinel#5789)
+- Upstream: **diperbaiki** (matz/spinel#5789) -- **REGRESI ditemukan ulang 2026-10-12
+  ~17:50 WIB, lalu diperbaiki ulang dan di-merge 2026-10-12 ~21:37 WIB
+  (matz/spinel#8679)**. Lihat blok di bawah untuk kronologi lengkap, termasuk
+  koreksi diagnosis awal yang salah arah.
+
+**Regresi, 2026-10-12 ~17:50 WIB** (spinel master `46a9efb16`, 73 commit di depan `9c2582011`,
+jauh setelah `dca09ca13`): `repro/k017_elsif_argument_evaluated_early.rb` kembali gagal
+dengan persis bug ASLI yang dijelaskan di komentar file itu sendiri (`update_binds
+called` lalu `nil given to int`), bukan output CRuby. Test resmi `#5789`
+(`test/elsif_condition_args_wait_for_their_branch.rb`) tetap LULUS tanpa perubahan di
+spinel master yang sama, jadi fix `05a5ebef6` sendiri tidak di-revert.
+
+**Diagnosis awal (salah arah, dikoreksi di bawah)**: dikira bentuk `elsif` DUA ARGUMEN
+(`db.execute("update", update_binds)`, literal string + panggilan method) adalah
+pemicunya, karena reduksi argumen tunggal (`elsif update_binds`) sempat lolos benar.
+Repro minimal pertama disimpan sebagai **repro/k017b_elsif_two_arg_call_evaluated_early.rb**.
+
+**Akar masalah sesungguhnya (ditemukan 2026-10-12 ~19:00-20:30 WIB, lewat instrumentasi
+debug sementara di `nullable_int_value`/`src/analyze.c`)**: bukan soal jumlah argumen
+`elsif` sama sekali -- bentuk dua-argumen itu cuma kebetulan cocok dengan bentuk repro
+asli. Bug sesungguhnya: **bare self-call ke method `attr_reader`** (`id.nil?` tanpa
+`self.`) tidak mewarisi fakta nullability ivar-nya dengan benar, saat ivar yang
+sama di-assign nilai konkret non-nil di CABANG YANG SAMA (`self.id = db.insert(...)`).
+`if self.id.nil?` (receiver eksplisit, method sama) selalu menjawab benar --
+`nullable_int_value`'s cabang `CallNode` punya dua jalur: untuk receiver eksplisit,
+re-derive langsung dari `ivar_nullable_int[iv]`; untuk bare self-call, hanya percaya
+`scope.ret_nullable_int` milik method `id` yang di-resolve -- dan method getter
+sintetis (`def id = @id`) TIDAK PERNAH ditandai `ret_nullable_int` oleh fixpoint umum
+begitu ada sibling-write yang menetapkan tipe ivar jadi Integer/Float konkret.
+Direduksi ke 12 baris murni (tanpa kaitan sama sekali dengan `elsif`, cukup `if
+id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
+- **Bug kedua, ditemukan sendiri lewat gate run fork sebelum sampai PR**: fix pertama
+  (menyamakan jalur re-derivasi untuk bare self-call) salah memukul rata ke member
+  `Struct.new`/`Data.define` juga -- heuristik `ivar_assigned_in_initialize`
+  (dipakai bersyarat untuk tipe Float) menjawab `false` untuk SETIAP member struct
+  (karena constructor-nya sintetis, bukan `def initialize` literal), salah
+  menandai method reader Float milik struct sebagai nullable (`sp_ofloat`) padahal
+  codegen struct-nya sendiri mengembalikan `sp_float` biasa -- C type mismatch,
+  ketahuan dari dua test korpus spinel (`issue_2872`, `struct_block_overrides_bracket`)
+  gagal compile di gate run fork pertama. Diperbaiki dengan menambah pengecualian
+  `is_struct`, lalu diverifikasi ulang: 58 file test (ivar/nullable/attr_reader +
+  struct/Data) cocok CRuby, gate fork hijau 18/18.
+- Repro minimal final: **test/bare_self_call_reader_nil_check_sibling_write.rb**
+  (ditambahkan ke suite resmi spinel sendiri, bukan `repro/` kilau, karena ini
+  murni bug compiler tanpa kaitan konteks kilau).
+- **Upstream: diperbaiki, di-merge** -- **matz/spinel#8679** (judul: "A bare
+  attr_reader self-call's nil check answers per call, not per method"), di-merge
+  oleh matz 2026-10-12 ~21:37 WIB (merge commit `e07cb990e`), diverifikasi masuk
+  `master` persis sesuai PR (`git diff <parent> <merge-commit>` = 3 file, 68 baris,
+  cocok diff PR). Gate fork hijau 18/18 sebelum PR dibuka (`Gate: green tree
+  5aeefa3cc744 master 31ccc270711c (linux-x86_64 gcc-13.3.0) tests 7113/0`).
+  CI upstream (clang) pass 27m13s, CodeRabbit tanpa temuan. **Compiler Kilau belum
+  dinaikkan ke versi yang berisi fix ini** -- langkah berikutnya.
 
 ## K-018: `spin test` memakai ulang binary tes lama setelah compiler di-upgrade
 - Lapisan: tooling (`spin`)
@@ -578,3 +654,7 @@ yang sama: `raise_only_method_value`, `raise_only_method_value_overridden` (#706
 - Klasifikasi: bug-compiler (nilai salah diam-diam untuk `respond_to?`)
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
 - Upstream: **belum diajukan**. Sengaja TIDAK ditambal di #8153 (file/mekanisme berbeda, akan memperluas scope PR itu di luar yang diminta — lihat bagian "Scope notes" di PR tersebut). Next step: telusuri akar penyebab di `rt_probe_answer`/`respond_to_static_answer`, lalu buka PR terpisah dengan repro ini sebagai test.
+- **Diverifikasi ulang 2026-10-12 ~17:48 WIB** dengan spinel master `46a9efb16` (setelah
+  matz/spinel#8650, generator `respond_to?` untuk receiver BOXED): gap tidak berubah,
+  masih `false/false/false/false` — #8650 memang tidak menyentuh `respond_to_static_answer`/
+  `rt_probe_answer`, sesuai yang didokumentasikan. Bukan regresi baru.
