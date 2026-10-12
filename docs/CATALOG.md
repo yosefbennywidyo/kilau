@@ -1,8 +1,10 @@
 # Katalog batas AOT
 
-Compiler: spinel master `46a9efb16` sejak 2026-10-12 ~17:30 WIB, dibangun bersih di worktree
-terpisah (bukan `/usr/local/bin/spinel` terpasang, lihat uji ulang di bawah untuk detail).
-Sebelumnya `f3da0151f` sejak 2026-10-07 ~16:27 WIB (sebelumnya `ae2c38c71` sejak 11:10,
+Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.09.12+8734 (35aea8ccc)`
+sejak 2026-10-13 (`sudo make install`, berisi fix K-027 #8720 dan K-017 #8679).
+Sebelumnya master `46a9efb16` sejak 2026-10-12 ~17:30 WIB, dibangun bersih di worktree
+terpisah (bukan `/usr/local/bin/spinel` terpasang saat itu, lihat uji ulang di bawah
+untuk detail). Sebelumnya `f3da0151f` sejak 2026-10-07 ~16:27 WIB (sebelumnya `ae2c38c71` sejak 11:10,
 `ea9feecfe` sejak 2026-09-30 14:29 WIB, `35ddccadb` sejak 06:43, `6626c0f05` sejak 2026-09-29
 23:08, `1ba12fb74` sejak 13:45). Entri K-001 s.d. K-017 ditemukan dengan 2026.09.12+1379
 (38dc57dd); lihat tabel status di bawah. Format entri: spec §6.3.
@@ -669,4 +671,6 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Solusi yang dipakai: upgrade compiler Kilau begitu fix ini masuk master (lihat status instalasi di bawah)
 - **Akar masalah DITEMUKAN dan DIPERBAIKI sama hari (2026-10-12)**: `cls_fact_excludes` memperlakukan fakta kelas yang kosong (`s->n == 0`) sama dengan tak ada fakta sama sekali (`cls_fact_node` sudah menjawab NULL untuk CF_ALL) — jadi tidak pernah mengecualikan apa pun berdasarkan fakta kosong itu. Fakta yang benar-benar menyempit ke satu atau lebih kelas nyata (`s->n >= 1`) tidak disentuh, jadi optimisasi #8530 tetap berlaku untuk kasus umum. Dua percobaan fix sebelumnya (melebarkan `cf_call_any`'s argument loop; fallback defensif di `comp_poly_candidates_at`) masing-masing TIDAK CUKUP karena setidaknya satu consumer lain (`emit_poly_user_arms_n`, `src/codegen_poly_plan.c`) memanggil `cls_fact_excludes` lagi secara independen, melewati ringkasan kandidat yang sudah diperbaiki — pelajaran DRY: patch primitive yang dibagi, bukan ringkasan tiap consumer.
 - Diverifikasi: oracle FFI (paket sqlite kilau asli) jalan sampai selesai; suite test Kilau penuh (25/25: framework, tool, examples/blog) LULUS, termasuk `migrator_test.rb`/`model_test.rb` yang tadinya gagal.
-- Upstream: **belum diajukan**, menunggu gate fork hijau (sedang berjalan saat entri ini ditulis) sebelum PR dibuka. Compiler Kilau yang TERPASANG (`/usr/local/bin/spinel`) BELUM dinaikkan ke versi berisi fix ini — butuh `sudo make install` manual oleh user (sama seperti upgrade K-017 sebelumnya), belum dilakukan.
+- Upstream: **diperbaiki, di-merge** — **matz/spinel#8720** (judul: "An empty class-fact answers like no fact, not like excluding every candidate"), di-merge oleh matz 2026-10-13 (merge commit `012325e97`). Gate fork hijau sebelum PR dibuka. CI upstream (clang, verify, CodeRabbit) semuanya pass, tanpa temuan.
+- **Follow-up biaya run-time dari matz**: fitur baru gate (#7501, `gate-costs`) melaporkan 32 slot jadi `boxed` di ~21-22 program setelah fix ini; matz menanyakan apakah ini biaya dari fix dan apakah menyentuh benchmark/optcarrot. Dicek lokal dengan `tools/repr_diff.sh`/`tools/c_costs.sh` terhadap merge-base: terkonfirmasi itu memang biaya fix ini (receiver yang kini benar membuka poly-dispatch butuh argumennya di-box untuk calling convention yang uniform), **0 menyentuh `benchmark/*.rb` (70 file) atau optcarrot**, tidak ada operasi O(len) baru di dalam loop — seluruhnya di program `test/`/`packages/*/test` yang namanya sendiri (`boxed_*`, `poly_*`, dll.) menunjukkan tujuannya memang menguji poly-dispatch. Dijawab di komentar PR: https://github.com/matz/spinel/pull/8720#issuecomment-6129642141
+- **Compiler Kilau sudah di-upgrade** (2026-10-13): `sudo make install` dijalankan user, `spinel -v` sekarang `2026.09.12+8734 (35aea8ccc)` (berisi `012325e97`, dikonfirmasi via `git merge-base --is-ancestor`). `make test` Kilau dijalankan ULANG dengan compiler yang benar-benar terinstall (bukan lagi worktree lokal): **25/25 LULUS** (13/13 framework, 8/8 tool, 4/4 examples/blog), termasuk `migrator_test.rb`/`model_test.rb`.
