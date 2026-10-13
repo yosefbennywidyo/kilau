@@ -41,7 +41,7 @@ module Kilau
       host = config.string("server.host")
       dispatcher = hooks.dispatcher(app_context)
       server = HTTP::Server.new(dispatcher, host, config.int("server.port"), config.bool("logger.requests"))
-      port = server.bind
+      port = server.listen
       puts "kilau: listening on http://#{host}:#{port} (#{environment})"
       $stdout.flush
       server.run

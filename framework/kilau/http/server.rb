@@ -15,7 +15,7 @@ module Kilau
       end
 
       # Opens the listening socket and returns its port (useful with 0).
-      def bind
+      def listen
         listener = TCPServer.new(@host, @port)
         @listener = listener
         listener.addr[1]
