@@ -28,6 +28,8 @@ expect "update via _method" "$(curl -s -o /dev/null -w '%{http_code}' --data-url
 expect "missing post is 404" "$(curl -s -o /dev/null -w '%{http_code}' $BASE/posts/999)" "404"
 expect "bad id is 400" "$(curl -s -o /dev/null -w '%{http_code}' $BASE/posts/abc)" "400"
 expect "HEAD on a parameterized path downloads 0 bytes of body" "$(curl -s -o /dev/null -w '%{size_download}' -I $BASE/posts/1)" "0"
+raw_head_404=$(printf 'HEAD /nope HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n' | nc 127.0.0.1 "$PORT")
+expect "HEAD to an unknown path sends no body on the raw wire (curl -I never reads a body, so this must be checked at the socket level)" "$(printf '%s' "$raw_head_404" | grep -c '<!doctype html>')" "0"
 expect "HEAD status matches GET status on a static path" "$(curl -s -o /dev/null -w '%{http_code}' -I $BASE/posts/new)" "$(curl -s -o /dev/null -w '%{http_code}' $BASE/posts/new)"
 expect "HEAD status matches GET status on a parameterized path" "$(curl -s -o /dev/null -w '%{http_code}' -I $BASE/posts/1)" "$(curl -s -o /dev/null -w '%{http_code}' $BASE/posts/1)"
 expect "PUT where only GET/POST are routed is 405 with Allow" "$(curl -s -o /dev/null -w '%{http_code}' -X PUT $BASE/posts)" "405"

@@ -19,6 +19,7 @@ T.check("_method=delete reaches the DELETE route") { client.delete("/notes/7").s
 T.check("an unknown path is 404") { client.get("/notes/7/edit").status == 404 }
 T.check("a verb without a route is 405 with Allow") { r = client.post("/notes", {}); r.status == 405 && r.headers["allow"] == "GET, HEAD" }
 T.check("an empty segment does not bind a parameter") { client.get("/notes//tags/red").status == 404 }
+T.check("HEAD to an unknown path has no body on the wire") { h = client.head("/notes/7/edit"); h.status == 404 && h.to_http(true).end_with?("\r\n\r\n") }
 T.check("HEAD on a static path matches GET's status with no body") do
   head = client.head("/notes"); get = client.get("/notes")
   head.status == get.status && head.to_http(true).include?("content-length: #{get.body.bytesize}") && !head.to_http(true).end_with?(get.body)

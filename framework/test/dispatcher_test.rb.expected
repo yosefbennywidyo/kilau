@@ -19,6 +19,8 @@ ok DELETE arrives as POST + _method
 ok HEAD on a static path matches GET's status with no body
 ok HEAD on a parameterized path matches GET's status with no body
 ok HEAD to a path with no GET is 405 with Allow: POST
+ok HEAD to a path with no GET has no body on the wire
+ok HEAD to an unknown path has no body on the wire
 ok POST to a GET+PATCH+DELETE-only path is 405 with Allow sorted and unique
 ok HEAD to a route that raises keeps the real status with no body
 ok OPTIONS on a routed path is 204 with Allow sorted and unique

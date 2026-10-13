@@ -23,11 +23,15 @@ module Kilau
         response = route.endpoint.call(@app_context, request)
         return verb == "HEAD" ? response.without_body : response
       end
-      return Dispatcher.error_response(404, "no route for #{verb} #{request.path}") if allowed.empty?
+      if allowed.empty?
+        response = Dispatcher.error_response(404, "no route for #{verb} #{request.path}")
+        return verb == "HEAD" ? response.without_body : response
+      end
       allowed << "HEAD" if allowed.include?("GET") && !allowed.include?("HEAD")
       allowed = allowed.uniq.sort
       return Dispatcher.options_response(allowed) if verb == "OPTIONS"
-      Dispatcher.method_not_allowed(allowed, verb, request.path)
+      response = Dispatcher.method_not_allowed(allowed, verb, request.path)
+      verb == "HEAD" ? response.without_body : response
     rescue Kilau::Error => e
       response = Dispatcher.error_response(e.status, e.message)
       request.request_method == "HEAD" ? response.without_body : response

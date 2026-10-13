@@ -79,6 +79,8 @@ T.check("HEAD on a parameterized path matches GET's status with no body") do
   head.status == get.status && head.to_http(true).include?("content-length: #{get.body.bytesize}") && !head.to_http(true).end_with?(get.body)
 end
 T.check("HEAD to a path with no GET is 405 with Allow: POST") { h = client.head("/notes/bulk/import"); h.status == 405 && h.headers["allow"] == "POST" }
+T.check("HEAD to a path with no GET has no body on the wire") { client.head("/notes/bulk/import").to_http(true).end_with?("\r\n\r\n") }
+T.check("HEAD to an unknown path has no body on the wire") { h = client.head("/nope"); h.status == 404 && h.to_http(true).end_with?("\r\n\r\n") }
 T.check("POST to a GET+PATCH+DELETE-only path is 405 with Allow sorted and unique") do
   r = client.post("/notes/7", {})
   r.status == 405 && r.headers["allow"] == "DELETE, GET, HEAD, PATCH"

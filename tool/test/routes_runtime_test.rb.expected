@@ -8,6 +8,7 @@ ok _method=delete reaches the DELETE route
 ok an unknown path is 404
 ok a verb without a route is 405 with Allow
 ok an empty segment does not bind a parameter
+ok HEAD to an unknown path has no body on the wire
 ok HEAD on a static path matches GET's status with no body
 ok HEAD on a parameterized path matches GET's status with no body
 ok OPTIONS on a routed path is 204 with Allow
