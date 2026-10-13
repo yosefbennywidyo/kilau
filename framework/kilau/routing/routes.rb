@@ -1,6 +1,7 @@
 module Kilau
   class Route
     attr_reader :verb, :pattern, :endpoint
+    attr_accessor :handler_label
 
     def initialize(verb, pattern, endpoint)
       @verb = verb
@@ -80,7 +81,10 @@ module Kilau
     end
 
     def add(routes)
-      routes.routes.each { |route| @routes << route }
+      routes.routes.each do |route|
+        route.handler_label = "#{route.verb} #{route.pattern}##{@routes.size}"
+        @routes << route
+      end
       self
     end
   end

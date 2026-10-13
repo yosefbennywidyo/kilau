@@ -45,6 +45,14 @@ T.check("a route captures its params") { route.match("/notes/7/edit") == { "id" 
 T.check("a route refuses a different shape") { route.match("/notes/7").nil? && route.match("/notes//edit").nil? }
 T.check("prefix and / make the prefix itself") { Kilau::Routes.new.prefix("/notes/").add("/", NotesController.get { |c, r| Kilau::Format.empty(204) }).routes[0].pattern == "/notes" }
 
+app = NotesApp.new
+labeled = app.routes.routes
+T.check("a route's handler_label is nil before AppRoutes assigns it") { Kilau::Route.new("GET", "/x", NotesController.get { |c, r| Kilau::Format.empty(204) }).handler_label.nil? }
+T.check("the first default route is labeled with index 0") { labeled[0].handler_label == "#{labeled[0].verb} #{labeled[0].pattern}#0" }
+T.check("the second default route is labeled with index 1") { labeled[1].handler_label == "#{labeled[1].verb} #{labeled[1].pattern}#1" }
+T.check("a route from the second composed controller keeps its own position") { labeled[labeled.size - 1].handler_label == "#{labeled[labeled.size - 1].verb} #{labeled[labeled.size - 1].pattern}##{labeled.size - 1}" }
+T.check("every label in the app is unique") { labeled.map { |route| route.handler_label }.uniq.size == labeled.size }
+
 db = Sqlite::Pool.new(":memory:", 1)
 app_context = Kilau::AppContext.new(db, Kilau::Config.parse("app:\n  name: notes\n", "test.yaml"), "test")
 client = Kilau::Testing::Client.new(NotesApp.new, app_context)

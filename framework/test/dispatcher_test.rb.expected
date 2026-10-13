@@ -3,6 +3,11 @@ ok a Hooks without routes raises NotImplementedError
 ok a route captures its params
 ok a route refuses a different shape
 ok prefix and / make the prefix itself
+ok a route's handler_label is nil before AppRoutes assigns it
+ok the first default route is labeled with index 0
+ok the second default route is labeled with index 1
+ok a route from the second composed controller keeps its own position
+ok every label in the app is unique
 ok _ping answers ok as JSON
 ok _health answers ok with a working database
 ok a GET reaches its handler with the query and app_context
