@@ -6,6 +6,7 @@ class NotesController < Kilau::Controller
     Kilau::Routes.new.prefix("notes")
       .add("/", get { |app_context, request| list(app_context, request) })
       .add("/", post { |app_context, request| add(app_context, request) })
+      .add("/bulk/import", post { |app_context, request| Kilau::Format.empty(204) })
       .add("/:id", get { |app_context, request| show(app_context, request) })
       .add("/:id", patch { |app_context, request| update(app_context, request) })
       .add("/:id", delete { |app_context, request| remove(app_context, request) })
@@ -67,8 +68,28 @@ T.check("path params reach the handler") { client.get("/notes/7").body == "note 
 T.check("a non-numeric id is 400") { client.get("/notes/abc").status == 400 }
 T.check("PATCH arrives as POST + _method") { client.patch("/notes/7", { "note[title]" => "new" }).body == "updated 7 to new" }
 T.check("DELETE arrives as POST + _method") { client.delete("/notes/7").status == 204 }
-T.check("_method=get does not change the verb") { client.post("/notes/7", { "_method" => "get" }).status == 404 }
-T.check("a POST where only GET is routed is 404") { client.post("/notes/7", {}).status == 404 }
+T.check("HEAD on a static path matches GET's status with no body") do
+  head = client.head("/notes")
+  get = client.get("/notes")
+  head.status == get.status && head.to_http(true).include?("content-length: #{get.body.bytesize}") && !head.to_http(true).end_with?(get.body)
+end
+T.check("HEAD on a parameterized path matches GET's status with no body") do
+  head = client.head("/notes/7")
+  get = client.get("/notes/7")
+  head.status == get.status && head.to_http(true).include?("content-length: #{get.body.bytesize}") && !head.to_http(true).end_with?(get.body)
+end
+T.check("HEAD to a path with no GET is 405 with Allow: POST") { h = client.head("/notes/bulk/import"); h.status == 405 && h.headers["allow"] == "POST" }
+T.check("POST to a GET+PATCH+DELETE-only path is 405 with Allow sorted and unique") do
+  r = client.post("/notes/7", {})
+  r.status == 405 && r.headers["allow"] == "DELETE, GET, HEAD, PATCH"
+end
+T.check("HEAD to a route that raises keeps the real status with no body") do
+  head = client.head("/crash/missing")
+  get = client.get("/crash/missing")
+  head.status == get.status && head.to_http(true).end_with?("\r\n\r\n")
+end
+T.check("_method=get does not change the verb") { client.post("/notes/7", { "_method" => "get" }).status == 405 }
+T.check("a POST where only GET is routed is 405") { client.post("/notes/7", {}).status == 405 }
 T.check("an unknown path is 404") { client.get("/nope").status == 404 }
 T.check("the 404 page escapes the path") { client.get("/<script>").body.include?("/&lt;script&gt;") }
 T.check("broken percent-encoding in a form is 400") { client.post("/notes", { "raw" => "x" }).status == 303 && client.get("/notes?q=%zz").status == 400 }
