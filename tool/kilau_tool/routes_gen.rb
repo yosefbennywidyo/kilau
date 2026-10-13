@@ -270,6 +270,23 @@ module KilauTool
       decls
     end
 
+    # The per-segment conditions and path_params pairs for one route's
+    # pattern, shared between the dispatch arm and its Allow bookkeeping.
+    def self.route_conditions(pattern)
+      segments = pattern.split("/").reject { |segment| segment.empty? }
+      conds = [segments.empty? ? "parts.empty?" : "parts.size == #{segments.size}"]
+      pairs = []
+      segments.each_with_index do |segment, j|
+        if segment.start_with?(":")
+          conds << "!parts[#{j}].empty?"
+          pairs << "\"#{segment[1, segment.size - 1]}\" => parts[#{j}]"
+        else
+          conds << "parts[#{j}] == #{segment.inspect}"
+        end
+      end
+      [conds, pairs]
+    end
+
     def self.render(scan)
       decls = ordered(scan)
       out = []
@@ -307,40 +324,34 @@ module KilauTool
       out << "      app_context = @app_context"
       out << "      parts = request.path.split(\"/\")"
       out << "      parts.shift"
-      out << "      case request.request_method"
-      VERBS.values.each do |verb|
-        calls = []
-        DEFAULTS.each { |d| calls << [d[1], "#{d[2]}(app_context, request)"] if d[0] == verb }
-        decls.each_with_index do |decl, i|
-          calls << [decl.pattern, "#{decl.klass}.kilau_route_#{i + DEFAULTS.size}(app_context, request)"] if decl.verb == verb
-        end
-        next if calls.empty?
-        out << "      when \"#{verb}\""
-        calls.each do |pattern, call|
-          segments = pattern.split("/").reject { |segment| segment.empty? }
-          conds = [segments.empty? ? "parts.empty?" : "parts.size == #{segments.size}"]
-          pairs = []
-          segments.each_with_index do |segment, j|
-            if segment.start_with?(":")
-              conds << "!parts[#{j}].empty?"
-              pairs << "\"#{segment[1, segment.size - 1]}\" => parts[#{j}]"
-            else
-              conds << "parts[#{j}] == #{segment.inspect}"
-            end
-          end
-          out << "        if #{conds.join(" && ")}"
-          out << "          request.path_params = #{pairs.empty? ? "{}" : "{ #{pairs.join(", ")} }"}"
-          out << "          return #{call}"
-          out << "        end"
-        end
+      out << "      verb = request.request_method"
+      out << "      match_verb = verb == \"HEAD\" ? \"GET\" : verb"
+      out << "      allowed = []"
+      all_routes = DEFAULTS.map { |d| [d[0], d[1], "#{d[2]}(app_context, request)"] } +
+        decls.each_with_index.map { |decl, i| [decl.verb, decl.pattern, "#{decl.klass}.kilau_route_#{i + DEFAULTS.size}(app_context, request)"] }
+      all_routes.each do |verb, pattern, call|
+        conds, pairs = route_conditions(pattern)
+        out << "      if #{conds.join(" && ")}"
+        out << "        allowed << \"#{verb}\""
+        out << "        if match_verb == \"#{verb}\""
+        out << "          request.path_params = #{pairs.empty? ? "{}" : "{ #{pairs.join(", ")} }"}"
+        out << "          response = #{call}"
+        out << "          return verb == \"HEAD\" ? response.without_body : response"
+        out << "        end"
+        out << "      end"
       end
-      out << "      end"
-      out << "      Kilau::Dispatcher.error_response(404, \"no route for \#{request.request_method} \#{request.path}\")"
+      out << "      return Kilau::Dispatcher.error_response(404, \"no route for \#{verb} \#{request.path}\") if allowed.empty?"
+      out << "      allowed << \"HEAD\" if allowed.include?(\"GET\") && !allowed.include?(\"HEAD\")"
+      out << "      allowed = allowed.uniq.sort"
+      out << "      return Kilau::Dispatcher.options_response(allowed) if verb == \"OPTIONS\""
+      out << "      Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)"
       out << "    rescue Kilau::Error => e"
-      out << "      Kilau::Dispatcher.error_response(e.status, e.message)"
+      out << "      response = Kilau::Dispatcher.error_response(e.status, e.message)"
+      out << "      request.request_method == \"HEAD\" ? response.without_body : response"
       out << "    rescue StandardError => e"
       out << "      $stderr.puts \"kilau: \#{e.class}: \#{e.message}\""
-      out << "      Kilau::Dispatcher.error_response(500, \"internal server error\")"
+      out << "      response = Kilau::Dispatcher.error_response(500, \"internal server error\")"
+      out << "      request.request_method == \"HEAD\" ? response.without_body : response"
       out << "    end"
       out << "  end"
       out << "end"
