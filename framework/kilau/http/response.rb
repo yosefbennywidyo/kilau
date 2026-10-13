@@ -3,6 +3,7 @@ module Kilau
     REASONS = {
       200 => "OK", 201 => "Created", 204 => "No Content", 303 => "See Other",
       400 => "Bad Request", 401 => "Unauthorized", 404 => "Not Found",
+      405 => "Method Not Allowed",
       413 => "Content Too Large", 422 => "Unprocessable Content",
       431 => "Request Header Fields Too Large", 500 => "Internal Server Error",
       503 => "Service Unavailable"
@@ -14,9 +15,17 @@ module Kilau
       @status = status
       @headers = { "content-type" => content_type }
       @body = body
+      @write_body = true
     end
 
     def location = @headers["location"]
+
+    # The status/headers/content-length stay real; only the bytes on the
+    # wire are skipped (HEAD, RFC 9110 §9.3.2).
+    def without_body
+      @write_body = false
+      self
+    end
 
     # A CR or LF would let a value start another header or end the head.
     def set_header(name, value)
@@ -35,7 +44,7 @@ module Kilau
       out << "content-length: #{@body.bytesize}\r\n"
       out << "connection: #{keep_alive ? "keep-alive" : "close"}\r\n"
       out << "\r\n"
-      out << @body
+      out << @body if @write_body
       out
     end
   end

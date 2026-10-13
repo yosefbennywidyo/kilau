@@ -12,6 +12,10 @@ ok text sets its content type
 ok empty has no body
 ok location is nil without a redirect
 ok an unknown status still serializes
+ok without_body keeps content-length but drops the body on the wire
+ok without_body returns self
+ok without_body leaves .body itself readable in-process
+ok 405 has its reason phrase
 ok a header value with CR or LF is refused
 ok a header name with CR or LF is refused
 ok NotFound is 404 with a default message
