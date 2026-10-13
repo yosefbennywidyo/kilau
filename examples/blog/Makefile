@@ -32,8 +32,13 @@ entities:
 E2E_DB ?= /tmp/kilau-e2e.sqlite3
 
 e2e: all
-	@A="$$(./build/bin/blog routes)"; B="$$(./build/bin/blog_routes routes)"; \
-	if [ "$$A" = "$$B" ]; then \
+	@A="$$(./build/bin/blog routes)"; ra=$$?; \
+	B="$$(./build/bin/blog_routes routes)"; rb=$$?; \
+	if [ $$ra -ne 0 ] || [ $$rb -ne 0 ]; then \
+	  echo "FAIL routes command exited nonzero: blog=$$ra blog_routes=$$rb"; exit 1; \
+	elif [ -z "$$A" ]; then \
+	  echo "FAIL routes printed nothing"; exit 1; \
+	elif [ "$$A" = "$$B" ]; then \
 	  echo "ok   routes match between blog and blog_routes"; \
 	else \
 	  echo "FAIL routes differ:"; echo "-- blog --"; echo "$$A"; echo "-- blog_routes --"; echo "$$B"; exit 1; \
