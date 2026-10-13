@@ -1,5 +1,6 @@
-usage: COMMAND   (start | db migrate | db rollback | db status)
+usage: COMMAND   (start | routes | db migrate | db rollback | db status)
 error: config: no file at /nonexistent-kilau-config/development.yaml
+usage: COMMAND   (start | routes | db migrate | db rollback | db status)
 error: /tmp/kilau-cli-test/broken.yaml:2: lists are not supported
 ok an unknown command exits 2
 migrated 20260101000001
@@ -7,4 +8,9 @@ ok db migrate uses the config's database
 up   20260101000001
 ok db status reports it
 ok a missing config file exits 1
+GET     /_ping    GET /_ping#0
+GET     /_health  GET /_health#1
+GET     /items    GET /items#2
+ok routes prints the table and exits 0
+ok routes with an extra argument falls back to usage
 ok a malformed config exits 1

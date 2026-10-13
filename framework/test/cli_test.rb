@@ -27,6 +27,16 @@ T.check("an unknown command exits 2") { Kilau::CLI.run(hooks, migrations, ["expl
 T.check("db migrate uses the config's database") { Kilau::CLI.run(hooks, migrations, ["db", "migrate"], dir) == 0 }
 T.check("db status reports it") { Kilau::CLI.run(hooks, migrations, ["db", "status"], dir) == 0 }
 T.check("a missing config file exits 1") { Kilau::CLI.run(hooks, migrations, ["db", "status"], "/nonexistent-kilau-config") == 1 }
+
+class RoutesHooks < Kilau::Hooks
+  def routes
+    Kilau::AppRoutes.with_default_routes.add(Kilau::Routes.new.prefix("items").add("/", Kilau::Controller.get { |app_context, request| request }))
+  end
+end
+
+T.check("routes prints the table and exits 0") { Kilau::CLI.run(RoutesHooks.new, migrations, ["routes"], dir) == 0 }
+T.check("routes with an extra argument falls back to usage") { Kilau::CLI.run(RoutesHooks.new, migrations, ["routes", "extra"], dir) == 2 }
+
 ENV["KILAU_ENV"] = "broken"
 T.check("a malformed config exits 1") { Kilau::CLI.run(hooks, migrations, ["db", "status"], dir) == 1 }
 ["", "-wal", "-shm"].each { |suffix| File.delete(db_path + suffix) if File.exist?(db_path + suffix) }
