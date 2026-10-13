@@ -88,6 +88,11 @@ T.check("HEAD to a route that raises keeps the real status with no body") do
   get = client.get("/crash/missing")
   head.status == get.status && head.to_http(true).end_with?("\r\n\r\n")
 end
+T.check("OPTIONS on a routed path is 204 with Allow sorted and unique") do
+  r = client.options("/notes/7")
+  r.status == 204 && r.headers["allow"] == "DELETE, GET, HEAD, PATCH"
+end
+T.check("OPTIONS on an unrouted path is 404") { client.options("/nope").status == 404 }
 T.check("_method=get does not change the verb") { client.post("/notes/7", { "_method" => "get" }).status == 405 }
 T.check("a POST where only GET is routed is 405") { client.post("/notes/7", {}).status == 405 }
 T.check("an unknown path is 404") { client.get("/nope").status == 404 }

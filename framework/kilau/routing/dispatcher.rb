@@ -26,6 +26,7 @@ module Kilau
       return Dispatcher.error_response(404, "no route for #{verb} #{request.path}") if allowed.empty?
       allowed << "HEAD" if allowed.include?("GET") && !allowed.include?("HEAD")
       allowed = allowed.uniq.sort
+      return Dispatcher.options_response(allowed) if verb == "OPTIONS"
       Dispatcher.method_not_allowed(allowed, verb, request.path)
     rescue Kilau::Error => e
       response = Dispatcher.error_response(e.status, e.message)
@@ -44,6 +45,12 @@ module Kilau
 
     def self.method_not_allowed(allowed, verb, path)
       response = error_response(405, "method #{verb} not allowed for #{path}")
+      response.set_header("allow", allowed.join(", "))
+      response
+    end
+
+    def self.options_response(allowed)
+      response = Format.empty(204)
       response.set_header("allow", allowed.join(", "))
       response
     end

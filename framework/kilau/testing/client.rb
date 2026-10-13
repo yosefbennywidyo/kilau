@@ -9,6 +9,7 @@ module Kilau
 
       def get(path) = perform("GET", path, {})
       def head(path) = perform("HEAD", path, {})
+      def options(path) = perform("OPTIONS", path, {})
       def post(path, form) = perform("POST", path, form)
 
       def patch(path, form)
