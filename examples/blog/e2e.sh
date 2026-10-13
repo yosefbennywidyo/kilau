@@ -27,6 +27,11 @@ expect "invalid post is 422" "$(curl -s -o /dev/null -w '%{http_code}' --data-ur
 expect "update via _method" "$(curl -s -o /dev/null -w '%{http_code}' --data-urlencode '_method=patch' --data-urlencode 'post[title]=Halo lagi' --data-urlencode 'post[content]=Baru' $BASE/posts/1)" "303"
 expect "missing post is 404" "$(curl -s -o /dev/null -w '%{http_code}' $BASE/posts/999)" "404"
 expect "bad id is 400" "$(curl -s -o /dev/null -w '%{http_code}' $BASE/posts/abc)" "400"
+expect "HEAD on a parameterized path downloads 0 bytes of body" "$(curl -s -o /dev/null -w '%{size_download}' -I $BASE/posts/1)" "0"
+expect "HEAD status matches GET status on a static path" "$(curl -s -o /dev/null -w '%{http_code}' -I $BASE/posts/new)" "$(curl -s -o /dev/null -w '%{http_code}' $BASE/posts/new)"
+expect "HEAD status matches GET status on a parameterized path" "$(curl -s -o /dev/null -w '%{http_code}' -I $BASE/posts/1)" "$(curl -s -o /dev/null -w '%{http_code}' $BASE/posts/1)"
+expect "PUT where only GET/POST are routed is 405 with Allow" "$(curl -s -o /dev/null -w '%{http_code}' -X PUT $BASE/posts)" "405"
+expect "Allow lists GET, HEAD, POST sorted" "$(curl -s -I -X OPTIONS $BASE/posts | tr -d '\r' | grep -i '^allow:' | tr 'a-z' 'A-Z')" "ALLOW: GET, HEAD, POST"
 codes=$(seq 200 | xargs -P 32 -I{} curl -s -o /dev/null -w '%{http_code}\n' $BASE/posts | sort | uniq -c | awk '{print $2 ":" $1}' | tr '\n' ' ')
 expect "200 requests at 32 concurrent all 200" "$codes" "200:200 "
 expect "delete via _method" "$(curl -s -o /dev/null -w '%{http_code}' --data-urlencode '_method=delete' $BASE/posts/1)" "303"
