@@ -91,6 +91,7 @@ cd examples/blog
 make               # kilau gen templates + routes, then build blog and blog_routes
 ./build/bin/blog_routes db migrate
 ./build/bin/blog_routes start   # http://127.0.0.1:5150
+./build/bin/blog_routes routes  # VERB  pattern  handler, one line per route
 make e2e           # drive both binaries with curl
 ```
 

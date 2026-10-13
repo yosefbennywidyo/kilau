@@ -32,6 +32,12 @@ entities:
 E2E_DB ?= /tmp/kilau-e2e.sqlite3
 
 e2e: all
+	@A="$$(./build/bin/blog routes)"; B="$$(./build/bin/blog_routes routes)"; \
+	if [ "$$A" = "$$B" ]; then \
+	  echo "ok   routes match between blog and blog_routes"; \
+	else \
+	  echo "FAIL routes differ:"; echo "-- blog --"; echo "$$A"; echo "-- blog_routes --"; echo "$$B"; exit 1; \
+	fi
 	for bin in blog blog_routes; do \
 	  rm -f $(E2E_DB) $(E2E_DB)-wal $(E2E_DB)-shm; \
 	  KILAU_DATABASE_PATH=$(E2E_DB) ./build/bin/$$bin db migrate || exit 1; \
