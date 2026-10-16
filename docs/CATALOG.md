@@ -847,7 +847,15 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   builtin_visibility.rb` (spinel), RED (4 dari 9 baris salah) → GREEN (cocok CRuby persis) setelah
   KEDUA fix terpasang. Regresi: 205 test spinel terkait (`respond_to?`, visibility, builtin reopen,
   array first/last/at) dicek satu per satu terhadap `.expected`/`.err.expected`: 205/205 cocok.
-- Upstream: **PR dibuka di fork untuk CI+CodeRabbit**: yosefbennywidyo/spinel#31
-  (https://github.com/yosefbennywidyo/spinel/pull/31), branch `k028-builtin-reopen-visibility`,
-  commit `207d515f8`. Gate ter-shard (`gate/k028-builtin-reopen-visibility`) dipush bersamaan.
-  Menunggu hasil CI+gate sebelum membuka PR langsung ke matz/spinel.
+- Upstream: CI fork (clang+corpus) dan gate ter-shard (17 job + trailer) keduanya hijau,
+  `Gate: green tree 49b784206974 master bd04d66fc0f7 (linux-x86_64 gcc-13.3.0) tests 7685/0`
+  (https://github.com/yosefbennywidyo/spinel/actions/runs/38959381864). CodeRabbit tidak
+  sempat mereview fork PR (repo ini tak dapat auto-review otomatis karena bintang <10, dan
+  trigger manual kena rate limit) — dicatat apa adanya di body PR upstream, tidak diblokir
+  karena bukan syarat wajib alur ini (CI+gate hijau yang wajib). Gotcha baru: label sempat
+  `gate: unknown master` (bukan `gate: verified`) karena fork's `master` branch belum
+  disinkronkan ke tip upstream terbaru saat gate run memakai upstream LIVE sebagai
+  pembanding trailer — diperbaiki dengan `git push fork origin/master:master` lalu
+  close+reopen fork PR lagi untuk re-trigger `gate-trailer.yml` (lihat memory
+  `feedback_spinel_gate_trailer_automation.md`). **PR dibuka langsung ke matz/spinel:
+  matz/spinel#9386** (fork PR #31 ditutup, menautkan ke #9386). Menunggu Matz.
