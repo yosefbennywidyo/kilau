@@ -2,6 +2,73 @@
 
 Entri terbaru di atas.
 
+## 2026-10-17 ~03:24 WIB — Rencana 5 Fase C: plan siap, menunggu pilihan eksekusi
+
+**Status**
+- User menyetujui lanjut Fase C-F dari Rencana 5 (kualitas route), satu fase per
+  putaran dengan cek di antaranya (bukan jalan semua C-F sekaligus tanpa henti).
+- **Keputusan Fase C**: **Opsi 1** (prioritas matchit/Loco — static selalu
+  menang atas `:param` pada kedalaman segmen sama, tidak bergantung urutan
+  deklarasi; tumpang-tindih ambigu antar dua pola berparameter sebentuk untuk
+  verb yang sama ditolak saat boot/generate) — dipilih user 2026-10-17 setelah
+  dikonfrontasi dengan riset Loco (pakai matchit, persis Opsi 1) vs Rails
+  (Journey, order-wins, lebih dekat Opsi 2 tapi tanpa fitur "peringatan route
+  dibayangi"). Alasan: konsisten dengan D-024 (Kilau sudah pakai gaya axum
+  untuk 405, bukan Rails-style 404).
+- **Plan implementasi lengkap sudah ditulis dan disimpan**:
+  `docs/superpowers/plans/2026-10-17-kilau-rencana-5-fase-c-conflict-priority.md`
+  (7 task, TDD, commit per task). Desain intinya:
+  - `Kilau::Route#shape_key` (String tunggal, bukan Array campuran — hindari
+    K-015/K-016) dan `Route#specificity` (Integer bitmask, MSB = segmen paling
+    kiri, bit nyala kalau segmen itu `:param` — makin kecil makin statis/makin
+    tinggi prioritas; perbandingan Integer polos `<`/`==` cukup, tak perlu
+    `.min`/`.sort_by` yang belum terbukti aman di spinel untuk `framework/`
+    maupun `tool/`, keduanya **dikompilasi spinel** lewat `spin build`
+    — lihat `Makefile:41-44`).
+  - Table mode: `AppRoutes#add` menolak route baru dengan `(verb, shape_key)`
+    yang sudah ada. `Dispatcher#call` dirombak jadi dua langkah: kumpulkan
+    semua route yang match path, pilih grup `specificity` terkecil ("winners"),
+    baru dispatch/405/OPTIONS dari grup itu saja (bukan agregat semua pattern
+    yang textually match, supaya Allow header benar per "node", gaya
+    matchit/axum bukan linear scan lama).
+  - Generate mode (`tool/kilau_tool/routes_gen.rb`): helper `shape_key`/
+    `specificity` versi teks-pattern (duplikasi sengaja dari framework, sesuai
+    pola pemisahan tool/framework yang sudah ada di codebase ini — bukan DRY
+    violation, lihat precedent `route_conditions`). `render` dirombak:
+    kelompokkan semua deklarasi (termasuk 2 route default `_ping`/`_health`)
+    per `shape_key`, tolak kalau ada verb yang sama dua kali dalam satu grup
+    (dengan `file:baris` KEDUA deklarasi), urutkan grup ascending by
+    `specificity` (insertion sort manual, bukan `.sort_by`), lalu emit satu
+    `if <conds>` per grup berisi `case match_verb` — tiap cabang `return`,
+    supaya begitu satu grup match, tak pernah jatuh ke grup kurang spesifik
+    di bawahnya walau verb-nya tak cocok di grup itu.
+  - Bug nyata yang jadi bukti/regression-proof: `DELETE /notes/bulk` saat ini
+    *diam-diam sukses* (204) lewat `/notes/:id`'s `remove` (yang tak pernah
+    memanggil `load_item`/`path_int`) — bukan sekadar 400 seperti kasus GET.
+    Fase C mengubahnya jadi 405 Allow: POST yang benar. Lihat memory
+    `[[kilau-route-segment-shadowing]]` untuk histori lengkap bug ini.
+  - D-025 akan dicatat di `docs/DECISIONS.md` sebagai bagian plan (Task 6).
+
+**Langkah berikutnya**
+1. **Tanya user pilihan eksekusi plan** (belum dijawab sesi ini): native
+   (direkomendasikan — 7 task-nya sangat sekuensial, tak ada paralelisme nyata
+   untuk dimanfaatkan subagent-driven) vs subagent-driven. Lanjutkan dengan
+   `superpowers:executing-plans` atau `superpowers:subagent-driven-development`
+   sesuai jawabannya.
+2. Eksekusi plan task 1-7 (lihat file plan di atas untuk detail lengkap per
+   task: file yang disentuh, test yang ditulis dulu, langkah implementasi).
+3. Setelah Fase C selesai dan `make test` + e2e blog hijau: lanjut **Fase D**
+   (trie segmen) — **ingat**: Fase D baru diadopsi kalau benchmark mikro
+   (gaya r10k, 10/100/1.000 route sintetis) membuktikan trie menang berarti
+   di ≥100 route **dan** tidak kalah di 10 route (ukuran blog). Jangan skip
+   pengukuran ini — itu syarat eksplisit dari spec Rencana 5 §3 Fase D.
+4. Baru setelah D selesai/diputuskan: **Fase E** (parameter bertipe `/:id<int>`,
+   atau `{id:int}` — keputusan sintaks juga ditunda ke fase itu per spec), lalu
+   putuskan ke user apakah **Fase F** (DX sugar, eksplisit "opsional, diputuskan
+   setelah A-E") dikerjakan sama sekali.
+5. Satu fase per putaran, cek balik ke user di antaranya — ini permintaan
+   eksplisit user (bukan jalan semua tanpa henti).
+
 ## 2026-10-07 ~15:50 WIB — matz/spinel#7807 MERGED
 
 **Status**
