@@ -730,6 +730,28 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `tally`/`transform_keys!` (Cacat A) masih `false`, tidak berubah oleh #8821 (mekanisme
   berbeda, PR itu tidak menyentuhnya) — **ini kandidat berikutnya yang tersisa di K-026**.
   `unicode_normalize` tetap sengaja ditolak (desain, bukan bug), tidak dibahas lebih lanjut.
+- **Cacat A (`tally`/`transform_keys!`) FIXED 2026-10-16, PR dibuka upstream**: `rt_probe_answer`
+  (`src/codegen_call.c`) sekarang bertanya pertanyaan kedua saat sebuah probe terbaca
+  untyped: `enum_builtin_responds` (baru, `src/analyze_desugar.c`, diekspor lewat `analyze.h`)
+  menjawab pertanyaan tipe-receiver yang sama dengan gerbang `ok` milik
+  `desugar_builtin_enum_calls`, tanpa perlu rewrite-nya benar-benar jalan — menghindari
+  kebutuhan merestrukturisasi timing pre-pass/fixpoint (opsi yang lebih berisiko, lihat
+  "Arah perbaikan" di atas). Dibatasi ke dua mekanisme cacat A saja (`builtin_enum_name_index`'s
+  daftar generik, dan `transform_keys!`/`transform_values!` pada receiver bertipe Hash), bukan
+  digeneralisasi ke semua nama Enumerable, karena pemanggil `respond_to_static_answer` sudah
+  merutekan receiver `TY_POLY`/`TY_UNKNOWN` ke jalur lain (boxed runtime, #8153) SEBELUM
+  mencapai `rt_probe_answer` — hanya tipe yang benar-benar konkret yang sampai ke cek baru ini.
+  Test `test/respond_to_static_enum_methods.rb` (spinel): RED sebelum fix (3 dari 6 jawaban
+  salah), GREEN sesudah (cocok CRuby persis). 40 test `test/respond_to*.rb` yang sudah ada +
+  test panggilan nyata `tally`/`transform_keys!`/`transform_values!` diverifikasi ulang tak
+  terpengaruh. Temuan CodeRabbit di fork PR (soal method yang di-private/undef lewat reopening)
+  diperiksa dan ditolak dengan bukti: `undef_method`/`remove_method` ditolak total saat compile
+  (`docs/limitations.md`), dan gap `private :name` yang sama sudah ada SEBELUM fix ini untuk
+  method builtin lain mana pun (`Array#first` direprodisi sebagai bukti, tak tersentuh PR ini)
+  — bukan regresi, di luar cakupan PR ini. Gate ter-shard di fork: 17 job + trailer, hijau,
+  `Gate: green tree 6bc5720a205b master 5ab6ba17cd43 (linux-x86_64 gcc-13.3.0) tests 7658/0`
+  (https://github.com/yosefbennywidyo/spinel/actions/runs/38906207673). **PR dibuka langsung ke
+  matz/spinel: matz/spinel#9344** (fork PR #30 ditutup, menautkan ke #9344). Menunggu Matz.
 
 ## K-027: poly-dispatch dengan fakta-kelas KOSONG (bukan tak-ada-fakta) mengecualikan setiap kandidat, termasuk yang nyata
 - Lapisan: compiler (`cls_fact_excludes`, `src/analyze_cls.c`)
