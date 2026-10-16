@@ -790,3 +790,45 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   hanya untuk korpus spinel sendiri). `spin clean` + `make test` diuji ulang bersih:
   **25/25 LULUS**, tanpa regresi. Tidak ada langkah tersisa dari upgrade compiler K-027.
 - **Audit kode Kilau sendiri (2026-10-13)**: dicek apakah ada method lain di source Kilau (`framework/`, `tool/`, `examples/`) yang bernama seperti salah satu entri `cf_opaque_name` (`bind`, `send`, `owner`, `receiver`, `unbind`, dll.) dan BERISIKO kena pola bug yang sama. Ditemukan satu kecocokan nama: `Kilau::HTTP::Server#bind` (`framework/kilau/http/server.rb:18`) — tapi method itu **tidak punya parameter sama sekali** (`def bind` tanpa argumen), jadi tidak relevan dengan bug ini (yang spesifik soal parameter method yang catatan kelasnya kosong). **Tidak ada kode Kilau yang perlu diubah.** Satu-satunya method `bind` yang BERPARAMETER dan berisiko (`Sqlite::Connection#bind(stmt, index, binds, i)`) ada di paket eksternal `sqlite-0.1.0`, bukan source Kilau — dan sudah otomatis aman begitu compiler yang terinstall membawa fix ini.
+
+## K-028: `private`/`protected` lewat reopening builtin class diabaikan sepenuhnya saat panggilan LANGSUNG, bukan cuma di `respond_to?`
+- Lapisan: compiler (dispatch panggilan langsung ke method builtin dengan receiver literal; `respond_to_static_answer`/`rt_probe_answer`, `src/codegen_call.c`)
+- Ditemukan: 2026-10-17, sebagai efek samping saat memeriksa temuan CodeRabbit yang ditolak di PR matz/spinel#9344 (lihat entri K-026 cause A). Saat itu hanya diverifikasi untuk `respond_to?`; sesi ini diverifikasi lebih luas bahwa gap-nya jauh lebih besar dari sekadar `respond_to?`.
+- Repro: **repro/k028_private_reopen_builtin_method_bypassed.rb**. Dengan spinel terpasang `2026.09.12+10352 (d20573c47)`:
+  ```ruby
+  class Array
+    private :first
+  end
+  begin
+    p [1, 2, 3].first
+  rescue NoMethodError => e
+    p e.message
+  end
+  p [1, 2, 3].respond_to?(:first)
+  ```
+  CRuby: `"private method 'first' called for an instance of Array"` lalu `false`.
+  Spinel: `1` (panggilan langsung BERHASIL, tidak raise sama sekali) lalu `true`.
+- Mekanisme: spinel punya daftar method privat UNIVERSAL yang hardcode untuk Object
+  (`object_private_method_names()`/`object_private_method_name()`, `src/codegen_call.c:28717-28734`,
+  dipakai di `respond_to_static_answer` sekitar baris 29079/29177-29240) — tapi itu HANYA menjawab
+  "apakah nama ini salah satu method privat bawaan Object" (`initialize`, dll.), BUKAN "apakah
+  program ini, lewat reopening (`private :nama`), baru saja membuat sebuah method builtin tertentu
+  jadi privat di kelasnya sendiri". Tidak ada mekanisme analisis yang melacak reopening akses-kontrol
+  semacam itu pada kelas builtin (Array, Hash, String, dll.) sama sekali — bukan cuma di jalur probe
+  `respond_to?`, tapi juga di jalur panggilan langsung biasa (`recv.method_name`, resolusi statis ke
+  fungsi builtin C). `docs/limitations.md` baris 301 menyebut `private :center` sebagai salah satu
+  kasus yang DITANGANI, tapi HANYA untuk jalur fallback splat-call pada receiver yang BISA jadi
+  builtin ATAU objek user (`o.center(*a)`) — bukan untuk panggilan langsung biasa dengan receiver
+  yang diketahui pasti builtin, yang jauh lebih umum.
+- Klasifikasi: bug-compiler (nilai salah diam-diam: method yang di-reopen privat tetap bisa
+  dipanggil langsung dan `respond_to?` tetap menjawab `true`) — tapi **scope fix jauh lebih besar**
+  dari K-026: perlu mekanisme baru yang melacak reopening akses-kontrol per kelas builtin dan
+  mengonsultasikannya di SETIAP call site langsung ke method builtin, bukan cuma di satu titik
+  (`rt_probe_answer`) seperti K-026 cause A.
+- Solusi yang dipakai: tidak dibutuhkan Kilau saat ini (Kilau tidak me-reopen method builtin
+  manapun jadi privat di source-nya sendiri — dicek cepat, tidak ada `private :` yang menyasar
+  kelas builtin di `framework/`, `tool/`, `examples/`).
+- Upstream: **belum diajukan, belum dikerjakan**. Diputuskan 2026-10-17 untuk didokumentasikan
+  dulu tanpa fix, karena scope-nya (mekanisme baru lintas semua call site builtin, bukan satu
+  titik) lebih besar dari perbaikan K-026 cause A/B dan perlu didiskusikan lagi sebelum investasi
+  waktu. Kandidat untuk sesi berikutnya kalau user ingin melanjutkan.
