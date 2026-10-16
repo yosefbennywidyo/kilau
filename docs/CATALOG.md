@@ -1,8 +1,13 @@
 # Katalog batas AOT
 
-Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.09.12+8734 (35aea8ccc)`
-sejak 2026-10-13 (`sudo make install`, berisi fix K-027 #8720 dan K-017 #8679).
-Sebelumnya master `46a9efb16` sejak 2026-10-12 ~17:30 WIB, dibangun bersih di worktree
+Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.09.12+8878 (e24b53a35)`
+sejak 2026-10-13 ~11:31 WIB (`sudo make install`, berisi juga fix lanjutan Matz
+`a58cbba58`/`45d534608` — lihat catatan K-027 di bawah, 143 commit di depannya — jadi
+ongkos boxing 32 slot/~21 program yang K-027 sempat timbulkan sekarang hilang juga).
+`make test` diuji ulang bersih (`spin clean` + `make test`): 25/25 lulus (13/13
+framework, 8/8 tool, 4/4 examples/blog), tanpa regresi. Sebelumnya `2026.09.12+8734
+(35aea8ccc)` sejak 2026-10-13 ~11:30 WIB (berisi fix K-027 #8720 dan K-017 #8679, BELUM
+fix lanjutan Matz). Sebelumnya master `46a9efb16` sejak 2026-10-12 ~17:30 WIB, dibangun bersih di worktree
 terpisah (bukan `/usr/local/bin/spinel` terpasang saat itu, lihat uji ulang di bawah
 untuk detail). Sebelumnya `f3da0151f` sejak 2026-10-07 ~16:27 WIB (sebelumnya `ae2c38c71` sejak 11:10,
 `ea9feecfe` sejak 2026-09-30 14:29 WIB, `35ddccadb` sejak 06:43, `6626c0f05` sejak 2026-09-29
@@ -660,6 +665,71 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   matz/spinel#8650, generator `respond_to?` untuk receiver BOXED): gap tidak berubah,
   masih `false/false/false/false` — #8650 memang tidak menyentuh `respond_to_static_answer`/
   `rt_probe_answer`, sesuai yang didokumentasikan. Bukan regresi baru.
+- **Akar masalah ditelusuri 2026-10-13 — DUA mekanisme berbeda, bukan satu.** Dibuktikan
+  dengan build spinel dari worktree (checkout `fix/inline-rbs-grep-pipe`, 1 commit di depan
+  `fork/master`) dan pemanggilan LANGSUNG (bukan lewat `respond_to?`): `a.tally`, `a.to_set`,
+  `h.transform_keys! { … }` ketiganya berjalan BENAR dan identik dengan CRuby — jadi method-nya
+  sendiri tidak rusak, hanya probe `respond_to?`-nya yang salah menjawab. `String#unicode_normalize`
+  terpisah: spinel SENGAJA menolaknya (`not supported: Unicode normalization requires shipping
+  the Unicode decomposition/composition tables …`), jadi `false` di sana adalah desain, bukan
+  bug dari keluarga yang sama — tidak dibahas lebih lanjut di sini.
+  - **Cacat A — soal waktu (timing), kena `tally` dan `transform_keys!`/`transform_values!`:**
+    `desugar_respond_to_probe` (`src/analyze_desugar.c:4710`) mensintesis 3 bentuk probe
+    (`recv.m`, `recv.m { }`, `recv.m(recv)`) di DALAM fixpoint analyzer (ia butuh `infer_type`,
+    yang butuh scope sudah terbangun). Tapi rewrite yang membuat `tally` benar-benar jalan
+    (`desugar_builtins`, `src/analyze.c:40980`, lewat flag per-call-site `enum_copy` yang
+    dikonsumsi `desugar_builtin_enum_calls`) dan rewrite untuk `transform_keys!`/
+    `transform_values!` (`desugar_enum_chain_shapes`, dipanggil 2x di `src/analyze.c:41000-41001`)
+    KEDUANYA jalan SEKALI SAJA, di daftar pre-pass "one-shot" sebelum scope dibangun sama sekali
+    (komentar di `src/analyze_desugar.c:8937`: "before the scopes are built"). Probe yang baru
+    ada belakangan (saat fixpoint) tidak pernah ada di node table waktu pre-pass itu jalan, jadi
+    tidak pernah mendapat `enum_copy`/rewrite bang-nya — `desugar_builtin_enum_calls` membaca
+    `enum_copy < 0` lalu `continue` (`src/analyze_desugar.c:9861`), dan probe-nya tetap jadi
+    CallNode polos bernama `tally`/`transform_keys!` yang jatuh ke baris `bop_rows` yang memang
+    sengaja menjawab `TY_UNKNOWN` sebagai placeholder (`src/builtin_ops.c:2369`,
+    `BOP_ANY_ARRAY, "tally", …, TY_UNKNOWN, BOPE_NONE`) — `rt_probe_answer` membaca tipe itu
+    sebagai "untyped" dan `respond_to?` menjawab `false`. **Dibuktikan bukan soal
+    keterjangkauan (reachability)**: menambah panggilan `.tally` NYATA dan terjangkau tepat di
+    sebelah `respond_to?(:tally)` di program yang sama TIDAK mengubah jawabannya — menyingkirkan
+    teori "method dianggap dead code" dan mengarah tepat ke urutan pre-pass vs fixpoint.
+  - **Cacat B — ketidakcocokan bentuk node, kena `to_set`:** rewrite `to_set` (`Set.new(recv.to_a)`,
+    `src/analyze.c:9374`) memang jalan DI DALAM fixpoint (ia memanggil `infer_type`), tapi
+    gerbangnya `nt_ref(nt, id, "arguments") < 0` — artinya "tidak ada node `ArgumentsNode` sama
+    sekali", yang hanya benar untuk panggilan tanpa tanda kurung yang ditulis tangan (`recv.to_set`).
+    Ketiga bentuk probe `desugar_respond_to_probe` SELALU membuat sebuah `ArgumentsNode` (bahkan
+    yang 0 elemen, untuk bentuk 0 dan 1), jadi tidak satu pun pernah memenuhi gerbang itu, dan
+    rewrite Set-nya tidak pernah jalan untuk probe — jatuh ke baris `bop_rows` yang sama
+    (`TY_UNKNOWN`), gejala akhirnya identik dengan Cacat A walau mekanismenya beda sama sekali.
+    **Dibuktikan bukan soal splice Set yang hilang**: menambah panggilan `.to_set` NYATA (dengan
+    titik literal, memicu `sp_splice_builtin_extras`/kelas `Set` ikut teregistrasi) di program
+    yang sama JUGA tidak mengubah jawaban `respond_to?(:to_set)`-nya.
+  - Repro verifikasi (scratchpad sesi, tidak disimpan di `repro/`): `direct_tally.rb`,
+    `direct_to_set.rb`, `direct_tk.rb` (panggilan langsung, semua cocok CRuby),
+    `probe_plus_real.rb` (tally nyata + `respond_to?` berdampingan, jawaban tetap `false`),
+    `to_set_with_mention.rb`/`tk_real.rb` (idem untuk to_set/transform_keys!).
+  - Arah perbaikan (belum dikerjakan, belum diajukan upstream): kedua cacat sama-sama berakar
+    dari bentuk node yang disintesis `desugar_respond_to_probe` tidak cocok dengan asumsi yang
+    dipegang rewrite lain (lewat timing ATAU lewat bentuk persis node argumen). Perbaikan
+    kemungkinan bukan di `rt_probe_answer` sendiri, tapi di titik probe disintesis atau di titik
+    gerbang masing-masing rewrite (`enum_copy`, `desugar_enum_chain_shapes`, gerbang
+    `arguments < 0` di `to_set`) supaya keduanya mengenali sebuah probe node sebagai permintaan
+    tipe yang sah, bukan panggilan nyata yang perlu bentuk AST persis seperti tulisan tangan
+    pengguna.
+- **Cacat B (`to_set`) FIXED 2026-10-13**: `matz/spinel#8821` (commit `13b6d2333`, merge
+  `11ca54e23`) **merged** — ganti gerbang `to_set`'s rewrite dari "tidak ada `ArgumentsNode` sama
+  sekali" menjadi hitungan argumen sesungguhnya, jadi probe (yang selalu membawa sebuah
+  `ArgumentsNode` kosong) kini cocok juga. PR yang sama juga menambah `to_set` ke `rngm[]`
+  (Range lewat `sp_poly_responds_builtin`, bukan jalur probe ini — gap terpisah yang dicatat
+  di PR sebagai "Range: a concrete Range does not go through that rewrite or the probe at
+  all"). **Diverifikasi ulang 2026-10-16** dengan spinel master `5ab6ba17c` (lokal, `make`
+  biasa bukan `make test`): `a.respond_to?(:to_set)` kini `true` SETELAH `require "set"` di
+  program yang sama (perilaku benar — tanpa `require "set"`, Spinel menjawab `false` sedangkan
+  CRuby pada mesin ini menjawab `true` tanpa `require` eksplisit; itu bukan regresi Spinel,
+  CRuby di sini punya `set` sudah ter-load dari tempat lain sebelum skrip jalan — bukan
+  dicek lebih lanjut, di luar cakupan K-026).
+  `tally`/`transform_keys!` (Cacat A) masih `false`, tidak berubah oleh #8821 (mekanisme
+  berbeda, PR itu tidak menyentuhnya) — **ini kandidat berikutnya yang tersisa di K-026**.
+  `unicode_normalize` tetap sengaja ditolak (desain, bukan bug), tidak dibahas lebih lanjut.
 
 ## K-027: poly-dispatch dengan fakta-kelas KOSONG (bukan tak-ada-fakta) mengecualikan setiap kandidat, termasuk yang nyata
 - Lapisan: compiler (`cls_fact_excludes`, `src/analyze_cls.c`)
@@ -676,4 +746,11 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - **Follow-up biaya run-time dari matz**: fitur baru gate (#7501, `gate-costs`) melaporkan 32 slot jadi `boxed` di ~21-22 program setelah fix ini; matz menanyakan apakah ini biaya dari fix dan apakah menyentuh benchmark/optcarrot. Dicek lokal dengan `tools/repr_diff.sh`/`tools/c_costs.sh` terhadap merge-base: terkonfirmasi itu memang biaya fix ini (receiver yang kini benar membuka poly-dispatch butuh argumennya di-box untuk calling convention yang uniform), **0 menyentuh `benchmark/*.rb` (70 file) atau optcarrot**, tidak ada operasi O(len) baru di dalam loop — seluruhnya di program `test/`/`packages/*/test` yang namanya sendiri (`boxed_*`, `poly_*`, dll.) menunjukkan tujuannya memang menguji poly-dispatch. Dijawab di komentar PR: https://github.com/matz/spinel/pull/8720#issuecomment-6129642141
 - **Fix yang lebih tepat dari Matz sendiri (2026-10-13, ~1 jam setelah merge)**: commit `a58cbba58` (di master sebagai `45d534608`) menambahkan `cf_opaque_name(s->name)` ke kondisi scope-setup yang sudah memaksa `cf_all_params` untuk protocol names — jadi method bernama opaque (`bind`, dll.) kini parameternya sendiri juga ditandai "bisa apa saja", simetris dengan bagaimana PANGGILAN ke nama itu sudah diperlakukan. Dengan ini, shortcut `s->n == 0` di fix saya (#8720) **DIHAPUS** — tidak diperlukan lagi, dan menghapusnya mengembalikan optimisasi "kosong = builtin saja" untuk 32 slot/21 program yang jadi korban fix saya. Fix Matz benar DAN gratis; fix saya benar tapi bayar ongkos yang tak perlu.
 - **Compiler Kilau sudah di-upgrade** (2026-10-13): `sudo make install` dijalankan user, `spinel -v` sekarang `2026.09.12+8734 (35aea8ccc)` (berisi `012325e97`, dikonfirmasi via `git merge-base --is-ancestor`; BELUM termasuk fix lanjutan `a58cbba58`/`45d534608` — upgrade lagi kalau mau ongkos boxing di 21 program lain itu juga hilang, tidak wajib untuk Kilau sendiri). `make test` Kilau dijalankan ULANG dengan compiler yang benar-benar terinstall (bukan lagi worktree lokal): **25/25 LULUS** (13/13 framework, 8/8 tool, 4/4 examples/blog), termasuk `migrator_test.rb`/`model_test.rb`.
+- **Fix lanjutan Matz sekarang juga terpasang** (2026-10-13 ~11:31 WIB, di luar sesi ini):
+  `spinel -v` naik lagi ke `2026.09.12+8878 (e24b53a35)`. Diverifikasi
+  `git merge-base --is-ancestor a58cbba58 e24b53a35` → ya, 143 commit di depannya — jadi
+  shortcut `s->n == 0` dari fix #8720 sudah terhapus di versi yang terpasang, dan ongkos
+  boxing 32 slot/~21 program yang disebut di atas sudah hilang untuk Kilau juga (tidak
+  hanya untuk korpus spinel sendiri). `spin clean` + `make test` diuji ulang bersih:
+  **25/25 LULUS**, tanpa regresi. Tidak ada langkah tersisa dari upgrade compiler K-027.
 - **Audit kode Kilau sendiri (2026-10-13)**: dicek apakah ada method lain di source Kilau (`framework/`, `tool/`, `examples/`) yang bernama seperti salah satu entri `cf_opaque_name` (`bind`, `send`, `owner`, `receiver`, `unbind`, dll.) dan BERISIKO kena pola bug yang sama. Ditemukan satu kecocokan nama: `Kilau::HTTP::Server#bind` (`framework/kilau/http/server.rb:18`) — tapi method itu **tidak punya parameter sama sekali** (`def bind` tanpa argumen), jadi tidak relevan dengan bug ini (yang spesifik soal parameter method yang catatan kelasnya kosong). **Tidak ada kode Kilau yang perlu diubah.** Satu-satunya method `bind` yang BERPARAMETER dan berisiko (`Sqlite::Connection#bind(stmt, index, binds, i)`) ada di paket eksternal `sqlite-0.1.0`, bukan source Kilau — dan sudah otomatis aman begitu compiler yang terinstall membawa fix ini.
