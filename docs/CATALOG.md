@@ -821,14 +821,33 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   builtin ATAU objek user (`o.center(*a)`) — bukan untuk panggilan langsung biasa dengan receiver
   yang diketahui pasti builtin, yang jauh lebih umum.
 - Klasifikasi: bug-compiler (nilai salah diam-diam: method yang di-reopen privat tetap bisa
-  dipanggil langsung dan `respond_to?` tetap menjawab `true`) — tapi **scope fix jauh lebih besar**
-  dari K-026: perlu mekanisme baru yang melacak reopening akses-kontrol per kelas builtin dan
-  mengonsultasikannya di SETIAP call site langsung ke method builtin, bukan cuma di satu titik
-  (`rt_probe_answer`) seperti K-026 cause A.
+  dipanggil langsung dan `respond_to?` tetap menjawab `true`) — perkiraan scope AWAL (lihat di
+  bawah untuk koreksi) adalah "mekanisme baru lintas semua call site builtin".
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini (Kilau tidak me-reopen method builtin
   manapun jadi privat di source-nya sendiri — dicek cepat, tidak ada `private :` yang menyasar
   kelas builtin di `framework/`, `tool/`, `examples/`).
-- Upstream: **belum diajukan, belum dikerjakan**. Diputuskan 2026-10-17 untuk didokumentasikan
-  dulu tanpa fix, karena scope-nya (mekanisme baru lintas semua call site builtin, bukan satu
-  titik) lebih besar dari perbaikan K-026 cause A/B dan perlu didiskusikan lagi sebelum investasi
-  waktu. Kandidat untuk sesi berikutnya kalau user ingin melanjutkan.
+- **(Koreksi scope, 2026-10-17, sesi yang sama)** Perkiraan awal "perlu mekanisme baru" SALAH —
+  ditemukan lewat investigasi lebih dalam bahwa `method_defined?`/`private_method_defined?` SUDAH
+  menjawab BENAR untuk kasus persis yang sama (`Array.private_method_defined?(:first)` → `true`,
+  cocok CRuby), membuktikan tabel visibility untuk kelas builtin yang di-reopen SUDAH ADA
+  (`comp_method_vis_declared`, diindeks per class id, tidak peduli builtin atau bukan). Gap-nya
+  cuma di 2 titik yang gagal mengonsultasikannya untuk receiver bertipe builtin (hanya dicek untuk
+  `TY_OBJECT`): `emit_vis_refusal` (`src/codegen_call.c`, gerbang raise panggilan langsung) dan
+  cabang instance `respond_to_static_answer` (hanya tanya `rt_probe_answer`, yang menjawab "bisa
+  di-dispatch" bukan "visibility apa"). Satu helper kecil `builtin_reopen_vis_class` dipakai di
+  keduanya. **Lalu ditemukan bug KEDUA yang independen** saat `Array#first`/`Hash#fetch` diuji
+  bersamaan: `Hash#fetch` langsung benar begitu fix di atas terpasang, tapi `Array#first` TIDAK —
+  root cause: `desugar_array_first_last`/`desugar_array_at` (`src/analyze_desugar.c`) menulis ulang
+  `arr.first`/`arr.last`/`arr.at(i)` menjadi `arr[0]`/`arr[-1]`/`arr[i]` SEBELUM codegen (gerbang
+  visibility yang baru diperbaiki tidak pernah sempat melihat nama method aslinya), dan gerbang
+  "apakah program override nama ini" milik kedua desugar itu hanya cek `comp_method_in_chain`/
+  `comp_reader_in_chain` (method yang benar-benar di-`def` ulang), BUKAN deklarasi visibility murni
+  tanpa redefinisi (`private :first` tanpa `def` baru). Ditambah satu baris yang sama
+  (`comp_method_vis_declared`) ke kedua gerbang itu. TDD: `test/respond_to_and_call_reopened_
+  builtin_visibility.rb` (spinel), RED (4 dari 9 baris salah) → GREEN (cocok CRuby persis) setelah
+  KEDUA fix terpasang. Regresi: 205 test spinel terkait (`respond_to?`, visibility, builtin reopen,
+  array first/last/at) dicek satu per satu terhadap `.expected`/`.err.expected`: 205/205 cocok.
+- Upstream: **PR dibuka di fork untuk CI+CodeRabbit**: yosefbennywidyo/spinel#31
+  (https://github.com/yosefbennywidyo/spinel/pull/31), branch `k028-builtin-reopen-visibility`,
+  commit `207d515f8`. Gate ter-shard (`gate/k028-builtin-reopen-visibility`) dipush bersamaan.
+  Menunggu hasil CI+gate sebelum membuka PR langsung ke matz/spinel.
