@@ -1,11 +1,18 @@
 # Katalog batas AOT
 
-Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.09.12+8878 (e24b53a35)`
-sejak 2026-10-13 ~11:31 WIB (`sudo make install`, berisi juga fix lanjutan Matz
+Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.09.12+10352 (d20573c47)`
+sejak 2026-10-17 (`sudo make install`, berisi fix K-026 cause A #9344 dan semua PR
+yang merge setelahnya, 1.474 commit di depan `e24b53a35`). `make test` diuji ulang
+bersih (`spin clean` + `make test`): 25/25 lulus (13/13 framework, 8/8 tool, 4/4
+examples/blog), tanpa regresi. Repro suite (`repro/*.rb`, dibandingkan manual dengan
+CRuby karena tak ada `.expected` sidecar) juga diuji ulang: semua diff yang muncul
+sudah terdokumentasi dan sesuai harapan (K-003 by design, K-006/K-015 butuh `-I`
+kilau, K-007 beda prefix backtrace saja, K-023 ditolak compile memang desainnya,
+K-026 sekarang MATCH untuk `tally`/`transform_keys!`). Sebelumnya `2026.09.12+8878
+(e24b53a35)` sejak 2026-10-13 ~11:31 WIB (berisi juga fix lanjutan Matz
 `a58cbba58`/`45d534608` — lihat catatan K-027 di bawah, 143 commit di depannya — jadi
 ongkos boxing 32 slot/~21 program yang K-027 sempat timbulkan sekarang hilang juga).
-`make test` diuji ulang bersih (`spin clean` + `make test`): 25/25 lulus (13/13
-framework, 8/8 tool, 4/4 examples/blog), tanpa regresi. Sebelumnya `2026.09.12+8734
+Sebelumnya `2026.09.12+8734
 (35aea8ccc)` sejak 2026-10-13 ~11:30 WIB (berisi fix K-027 #8720 dan K-017 #8679, BELUM
 fix lanjutan Matz). Sebelumnya master `46a9efb16` sejak 2026-10-12 ~17:30 WIB, dibangun bersih di worktree
 terpisah (bukan `/usr/local/bin/spinel` terpasang saat itu, lihat uji ulang di bawah
