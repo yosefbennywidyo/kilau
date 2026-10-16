@@ -751,7 +751,14 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   — bukan regresi, di luar cakupan PR ini. Gate ter-shard di fork: 17 job + trailer, hijau,
   `Gate: green tree 6bc5720a205b master 5ab6ba17cd43 (linux-x86_64 gcc-13.3.0) tests 7658/0`
   (https://github.com/yosefbennywidyo/spinel/actions/runs/38906207673). **PR dibuka langsung ke
-  matz/spinel: matz/spinel#9344** (fork PR #30 ditutup, menautkan ke #9344). Menunggu Matz.
+  matz/spinel: matz/spinel#9344** (fork PR #30 ditutup, menautkan ke #9344).
+- **Cacat A MERGED 2026-10-16**: matz/spinel#9344 di-merge oleh matz sebagai commit `ce3b19439`
+  ("after the gate and all lanes passed. Thank you."), tanpa perubahan dari versi yang diajukan.
+  **K-026 kini sepenuhnya FIXED** (cacat A dan B keduanya merged): `to_set` lewat #8821
+  (2026-10-13), `tally`/`transform_keys!` lewat #9344 (2026-10-16). `unicode_normalize` tetap
+  sengaja ditolak (desain). Tidak ada langkah tersisa untuk K-026 kecuali Kilau ingin
+  upgrade compiler terinstal untuk memakai fix ini (tidak wajib — Kilau sendiri tidak
+  memanggil `respond_to?(:tally)`/`(:transform_keys!)` di source-nya).
 
 ## K-027: poly-dispatch dengan fakta-kelas KOSONG (bukan tak-ada-fakta) mengecualikan setiap kandidat, termasuk yang nyata
 - Lapisan: compiler (`cls_fact_excludes`, `src/analyze_cls.c`)
