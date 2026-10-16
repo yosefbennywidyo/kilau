@@ -858,4 +858,9 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   pembanding trailer — diperbaiki dengan `git push fork origin/master:master` lalu
   close+reopen fork PR lagi untuk re-trigger `gate-trailer.yml` (lihat memory
   `feedback_spinel_gate_trailer_automation.md`). **PR dibuka langsung ke matz/spinel:
-  matz/spinel#9386** (fork PR #31 ditutup, menautkan ke #9386). Menunggu Matz.
+  matz/spinel#9386** (fork PR #31 ditutup, menautkan ke #9386).
+- **MERGED 2026-10-16**: matz/spinel#9386 di-merge oleh matz sebagai commit `91f83e9dd`
+  ("after the gate and all lanes passed. Thank you."), tanpa perubahan dari versi yang
+  diajukan. **K-028 kini sepenuhnya FIXED.** Tidak ada langkah tersisa kecuali Kilau ingin
+  upgrade compiler terinstal (tidak wajib — Kilau tidak me-reopen visibility method builtin
+  manapun di source-nya).
