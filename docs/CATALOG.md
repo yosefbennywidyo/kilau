@@ -881,4 +881,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   terkonfirmasi, bukan regresi nyata). Gate ter-shard hijau,
   `Gate: green tree 677ad1bb099e master 2e22c6811c17 (linux-x86_64 gcc-13.3.0) tests 7714/0`
   (https://github.com/yosefbennywidyo/spinel/actions/runs/38984145804). **PR dibuka langsung
-  ke matz/spinel: matz/spinel#9404** (fork PR #32 ditutup, menautkan ke #9404). Menunggu Matz.
+  ke matz/spinel: matz/spinel#9404** (fork PR #32 ditutup, menautkan ke #9404).
+- **MERGED 2026-10-17**: matz/spinel#9404 di-merge oleh matz sebagai commit `b3faf74df`
+  ("after the gate and all lanes passed. Thank you."), tanpa perubahan dari versi yang
+  diajukan. **K-028 (termasuk follow-up semua tipe builtin) kini sepenuhnya FIXED.**
