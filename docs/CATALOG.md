@@ -632,7 +632,34 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   - `succ`: `Integer#succ` = `int` di raise, `poly` di promote (overflow ke Bignum, setara `+ 1`). `String#succ` = `string`. Bisa ditambah dengan gerbang `g_promote_mode` seperti `yield_operator_site_type`, tapi belum diverifikasi. (Hanya bila ada reopen pada rantai, `succ` dan nama lain di luar tabel kini terjawab per site oleh #7158; lihat K-025.)
   - `dig`: hasilnya bergantung jumlah indeks (kedalaman), dan di promote bahkan `IntArray#dig(0)` = `poly`. Bukan aturan "ikut receiver".
   - Issue terkait tapi berbeda posisi: matz/spinel#7010 (yield divergen di ABI proc, `next []`, nilai blok ke method user, inline `super`). Programnya tetap gagal dengan 4 error yang sama dengan K-024b; tidak diperbaiki dan tidak diperburuk.
-- **Catatan untuk refactor umum** (diputuskan user 2026-10-02: belum dikerjakan): tabel ini tetap daftar tangan. Solusi menyeluruh adalah memisahkan logika "tipe hasil builtin untuk receiver bertipe `rt`" dari `infer_call` (`src/analyze_infer.c`, kira-kira baris 1650 sampai 6400, tersebar di `infer_array_call`, `infer_numeric_call`, `infer_hash_call`, `infer_poly_call` dan arm inline) menjadi fungsi murni tanpa tulis cache. Dengan begitu hook codegen bisa memanggilnya dengan `rt` per site dan semua method tertutup sekaligus. Hambatannya: fungsi-fungsi itu menerima `Compiler *` non-const, membaca `infer_type` (yang mengisi cache), dan menghitung `rt` dari node receiver di dalam fungsi. Risiko regresinya besar, jadi layak didiskusikan dulu dengan Matz (issue), bukan langsung PR. Perkembangan 2026-10-02: #7158 memakai *face re-inference* (`an_set_face_node` + `infer_call`, mekanisme dispatch receiver poly) sebagai sumber tipe per site, tapi hanya bila ada reopen pada rantai; arah upstream yang lebih luas ada di matz/spinel#7033 (tabel builtin) dan #7100 (`CallPlan`).
+- **Catatan untuk refactor umum** (diputuskan user 2026-10-02: belum dikerjakan; **lihat koreksi 2026-10-17 di bawah — ternyata TIDAK perlu refactor sebesar ini**). Perkembangan 2026-10-02: #7158 memakai *face re-inference* (`an_set_face_node` + `infer_call`, mekanisme dispatch receiver poly) sebagai sumber tipe per site, tapi hanya bila ada reopen pada rantai; arah upstream yang lebih luas ada di matz/spinel#7033 (tabel builtin) dan #7100 (`CallPlan`, sudah CLOSED, tidak pernah diadopsi).
+- **Sisa cakupan (`dig`/`succ`/`sum`) dikerjakan 2026-10-17, TANPA refactor besar di atas.** Riset ulang
+  (fresh, dengan plan tertulis + TDD) menemukan asumsi 2026-10-02 di atas dua kali salah, dibuktikan
+  dengan `--emit-types` pada panggilan langsung (bukan lewat `yield`) SEBELUM menulis kode:
+  - `dig` BUKAN "bergantung kedalaman" secara rumit — satu indeks menjawab elemen array (nilable,
+    sama seperti `[]`; row `BOP_ANY_ARRAY "dig" 1 1` di `builtin_ops.c` memang melower ke getter
+    nilable yang sama persis dengan `[]`), dua indeks atau lebih menjawab poly (row `2 127`-nya).
+    Promote-mode TIDAK mengubah jawaban satu-indeks ini (sama seperti `[]` di sebelahnya tak berubah).
+  - `sum` pada Float Array BUKAN `TY_FLOAT` di kedua mode — selalu poly (aturan `fold_sum_type`
+    yang sudah ada di `src/types.c`: seed Integer(0) default tak cocok dengan elemen Float, bukan
+    aturan "ikut receiver"; `[1.5].sum` CRuby jawab Float 4.0, tapi Spinel sendiri poly di keduanya).
+    `sum` pada String Array JUGA tidak "tak terjawab" — poly juga, dan jalur boxed-nya memang benar
+    me-raise `TypeError` CRuby saat runtime (diverifikasi menjalankan binary hasil compile).
+  - `succ` persis seperti dugaan 2026-10-02 (Integer: int raise / poly promote; String: string tetap)
+    TAPI ada kasus yang lupa dicek: **Symbol#succ**, ditemukan lewat review terpisah setelah PR
+    pertama dibuka — `yield.succ` dengan site Symbol diam-diam salah (mencetak Integer bukan Symbol),
+    diperbaiki dengan menambah arm Symbol (row builtin-nya sendiri sama persis bentuknya dengan String).
+  - Jadi perbaikan sebenarnya hanya: tambah parameter `promote` + tiga arm baru ke
+    `ty_recv_builtin_result` yang SUDAH ADA di `src/types.c`, pakai ulang `fold_sum_type` yang
+    juga sudah ada — tidak ada fungsi baru, tidak ada ekstraksi dari `infer_call`. Mekanisme
+    widening (`yield_recv_builtin_every_site`) tidak disentuh sama sekali, sesuai desain tabel ini.
+  - Rencana tertulis: `RENCANA_K024_YIELD_BUILTIN_RESULT.md` di working tree spinel (lokal, tidak
+    dikirim upstream). TDD penuh per arm (RED sebelum fix, GREEN sesudah) + review fresh-context
+    terpisah (model lain, menemukan bug Symbol di atas + beberapa masalah komentar minor).
+  - Gate ter-shard hijau, `Gate: green tree 20f5d49b8314 master 8a51e2822ad4 (linux-x86_64
+    gcc-13.3.0) tests 7744/0` (https://github.com/yosefbennywidyo/spinel/actions/runs/39016853167).
+    CodeRabbit + guardrails bersih (tanpa temuan). Fork PR #33 ditutup, menautkan ke PR upstream.
+  - **PR dibuka langsung ke matz/spinel: matz/spinel#9419** (belum merge saat catatan ini ditulis).
 
 ## K-025: method builtin yang dibuka ulang di Array/Hash diabaikan; reopen scalar lewat `yield` gagal compile
 - Lapisan: compiler (dispatch reopen kelas builtin)
