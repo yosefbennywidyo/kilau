@@ -7,8 +7,8 @@ dibandingkan manual dengan CRuby karena tak ada `.expected` sidecar) diuji ulang
 dengan build lokal di commit yang sama sebelum install: semua diff yang muncul sudah
 terdokumentasi dan sesuai harapan (K-003 by design, K-006/K-015 butuh `-I` kilau,
 K-023 ditolak compile memang desainnya, K-026 sekarang MATCH untuk
-`tally`/`transform_keys!`). `make test` Kilau dengan compiler terpasang ini: lihat
-hasil terbaru di bawah / belum diverifikasi ulang sejak lompatan ini.
+`tally`/`transform_keys!`). `make test` Kilau dengan compiler terpasang ini:
+**25/25 lulus** (13/13 framework, 8/8 tool, 4/4 examples/blog), tanpa regresi.
 Sebelumnya `2026.09.12+10352 (d20573c47)` sejak 2026-10-17 pagi (`sudo make
 install`, berisi fix K-026 cause A #9344 dan semua PR yang merge setelahnya, 1.474
 commit di depan `e24b53a35`). `make test` saat itu diuji ulang bersih (`spin clean`
