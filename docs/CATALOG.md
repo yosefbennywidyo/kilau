@@ -956,14 +956,37 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   LOUD, bukan nilai salah diam-diam, tapi tetap blocker penuh untuk program yang memakainya)
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini (source Kilau tidak memanggil builtin
   ini pada receiver `yield` dengan blok bertipe campuran)
-- Upstream: **belum diajukan**. Arah perbaikan: sama seperti #9419, kemungkinan cukup
-  menambah arm per nama ke `ty_recv_builtin_result` (pola sudah mapan: grup "kembalikan
-  sejenis receiver" seperti `sort`/`reverse` untuk `sort!`/`reverse!`/`rotate`/`shuffle`/
-  `sample`, grup "pembaca elemen dengan argumen" seperti `dig`/`[]` untuk `take`/`drop`/
-  `first(n)`/`last(n)`/`fetch`). **Belum diputuskan**: menambah satu per satu lagi (ongkos
-  rendah per PR, pola K-024's #9419 terbukti bekerja) vs akhirnya melakukan refactor generik
-  yang pernah dipertimbangkan 2026-10-02 (baca dari `bop_rows`/`BOP_ANY_ARRAY` langsung
-  alih-alih daftar manual) — mengingat sweep ini baru menemukan 11 nama lewat sampel kecil,
-  kemungkinan jumlah nama yang sebenarnya terkena jauh lebih besar, yang mulai melemahkan
-  argumen "refactor besar tidak perlu" dari catatan K-024's correction 2026-10-17. Keputusan
-  ini menunggu user.
+- **Keputusan 2026-10-17 (user)**: lakukan refactor generik, bukan tambah arm satu-satu.
+  Investigasi menemukan `builtin_ops.c`'s `bop_rows` sudah punya lookup murni
+  (`bop_find_arg`/`bop_result`) yang bisa langsung dipakai `ty_recv_builtin_result` sebagai
+  fallback generik, alih-alih menulis arm tangan per nama. Dari 11 nama: 6 langsung gratis
+  (row-nya sudah punya hasil konkret: `sort!`/`reverse!`/`rotate`/`shuffle`/`first(n)`/
+  `last(n)`), 4 lagi gratis setelah memperbaiki row `TY_UNKNOWN` yang ternyata cuma belum
+  selesai ditulis, bukan sengaja dilempar ke tempat lain (`take`/`drop`/`fetch` 1-arg/
+  `sample` 0-arg), dan 2 (`sample(n)`, `clamp`) butuh parameter baru (`arg1`, dan apakah
+  argumen Range literal punya bound Float) yang di-thread lewat helper baru
+  (`ty_recv_call_extra_args`) yang dipanggil dari KEDUA caller tabel ini (analyzer dan
+  codegen) — disiplin DRY yang sama dengan pelajaran K-027.
+  **Regresi nyata ditemukan SEBELUM di-push ke mana pun** (review fresh-context, lalu
+  dikonfirmasi lagi oleh CI asli): fallback generik versi awal tidak dibatasi — ia menjawab
+  untuk NAMA APA PUN yang row-nya kebetulan punya hasil konkret, bukan cuma 11 nama yang
+  sudah diverifikasi. `inspect` juga punya row konkret (`TY_STRING`) dan ikut lolos tanpa
+  diverifikasi, merusak `test/string_encode_arguments.rb` yang sudah ada. Diperbaiki dengan
+  mengubah fallback jadi ALLOWLIST eksplisit 10 nama (bukan "nama apa pun yang row-nya
+  terlihat aman") — nama baru yang mau ikut harus punya tes RED/GREEN sendiri dulu, bukan
+  cuma row yang terlihat konkret. Juga ditemukan (CodeRabbit) dan diperbaiki: lookup
+  fallback hanya mengirim `arg0` ke `bop_find_arg`, bukan `arg1`, jadi row yang digerbangi
+  argumen kedua (`IO#set_encoding`) tidak pernah bisa cocok lewat jalur ini (belum pernah
+  terlihat salah karena kedua row kebetulan menjawab sama, tapi berisiko untuk row masa
+  depan) — diperbaiki supaya kedua argumen dikirim.
+  **Pelajaran metodologi**: sweep regresi pertama memakai filter keyword (grep nama-nama
+  yang DIKIRA relevan) — ini tidak bisa menemukan `inspect` karena `inspect` tidak pernah
+  dikira relevan sampai kejadian. Begitu akar masalahnya ditemukan, perbaikan sebenarnya
+  (allowlist) membuktikan keamanan secara STRUKTURAL (dibaca dari kode: nama di luar
+  daftar literal tidak bisa mencapai jalur itu) — jauh lebih kuat daripada sweep lari
+  (yang juga dihentikan di ~22% korpus penuh karena perbaikan struktural ini sudah cukup
+  menjamin tanpa perlu menghabiskan waktu menjalankan semua ~7500 file satu per satu).
+- Gate ter-shard hijau, `Gate: green tree 0498906b6cd0 master 4ff65b4568a1
+  (linux-x86_64 gcc-13.3.0) tests 7772/0`. Fork PR #34 ditutup, menautkan ke PR upstream.
+- **PR dibuka langsung ke matz/spinel: matz/spinel#9460** (belum merge saat catatan ini
+  ditulis).
