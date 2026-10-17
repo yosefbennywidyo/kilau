@@ -861,6 +861,24 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   matz/spinel#9386** (fork PR #31 ditutup, menautkan ke #9386).
 - **MERGED 2026-10-16**: matz/spinel#9386 di-merge oleh matz sebagai commit `91f83e9dd`
   ("after the gate and all lanes passed. Thank you."), tanpa perubahan dari versi yang
-  diajukan. **K-028 kini sepenuhnya FIXED.** Tidak ada langkah tersisa kecuali Kilau ingin
-  upgrade compiler terinstal (tidak wajib — Kilau tidak me-reopen visibility method builtin
-  manapun di source-nya).
+  diajukan.
+- **Follow-up ditemukan 2026-10-17**: fix #9386 hanya memperbaiki Array/Hash. Probe lebih
+  luas ke tipe builtin lain (String, Integer, Range, Symbol, Float) menemukan `respond_to?`
+  masih salah (`true`, CRuby `false`) untuk `Integer#to_s`, `Range#min`, `Symbol#to_s` yang
+  di-reopen privat — walau panggilan LANGSUNG sudah benar untuk semuanya (fix #9386 di
+  `emit_vis_refusal` memang type-agnostic lewat `builtin_class_of_type`). Akar masalah:
+  `respond_to_static_answer` (`src/codegen_call.c`) punya beberapa jalur jawaban berurutan,
+  dan fix #9386 cuma mengonsultasikan tabel visibility di jalur TERAKHIR (fallback probe
+  builtin) — tiga jalur SEBELUMNYA mengasumsikan semua nama publik dan jalan duluan:
+  `respond_universal[]` (nama method publik Object seperti `to_s`, dicek tanpa syarat —
+  inilah yang membuat `Integer#to_s`/`Symbol#to_s` salah), early-return "biarkan tak
+  terselesaikan" milik Range (membuat `Range#min` salah), dan daftar nama hardcode milik
+  Symbol/Proc/Time sendiri. Fix: pindahkan cek visibility ke PALING AWAL fungsi, sebelum
+  semua jalur itu, lalu hapus duplikat yang jadi dead code di fallback probe. Test
+  `test/respond_to_reopened_builtin_visibility_other_types.rb`: RED (3/9 salah) → GREEN
+  (cocok CRuby persis). Test K-028 asli + 205 test terkait diverifikasi ulang tak terpengaruh
+  (204/205 cocok, 1 false positif dari banding stdout+stderr tergabung yang sudah
+  terkonfirmasi, bukan regresi nyata). Gate ter-shard hijau,
+  `Gate: green tree 677ad1bb099e master 2e22c6811c17 (linux-x86_64 gcc-13.3.0) tests 7714/0`
+  (https://github.com/yosefbennywidyo/spinel/actions/runs/38984145804). **PR dibuka langsung
+  ke matz/spinel: matz/spinel#9404** (fork PR #32 ditutup, menautkan ke #9404). Menunggu Matz.
