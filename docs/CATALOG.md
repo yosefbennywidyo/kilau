@@ -918,3 +918,52 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - **MERGED 2026-10-17**: matz/spinel#9404 di-merge oleh matz sebagai commit `b3faf74df`
   ("after the gate and all lanes passed. Thank you."), tanpa perubahan dari versi yang
   diajukan. **K-028 (termasuk follow-up semua tipe builtin) kini sepenuhnya FIXED.**
+
+## K-029: belasan method builtin lain pada receiver `yield` dengan blok bertipe berbeda masih menghasilkan C tidak valid (keluarga K-024/#9419 belum tuntas)
+- Lapisan: compiler (tabel `ty_recv_builtin_result`, `src/types.c`, dan hook per-site
+  codegen `yield_builtin_method_site_type`/`src/codegen_util.c` yang membacanya — sama
+  mekanisme dengan K-024)
+- Ditemukan: 2026-10-17, lewat sweep proaktif setelah matz/spinel#9419 (K-024's dig/succ/sum
+  followup) di-merge. Tabel itu hanya mengenal daftar nama yang dipilih tangan (`abs`,
+  `magnitude`, `-@`, `succ`, `sum`, `itself`, `dup`, `clone`, `freeze`, `sort`, `reverse`,
+  `uniq`, `compact`, `to_a`, `first`/`last`/`min`/`max`/`pop`/`shift` tanpa argumen, `dig`,
+  `[]`) — argc selalu 0 untuk sebagian besar arm (lihat `src/types.c:389`, `if (argc == 0)`
+  membungkus semuanya kecuali `dig`/`[]`). Nama builtin LAIN yang dipanggil pada `yield` tanpa
+  blok sendiri, di call site berbeda dengan kind konkret berbeda, melewati tabel itu dan
+  menghasilkan C tidak valid — pola identik dengan K-024 sebelum #9419.
+- Diverifikasi langsung (compile gagal, bukan nilai salah diam-diam) untuk sedikitnya 11 nama:
+  `sort!`, `reverse!`, `rotate`, `shuffle`, `sample` (Array, kind elemen berbeda antar site →
+  `incompatible pointer types assigning to 'sp_IntArray *' from 'sp_StrArray *'`); `take(n)`,
+  `drop(n)`, `first(n)`, `last(n)` (bentuk SLICE, berbeda dari `first`/`last` TANPA argumen yang
+  sudah ditangani — argc≠0 jatuh ke luar `if (argc==0)`, error sama dengan grup di atas);
+  `fetch(i)` dan `clamp(lo, hi)` (error berbeda bentuk: `assigning to 'sp_int'/'sp_oint' from
+  incompatible type 'sp_RbVal'/'const char *'`, tapi akar penyebab sama — tabel tak menjawab
+  site itu). Ini BUKAN daftar lengkap — hanya sampel yang diuji; nama lain yang mengikuti
+  pola "kembalikan elemen/array sejenis receiver, tanpa blok sendiri" kemungkinan sama-sama
+  terkena (belum disisir satu per satu).
+  **Catatan metodologi**: `uniq!`/`compact!`/`flatten` DIUJI juga dan TERNYATA SUDAH BENAR
+  (cocok CRuby) walau sama-sama tak ada di tabel — kemungkinan jalur codegen-nya berbeda dari
+  `sort!`/`reverse!` (mis. keduanya mungkin memang mengembalikan objek yang sama, lewat jalur
+  generik yang sudah kind-agnostic), jadi tidak semua nama di luar tabel otomatis bermasalah;
+  setiap kandidat perlu diverifikasi langsung, tidak diasumsikan dari pola nama saja. Satu
+  jalur ternyata tidak reproducible sama sekali: `Integer#hash`/`String#hash` sempat terlihat
+  beda dari CRuby tapi itu bukan bug — CRuby sendiri mengacak `hash` per proses (hash-flooding
+  protection), jadi perbandingan satu kali jalan lintas proses itu sendiri tidak valid; dibuang
+  dari temuan setelah dicek ulang.
+- Repro: **repro/k029_yield_receiver_more_builtins_bad_c.rb** (semua 11 nama di atas, dua call
+  site per nama dengan kind berbeda; CRuby jalan bersih, spinel gagal compile di 11 titik).
+- Klasifikasi: bug-compiler (refusal compile palsu untuk program Ruby yang valid — gagal
+  LOUD, bukan nilai salah diam-diam, tapi tetap blocker penuh untuk program yang memakainya)
+- Solusi yang dipakai: tidak dibutuhkan Kilau saat ini (source Kilau tidak memanggil builtin
+  ini pada receiver `yield` dengan blok bertipe campuran)
+- Upstream: **belum diajukan**. Arah perbaikan: sama seperti #9419, kemungkinan cukup
+  menambah arm per nama ke `ty_recv_builtin_result` (pola sudah mapan: grup "kembalikan
+  sejenis receiver" seperti `sort`/`reverse` untuk `sort!`/`reverse!`/`rotate`/`shuffle`/
+  `sample`, grup "pembaca elemen dengan argumen" seperti `dig`/`[]` untuk `take`/`drop`/
+  `first(n)`/`last(n)`/`fetch`). **Belum diputuskan**: menambah satu per satu lagi (ongkos
+  rendah per PR, pola K-024's #9419 terbukti bekerja) vs akhirnya melakukan refactor generik
+  yang pernah dipertimbangkan 2026-10-02 (baca dari `bop_rows`/`BOP_ANY_ARRAY` langsung
+  alih-alih daftar manual) — mengingat sweep ini baru menemukan 11 nama lewat sampel kecil,
+  kemungkinan jumlah nama yang sebenarnya terkena jauh lebih besar, yang mulai melemahkan
+  argumen "refactor besar tidak perlu" dari catatan K-024's correction 2026-10-17. Keputusan
+  ini menunggu user.
