@@ -659,7 +659,8 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   - Gate ter-shard hijau, `Gate: green tree 20f5d49b8314 master 8a51e2822ad4 (linux-x86_64
     gcc-13.3.0) tests 7744/0` (https://github.com/yosefbennywidyo/spinel/actions/runs/39016853167).
     CodeRabbit + guardrails bersih (tanpa temuan). Fork PR #33 ditutup, menautkan ke PR upstream.
-  - **PR dibuka langsung ke matz/spinel: matz/spinel#9419** (belum merge saat catatan ini ditulis).
+  - **MERGED 2026-10-17 ~09:44 WIB**: matz/spinel#9419 di-merge sebagai commit
+    `b97f4462c` — **FIXED**.
 
 ## K-025: method builtin yang dibuka ulang di Array/Hash diabaikan; reopen scalar lewat `yield` gagal compile
 - Lapisan: compiler (dispatch reopen kelas builtin)
