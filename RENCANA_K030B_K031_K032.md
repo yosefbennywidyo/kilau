@@ -6,8 +6,8 @@ Dibuat: 2026-10-20 ~20:15 WIB. Sumber temuan: sapuan builtin pada receiver `yiel
 Status umum (2026-10-20 ~21:50 WIB):
 - K-030: merged sebagai matz/spinel#9779 (13:46Z, merge commit `4ab5183b5`).
 - K-032: bukan bug, perilaku sengaja (lihat T1).
-- K-031: upstream matz/spinel#9794, menunggu review.
-- K-030b: upstream matz/spinel#9795, bergantung pada #9794, menunggu review.
+- K-031: merged matz/spinel#9794 (15:46Z, merge commit `9e6678d2e`).
+- K-030b: merged matz/spinel#9795 (15:46Z, merge commit `9923101bd`).
 
 ## Aturan kerja
 
@@ -84,5 +84,6 @@ menunggu gate.
 
 - 2026-10-20 ~20:15 WIB: rencana dibuat. T1, T2, T3 belum dimulai.
 - 2026-10-20 ~21:30 WIB: T2 dan T3 fix lokal selesai.
+- 2026-10-20 ~22:46 WIB: #9794 dan #9795 merged (15:46Z). Ketiga tugas selesai.
 - 2026-10-20 ~21:50 WIB: gate fork hijau untuk K-031 dan K-030b, clang fork hijau. Dibuka upstream sebagai #9794 dan #9795. Fork PR #37 dan #38 ditutup. #9779 sudah merged (13:46Z).
 - 2026-10-20 ~20:40 WIB: T1 selesai, bukan bug (perilaku sengaja, lihat docs/limitations.md). Catalog K-032 diperbarui. Catatan status K-030 yang sebelumnya salah masuk ke K-032 dipindah ke K-030.

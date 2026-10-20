@@ -1006,7 +1006,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Belum diperbaiki.
 - Catatan sapuan lain: lihat K-031 (`<=>`) dan K-032 (`frozen?`) di bawah. Penolakan yang disengaja (`push`, `<<`, `append`, `unshift` dengan elemen tipe lain) adalah penolakan bernama, bukan bug. Nama yang hanya mismatch karena enumerator atau method yang tak ada di Hash (`cycle`, `each_cons`, `each_slice`, `find_index`) belum diverifikasi ke akar.
 
-**Status 2026-10-20 (~21:50 WIB): diperbaiki, PR upstream terbuka.** Commit `898cac013` di branch `k030b-yield-sort-reverse-nonarray-site`, di atas commit K-031. Dibuka sebagai matz/spinel#9795, bergantung pada #9794. Gate sharded di fork hijau (run `39431467735`, tests 8278/0 pada tree yang sama dengan hasil rebase `a154ead72`), clang di fork hijau. Test: `test/yield_receiver_sort_reverse_site_kinds.rb` + `test/infer/`. Repro K-030b identik dengan CRuby.
+**Diperbaiki upstream: merged 2026-10-20 15:46Z (~22:46 WIB)**, matz/spinel#9795, merge commit `9923101bd`. Fix asli commit `898cac013` di branch `k030b-yield-sort-reverse-nonarray-site`, di atas commit K-031. Dibuka sebagai matz/spinel#9795, bergantung pada #9794. Gate sharded di fork hijau (run `39431467735`, tests 8278/0 pada tree yang sama dengan hasil rebase `a154ead72`), clang di fork hijau. Test: `test/yield_receiver_sort_reverse_site_kinds.rb` + `test/infer/`. Repro K-030b identik dengan CRuby.
 
 ## K-031: `yield.<=>(2)` dengan site Integer lalu site non-numerik: TypeError saat runtime
 - Lapisan: compiler (tipe jawaban per site, sama keluarga K-030)
@@ -1016,7 +1016,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Klasifikasi: bug-compiler, gagal keras di runtime (bukan nilai salah diam-diam)
 - Belum diperbaiki.
 
-**Status 2026-10-20 (~21:50 WIB): diperbaiki, PR upstream terbuka.** Commit `d847a1d6c` di branch `k031-yield-spaceship-site-answer`, dibuka sebagai matz/spinel#9794 dari master terbaru (tidak bertumpuk lagi). Gate sharded di fork hijau (run `39431458277`, tests 8277/0), clang di fork hijau. Test: `test/yield_receiver_spaceship_site_kinds.rb` + `test/infer/`. Repro K-031 identik dengan CRuby (`1 nil`).
+**Diperbaiki upstream: merged 2026-10-20 15:46Z (~22:46 WIB)**, matz/spinel#9794, merge commit `9e6678d2e`. Fix asli commit `d847a1d6c` di branch `k031-yield-spaceship-site-answer`, dibuka sebagai matz/spinel#9794 dari master terbaru (tidak bertumpuk lagi). Gate sharded di fork hijau (run `39431458277`, tests 8277/0), clang di fork hijau. Test: `test/yield_receiver_spaceship_site_kinds.rb` + `test/infer/`. Repro K-031 identik dengan CRuby (`1 nil`).
 
 ## K-032: `frozen?` pada String literal bernilai `true` di spinel (BUKAN bug yield)
 - Lapisan: compiler/runtime (perlakuan String literal)
