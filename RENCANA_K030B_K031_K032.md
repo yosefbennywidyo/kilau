@@ -68,6 +68,34 @@ Status umum (2026-10-20 ~21:50 WIB):
   K-030b identik dengan CRuby. Sapuan: `sort` dan `reverse` dari CC_FAIL ke OK,
   `<=>` dari MISMATCH ke OK. Tidak ada regresi di 67 test `yield.`.
 
+## T4. Enumerable tanpa blok pada Hash di site yield yang bercampur (baru, 2026-10-20 ~23:30 WIB)
+
+- Gejala: `def w; p yield.cycle.first(3); end; w { [1, 2] }; w { {a: 1} }` →
+  spinel `NoMethodError: undefined method 'cycle' for an instance of Hash`, CRuby
+  menjawab `[[:a, 1], [:a, 1], [:a, 1]]`. Dengan satu site Hash saja, benar.
+- Di luar yield, `{a: 1}.cycle`, `each_cons`, `each_slice`, dan `find_index`
+  semuanya benar.
+- Penyebab (dilihat dengan print sementara, sudah dibersihkan):
+  - YieldNode diberi tipe `int_array` (site pertama), bukan poly. Jadi widening
+    `YU_RECEIVER` tidak terjadi.
+  - Jawaban per site untuk site Array = enumerator (benar).
+  - Jawaban per site untuk site Hash = `TY_UNKNOWN`, karena inferensi face-pinned
+    tidak menghasilkan enumerator untuk `cycle` pada Hash.
+  - Codegen lalu jatuh ke `sp_stage_recv_args_msg("undefined method ...")`.
+- Coba: menambah `cycle`, `each_cons`, `each_slice`, `find_index` ke
+  `yield_site_per_kind_name`. Tidak cukup: `cycle` masih gagal, dan probe
+  campuran `each_slice`/`find_index` gagal compile (PolyArray vs IntArray).
+- Kriteria selesai: `w { [1, 2] }` + `w { {a: 1} }` untuk keempat nama identik
+  dengan CRuby, dan `yield.each_slice` / `each_cons` / `find_index` tidak gagal
+  compile saat bercampur.
+- Langkah yang disarankan:
+  1. Perbaiki inferensi face-pinned agar Hash `cycle` (tanpa blok) menjawab
+     enumerator, dan periksa apakah `each_slice`/`each_cons` juga perlu.
+  2. Untuk `find_index`, tentukan tipe hasil per site (Integer atau nil), bukan
+     tipe elemen.
+  3. Test CRuby dan `test/infer/`.
+- Status: belum dikerjakan. Ini lebih besar dari T3.
+
 ## Di luar cakupan (belum dijadwalkan)
 
 - Hash tidak punya `cycle`, `each_cons`, `each_slice`, `find_index` di spinel,
@@ -81,6 +109,8 @@ T1 → T2 → T3. T3 bisa dimulai lebih awal jika #9779 selesai dan T1/T2 sedang
 menunggu gate.
 
 ## Log status
+- 2026-10-20 ~23:30 WIB: T4 ditemukan dan didiagnosis. Eksperimen perubahan
+  dibatalkan, tidak ada perubahan kode yang tersisa.
 
 - 2026-10-20 ~20:15 WIB: rencana dibuat. T1, T2, T3 belum dimulai.
 - 2026-10-20 ~21:30 WIB: T2 dan T3 fix lokal selesai.
