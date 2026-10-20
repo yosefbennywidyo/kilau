@@ -990,3 +990,38 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   (linux-x86_64 gcc-13.3.0) tests 7772/0`. Fork PR #34 ditutup, menautkan ke PR upstream.
 - **PR dibuka langsung ke matz/spinel: matz/spinel#9460** (belum merge saat catatan ini
   ditulis).
+- **Uji ulang 2026-10-20 (master `30e71a00a`, dibangun dari source)**: `repro/k029_yield_receiver_more_builtins_bad_c.rb` kini compile dan keluarannya identik dengan CRuby untuk ke-11 nama di atas. Sisa yang belum disisir: nama builtin lain yang mengikuti pola "kembalikan elemen/array sejenis receiver, tanpa blok sendiri" (belum diverifikasi satu per satu).
+
+## K-030: sisir K-029 (2026-10-20): builtin lain pada receiver `yield` dengan site Integer dan Float -- Integer dijawab sebagai Float (nilai salah diam-diam)
+- Lapisan: compiler (per-site builtin answer `yield_builtin_method_site_type`/`ty_recv_builtin_result`, `src/types.c` + `src/codegen_util.c`)
+- Ditemukan: 2026-10-20, sapuan otomatis: 218 nama builtin yang dipanggil di `yield` dengan 7 jenis receiver (Integer, Float, String, Symbol, Array Integer, Array String, Hash), 258 probe, dibandingkan dengan CRuby. Generator: `scratchpad/sweep/gen.rb`, hasil: `scratchpad/sweep/results.txt`.
+- Yang terjadi (master `30e71a00a`): site Integer dan site Float dalam satu method `yield.NAME` → site Integer keluar sebagai Float: `7 ** 2` → `49.0` (CRuby `49`); `7.conj` → `7.0`; `7.modulo(2)` → `1.0`; `7.ceil(2)` → `7.0`. Sama untuk `abs2`, `floor(2)`, `round(2)`, `truncate(2)`, `remainder(2)`, `real`, `conjugate`. Site Float tetap benar. Tanpa site Float, nilainya benar.
+- Repro: **repro/k030_yield_receiver_numeric_wrong_value.rb** (keluaran: `49.0` vs CRuby `49`).
+- Klasifikasi: bug-compiler, nilai salah diam-diam (lebih buruk daripada K-029, yang gagal compile)
+- Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
+- Belum diperbaiki. Fix ada di compiler spinel (tabel per-site untuk nama di luar allowlist), perlu PR upstream.
+
+## K-030b: `yield.sort` / `yield.reverse` gagal compile C saat salah satu site receiver-nya bukan Array (Hash / String)
+- Lapisan: compiler (sama dengan K-030)
+- Ditemukan: 2026-10-20, sapuan K-030. `sort` dan `reverse` ada di allowlist `yield_site_listed` (`src/types.c`), tetapi allowlist hanya menjawab `ty_recv_is_plain_array(recv)`; site Hash atau String membuat tabel menolak (return 0) → codegen mengeluarkan C tidak valid.
+- Yang terjadi: `t_sort { [3,1,2] }` + `t_sort { {a: 1} }` → `assigning to 'sp_IntArray *' from 'sp_PolyArray *'`; `t_reverse { "abc" }` + `t_reverse { [3,1,2] }` → `assigning to 'const char *' from 'sp_IntArray *'`.
+- Repro: **repro/k030b_yield_receiver_nonarray_site_bad_c.rb**
+- Klasifikasi: bug-compiler (refusal palsu untuk program Ruby valid, gagal keras)
+- Belum diperbaiki.
+- Catatan sapuan lain: lihat K-031 (`<=>`) dan K-032 (`frozen?`) di bawah. Penolakan yang disengaja (`push`, `<<`, `append`, `unshift` dengan elemen tipe lain) adalah penolakan bernama, bukan bug. Nama yang hanya mismatch karena enumerator atau method yang tak ada di Hash (`cycle`, `each_cons`, `each_slice`, `find_index`) belum diverifikasi ke akar.
+
+## K-031: `yield.<=>(2)` dengan site Integer lalu site non-numerik: TypeError saat runtime
+- Lapisan: compiler (tipe jawaban per site, sama keluarga K-030)
+- Ditemukan: 2026-10-20, sapuan K-030 (sisa dari catatan `<=>`).
+- Yang terjadi (master `30e71a00a`): `w { 7 }` lalu `w { "abc" }` (atau Array/Hash/Symbol di posisi kedua) → spinel mencetak `1` lalu melempar `TypeError: no implicit conversion from nil to integer`. CRuby: `1`, `nil`. Urutan penting: `w { "abc" }` lalu `w { 7 }` benar (`nil`, `1`), jadi jawaban tipe diambil dari site pertama.
+- Repro: **repro/k031_yield_receiver_spaceship_integer_site_typeerror.rb**
+- Klasifikasi: bug-compiler, gagal keras di runtime (bukan nilai salah diam-diam)
+- Belum diperbaiki.
+
+## K-032: `frozen?` pada String literal bernilai `true` di spinel (BUKAN bug yield)
+- Lapisan: compiler/runtime (perlakuan String literal)
+- Ditemukan: 2026-10-20, sapuan K-030 (kasus `frozen?` pada site String).
+- Yang terjadi: `p "abc".frozen?` dan `x = "abc"; p x.frozen?` → spinel `true true`, CRuby 4.0 `false false` (literal polos belum di-freeze, chilled). Tanpa yield dan tanpa blok.
+- Repro: **repro/k032_string_literal_frozen_p.rb**
+- Klasifikasi: nilai salah diam-diam, di luar keluarga yield. Perlu pemeriksaan terpisah apakah literal dibekukan sengaja (mis. karena `# frozen_string_literal` tak ada).
+- Belum diperbaiki.
