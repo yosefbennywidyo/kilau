@@ -1001,6 +1001,8 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
 - Belum diperbaiki. Fix ada di compiler spinel (tabel per-site untuk nama di luar allowlist), perlu PR upstream.
 
+- **Perbaikan lokal 2026-10-20** (spinel branch `k030-yield-builtin-int-site-float`; sekarang matz/spinel#9779, head `fe86b5f93`, menunggu clang): `an_yield_site_builtin_answer` (`src/analyze_infer.c`) kini menjawab per site juga untuk site numerik (Integer/Float), tanpa perlu reopen di rantai. Repro K-030 kini identik dengan CRuby; test regresi: `test/yield_receiver_numeric_site_kinds.rb`. Sapuan ulang 258 probe: 18 berpindah ke OK, 0 regresi. Test `yield.` yang ada: tidak berubah. Belum dijalankan: corpus penuh dan infer-test (lihat gate CI fork). Catatan: memperluas ke site String/Hash (mis. `yield.inspect`) menyebabkan gagal compile, jadi dibatasi ke numerik.
+
 ## K-030b: `yield.sort` / `yield.reverse` gagal compile C saat salah satu site receiver-nya bukan Array (Hash / String)
 - Lapisan: compiler (sama dengan K-030)
 - Ditemukan: 2026-10-20, sapuan K-030. `sort` dan `reverse` ada di allowlist `yield_site_listed` (`src/types.c`), tetapi allowlist hanya menjawab `ty_recv_is_plain_array(recv)`; site Hash atau String membuat tabel menolak (return 0) → codegen mengeluarkan C tidak valid.
@@ -1024,5 +1026,4 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Yang terjadi: `p "abc".frozen?` dan `x = "abc"; p x.frozen?` → spinel `true true`, CRuby 4.0 `false false` (literal polos belum di-freeze, chilled). Tanpa yield dan tanpa blok.
 - Repro: **repro/k032_string_literal_frozen_p.rb**
 - Klasifikasi: nilai salah diam-diam, di luar keluarga yield. Perlu pemeriksaan terpisah apakah literal dibekukan sengaja (mis. karena `# frozen_string_literal` tak ada).
-- Belum diperbaiki.
-- **Perbaikan lokal 2026-10-20** (spinel branch `k030-yield-builtin-int-site-float`, commit `d3205b94b`, belum dipush): `an_yield_site_builtin_answer` (`src/analyze_infer.c`) kini menjawab per site juga untuk site numerik (Integer/Float), tanpa perlu reopen di rantai. Repro K-030 kini identik dengan CRuby; test regresi: `test/yield_receiver_numeric_site_kinds.rb`. Sapuan ulang 258 probe: 18 berpindah ke OK, 0 regresi. Test `yield.` yang ada: tidak berubah. Belum dijalankan: corpus penuh dan infer-test (lihat gate CI fork). Catatan: memperluas ke site String/Hash (mis. `yield.inspect`) menyebabkan gagal compile, jadi dibatasi ke numerik.
+- **Status 2026-10-20: BUKAN BUG, perilaku sengaja.** `docs/limitations.md` ("String literals are frozen by default") mendokumentasikan `frozen_string_literal: true` sebagai baseline, tanpa opt-out, dengan alasan (shared-string machinery bergantung pada jaminan literal beku). Tidak ada perubahan compiler.

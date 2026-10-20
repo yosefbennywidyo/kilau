@@ -26,7 +26,10 @@ Status umum: K-030 sudah diperbaiki secara lokal dan dibuka sebagai matz/spinel#
   1. Cari apakah literal dibekukan sengaja: `grep -rn frozen docs/limitations.md src/`.
   2. Jika sengaja, dokumentasikan di `docs/limitations.md` dan tutup K-032 sebagai
      "bukan bug". Jika tidak, perbaiki.
-- Status: belum dimulai.
+- Status: **selesai, bukan bug (2026-10-20 ~20:40 WIB).** `docs/limitations.md`
+  (bagian "String literals are frozen by default") mendokumentasikan
+  `frozen_string_literal: true` sebagai baseline yang disengaja, tanpa opt-out.
+  Tidak ada perubahan compiler. Katalog K-032 sudah diperbarui.
 
 ### T2. K-031: `yield.<=>(2)` dengan site Integer lalu site String → TypeError
 
@@ -68,3 +71,4 @@ menunggu gate.
 ## Log status
 
 - 2026-10-20 ~20:15 WIB: rencana dibuat. T1, T2, T3 belum dimulai.
+- 2026-10-20 ~20:40 WIB: T1 selesai, bukan bug (perilaku sengaja, lihat docs/limitations.md). Catalog K-032 diperbarui. Catatan status K-030 yang sebelumnya salah masuk ke K-032 dipindah ke K-030.
