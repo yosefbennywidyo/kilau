@@ -44,7 +44,6 @@ sebagai **matz/spinel#7807** hari yang sama (gate ter-shard hijau penuh, CodeRab
 **di-merge Matz pukul 08:45:32Z** (`b4d30a1d3`, master `f3da0151f`). Compiler kilau belum
 dinaikkan ke versi yang berisi fix ini — langkah berikutnya.
 
-
 Diuji dengan spinel `2026.09.12+2124 (1ba12fb74)`, yang 745 commit di depan `38dc57dd`.
 Spinel baru dibuat di worktree terpisah, sedangkan instalasi `/usr/local/bin/spinel`
 tetap `38dc57dd` saat tabel ini dibuat (lalu dinaikkan, lihat baris compiler di atas). Repro mandiri di-compile dengan `--require-gate` dan output-nya
@@ -229,7 +228,6 @@ Tidak ada regresi baru di luar K-017.
 - Upstream: tidak perlu
 - **Uji ulang 2026-10-07 ~11:12 WIB** (spinel `ae2c38c71`): `--warn-widen` pada paket sqlite `binds.rb` masih melebar (`int`, `text`, `int_or_nil`, dst.), jadi pelebaran tetap seperti dicatat di atas. File `framework/test/db_connection_test.rb` tidak ada lagi; pelebarannya sekarang terlihat di paket sqlite. Tidak berubah, diterima.
 
-
 ## K-006: `:ptr` dari `ffi_func` melebar ke untyped begitu dioper atau disimpan
 - Lapisan: db
 - Pola yang dicoba: `Row.new(stmt)` / `Connection.new(handle)` menyimpan pointer SQLite di ivar
@@ -280,7 +278,6 @@ Tidak ada regresi baru di luar K-017.
 - Biaya: belum terukur. Kandidat perbaikan di Rencana 2/4 kalau benchmark S3 menunjukkan biaya: entity hasil generate menyediakan finder bertipe sendiri (`all`, `find_by_id`) yang memanggil `Connection#query` langsung, bukan lewat blok generik pool.
 - Upstream: tidak perlu (sifat inferensi return per method, bukan per pemanggilan)
 - **Uji ulang 2026-10-07 ~11:12 WIB** (spinel `ae2c38c71`): `--warn-widen` pada `examples/blog/test/post_model_test.rb` masih melaporkan `Pool#with`, `query_all`, `query_first` (paket sqlite) dan `Model#destroy`. Tidak berubah, diterima.
-
 
 ## K-009: `StringIO` gagal link karena izin file instalasi
 - Lapisan: testing (lingkungan)
@@ -551,7 +548,6 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Tindak lanjut: CodeRabbit menemukan bahwa `which` melewati komponen PATH kosong (`:` di awal/akhir, `::`), padahal shell membacanya sebagai direktori kerja. Sejak #5983, `spinel_bin` bisa memakai compiler di sebelah `spin` lain yang lebih belakang di PATH. Perbaikan (`split(":", -1)`, komponen kosong → `.`) + tes e2e dengan `spin` decoy yang compiler-nya selalu gagal (merah sebelum, hijau sesudah): **PR https://github.com/matz/spinel/pull/5997 di-merge oleh matz 2026-09-30 01:24 WIB** (commit `4fafd9ba4`; CI hijau, CodeRabbit tanpa temuan). Hanya `spin-check` yang dijalankan (tidak ada perubahan di `src/`/`lib/`).
 - **Uji ulang 2026-10-07 ~11:12 WIB** (spinel `ae2c38c71`): `spin test` dengan path absolut dan dengan nama polos lewat PATH sama-sama membangun ulang setelah `bin/spinel` disentuh. Diuji dengan proyek spin kecil di scratch. Diperbaiki.
 
-
 ## K-019: value object yang di-`yield` ke blok berbentuk proc gagal dikompilasi (awalnya dikira soal alias)
 - Lapisan: compiler (codegen alias + yield)
 - Yang terjadi: `alias find first_match`, dengan `first_match` yang `yield` di dalam `with { |conn| conn.query { |row| found = yield(row) } }`, menghasilkan C tidak valid: `non-pointer operand type 'sp_Row' incompatible with NULL` / `operand of type 'sp_Row' where arithmetic or pointer type is required` di baris alias dan di `yield` terdalam. CRuby mencetak 7.
@@ -578,7 +574,6 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Upstream: **matz/spinel#6092 merged** (2026-09-30 06:53 WIB)
 - **Uji ulang 2026-10-07 ~11:12 WIB** (spinel `ae2c38c71`): repro tiga kasus (`next true`, `next 5`) sama dengan CRuby (`true`, `true`, `5`). Diperbaiki.
 
-
 ## K-021: method `module_function` yang `yield` + `rescue`, dipanggil tanpa receiver setelah `include` top level dengan blok yang selalu raise, menghasilkan C tidak valid
 - Lapisan: compiler (inline method modul via top-level include, jalur baru dari matz/spinel#6029)
 - Ditemukan: 2026-09-30 saat mencabut workaround K-004.
@@ -599,7 +594,6 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
 - Mekanisme (2026-09-30): `infer_uncached` sudah mengetik `yield` sebagai poly bila nilai blok berbeda antar call site dan nilainya mengalir ke local/ivar/gvar/cvar, elemen array, atau frame rescue/ensure. Posisi argumen dan receiver pemanggilan tidak tercakup, sehingga `yield` mengambil tipe site pertama. Varian lain yang juga kena: `show(yield)` (argumen ke method pengguna) terkompilasi tapi `TypeError` saat runtime.
 - Upstream: **matz/spinel#6185** (dibuka 2026-09-30) memperbaiki posisi argumen ke method pengguna (**merged**, commit `98c36b87a` setelah saran CodeRabbit: aturan argumen sadar-receiver; CI korpus penuh 2.453 + 2.453 / 4.906, 0 fail). **Sisa:** `yield + yield` / `yield * 2` (operator builtin) masih gagal compile; analyzer bisa dibuat poly, tapi codegen menurunkan operator per site ke bentuk konkret lalu memasukkannya ke slot poly tanpa box. Kandidat PR terpisah. **Perbaikan penuh 2026-09-30:** **matz/spinel#6219 merged** (2026-09-30 17:22 WIB, di `fff8bdd49`, termasuk perbaikan String `%` dan promote `/ %` dari review CodeRabbit; CI 2.463 + 2.463 / 4.926, 0 fail). Temuan ketiga CodeRabbit (String `+`/`*` dengan argumen yang dikonversi atau ditolak, mis. `yield * 2.0`, `yield + 1`) masuk setelah merge, jadi dibawa oleh **matz/spinel#6226** (commit `74e458ca7`, terbuka): analyzer mengetik `yield` poly bila menjadi receiver operator aritmetika builtin (`+ - * / %`, satu argumen), dan `sp_yield_site_type` menjawab tipe per site operator itu (String+String, String*Integer → String; Float/Integer campuran → Float; Integer+Integer → Integer kecuali mode promote), sehingga nilainya di-box ke slot poly. C benchmark + optcarrot identik; 675 tes korpus terkait lulus.
-
 
 ## K-023: pemanggilan tanpa receiver di subclass `BasicObject` ter-resolve ke method modul yang di-`include` di top level
 - Lapisan: compiler (resolusi pemanggilan tanpa receiver)
@@ -1001,7 +995,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
 - Belum diperbaiki. Fix ada di compiler spinel (tabel per-site untuk nama di luar allowlist), perlu PR upstream.
 
-- **Perbaikan lokal 2026-10-20** (spinel branch `k030-yield-builtin-int-site-float`; sekarang matz/spinel#9779, head `fe86b5f93`, menunggu clang): `an_yield_site_builtin_answer` (`src/analyze_infer.c`) kini menjawab per site juga untuk site numerik (Integer/Float), tanpa perlu reopen di rantai. Repro K-030 kini identik dengan CRuby; test regresi: `test/yield_receiver_numeric_site_kinds.rb`. Sapuan ulang 258 probe: 18 berpindah ke OK, 0 regresi. Test `yield.` yang ada: tidak berubah. Belum dijalankan: corpus penuh dan infer-test (lihat gate CI fork). Catatan: memperluas ke site String/Hash (mis. `yield.inspect`) menyebabkan gagal compile, jadi dibatasi ke numerik.
+- **Diperbaiki upstream 2026-10-20 13:46Z** (~20:46 WIB): matz/spinel#9779, merge commit `4ab5183b5`, head `fe86b5f93`. Test: `test/yield_receiver_numeric_site_kinds.rb`. Repro K-030 identik dengan CRuby. Sapuan ulang 258 probe: 18 pindah ke OK, tanpa regresi.
 
 ## K-030b: `yield.sort` / `yield.reverse` gagal compile C saat salah satu site receiver-nya bukan Array (Hash / String)
 - Lapisan: compiler (sama dengan K-030)
@@ -1012,6 +1006,8 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Belum diperbaiki.
 - Catatan sapuan lain: lihat K-031 (`<=>`) dan K-032 (`frozen?`) di bawah. Penolakan yang disengaja (`push`, `<<`, `append`, `unshift` dengan elemen tipe lain) adalah penolakan bernama, bukan bug. Nama yang hanya mismatch karena enumerator atau method yang tak ada di Hash (`cycle`, `each_cons`, `each_slice`, `find_index`) belum diverifikasi ke akar.
 
+**Status 2026-10-20 (~21:50 WIB): diperbaiki, PR upstream terbuka.** Commit `898cac013` di branch `k030b-yield-sort-reverse-nonarray-site`, di atas commit K-031. Dibuka sebagai matz/spinel#9795, bergantung pada #9794. Gate sharded di fork hijau (run `39431467735`, tests 8278/0 pada tree yang sama dengan hasil rebase `a154ead72`), clang di fork hijau. Test: `test/yield_receiver_sort_reverse_site_kinds.rb` + `test/infer/`. Repro K-030b identik dengan CRuby.
+
 ## K-031: `yield.<=>(2)` dengan site Integer lalu site non-numerik: TypeError saat runtime
 - Lapisan: compiler (tipe jawaban per site, sama keluarga K-030)
 - Ditemukan: 2026-10-20, sapuan K-030 (sisa dari catatan `<=>`).
@@ -1019,6 +1015,8 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Repro: **repro/k031_yield_receiver_spaceship_integer_site_typeerror.rb**
 - Klasifikasi: bug-compiler, gagal keras di runtime (bukan nilai salah diam-diam)
 - Belum diperbaiki.
+
+**Status 2026-10-20 (~21:50 WIB): diperbaiki, PR upstream terbuka.** Commit `d847a1d6c` di branch `k031-yield-spaceship-site-answer`, dibuka sebagai matz/spinel#9794 dari master terbaru (tidak bertumpuk lagi). Gate sharded di fork hijau (run `39431458277`, tests 8277/0), clang di fork hijau. Test: `test/yield_receiver_spaceship_site_kinds.rb` + `test/infer/`. Repro K-031 identik dengan CRuby (`1 nil`).
 
 ## K-032: `frozen?` pada String literal bernilai `true` di spinel (BUKAN bug yield)
 - Lapisan: compiler/runtime (perlakuan String literal)

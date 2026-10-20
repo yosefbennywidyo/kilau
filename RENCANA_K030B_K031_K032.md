@@ -3,8 +3,11 @@
 Dibuat: 2026-10-20 ~20:15 WIB. Sumber temuan: sapuan builtin pada receiver `yield`
 (`kilau/docs/CATALOG.md`, entri K-030 s.d. K-032; repro di `kilau/repro/`).
 
-Status umum: K-030 sudah diperbaiki secara lokal dan dibuka sebagai matz/spinel#9779
-(menunggu clang). Item di bawah belum dikerjakan.
+Status umum (2026-10-20 ~21:50 WIB):
+- K-030: merged sebagai matz/spinel#9779 (13:46Z, merge commit `4ab5183b5`).
+- K-032: bukan bug, perilaku sengaja (lihat T1).
+- K-031: upstream matz/spinel#9794, menunggu review.
+- K-030b: upstream matz/spinel#9795, bergantung pada #9794, menunggu review.
 
 ## Aturan kerja
 
@@ -42,7 +45,7 @@ Status umum: K-030 sudah diperbaiki secara lokal dan dibuka sebagai matz/spinel#
      Widening ke site String/Hash sebelumnya merusak `yield.inspect`
      (lihat #9779, "Known limits"), jadi hati-hati.
   3. Test: `test/` (CRuby) dan `test/infer/`.
-- Status: **fix lokal selesai (2026-10-20 ~21:30 WIB).** Commit `aa7deaa5a` di
+- Status: **upstream matz/spinel#9794 (2026-10-20 ~21:50 WIB).** Commit `d847a1d6c` di
   branch `k031-yield-spaceship-site-answer`, di atas head #9779 (`fe86b5f93`).
   Test: `test/yield_receiver_spaceship_site_kinds.rb` + `test/infer/`. Repro
   K-031 identik dengan CRuby (`1 nil`). Dibutuhkan pembangunan ulang
@@ -59,7 +62,7 @@ Status umum: K-030 sudah diperbaiki secara lokal dan dibuka sebagai matz/spinel#
      membox jawaban per site, jadi ditunda.
   2. Sapuan ulang `kilau/tools/yield-sweep/` untuk memastikan tidak ada regresi.
   3. Test CRuby dan `test/infer/`.
-- Status: **fix lokal selesai (2026-10-20 ~21:30 WIB).** Commit `a81bc79ce` di
+- Status: **upstream matz/spinel#9795 (2026-10-20 ~21:50 WIB), bergantung pada #9794.** Commit `898cac013` di
   branch `k030b-yield-sort-reverse-nonarray-site`, di atas commit K-031. Helper
   `yield_site_per_kind_name` menampung nama `<=>`, `sort`, `reverse`. Repro
   K-030b identik dengan CRuby. Sapuan: `sort` dan `reverse` dari CC_FAIL ke OK,
@@ -80,5 +83,6 @@ menunggu gate.
 ## Log status
 
 - 2026-10-20 ~20:15 WIB: rencana dibuat. T1, T2, T3 belum dimulai.
-- 2026-10-20 ~21:30 WIB: T2 (aa7deaa5a) dan T3 (a81bc79ce) fix lokal selesai, bertumpuk di atas #9779. Belum dipush, belum digate.
+- 2026-10-20 ~21:30 WIB: T2 dan T3 fix lokal selesai.
+- 2026-10-20 ~21:50 WIB: gate fork hijau untuk K-031 dan K-030b, clang fork hijau. Dibuka upstream sebagai #9794 dan #9795. Fork PR #37 dan #38 ditutup. #9779 sudah merged (13:46Z).
 - 2026-10-20 ~20:40 WIB: T1 selesai, bukan bug (perilaku sengaja, lihat docs/limitations.md). Catalog K-032 diperbarui. Catatan status K-030 yang sebelumnya salah masuk ke K-032 dipindah ke K-030.
