@@ -2,6 +2,60 @@
 
 Entri terbaru di atas.
 
+## 2026-10-21 ~01:35 WIB — K-030 sampai K-032 selesai; T4 (Hash Enumerable pada yield campuran) siap dikerjakan
+
+**Status**
+- **Selesai, di upstream matz/spinel:**
+  - K-030 (`yield` + builtin numerik per site) → #9779, merged 2026-10-20 13:46Z.
+  - K-031 (`yield.<=>`) → #9794, merged 15:46Z (`9e6678d2e`).
+  - K-030b (`yield.sort` / `yield.reverse`) → #9795, merged 15:46Z (`9923101bd`).
+- **K-032** (`"abc".frozen?` true) ditutup sebagai perilaku sengaja. Dasarnya di
+  `spinel/docs/limitations.md`, bagian "String literals are frozen by default":
+  `frozen_string_literal: true` adalah baseline, tanpa opt-out, dan mesin
+  shared-string bergantung pada jaminannya.
+- **Pembersihan (2026-10-20):** branch lokal dan fork dari pekerjaan K-029..K-031
+  dihapus. Fork PR #36, #37, #38 ditutup setelah PR upstream dibuka. Yang tersisa
+  di fork: `c-version`, `openbsd-portable-fiber`, `ruby-v1`, `self-host`
+  (bukan dari pekerjaan ini, tidak disentuh).
+- **Belum:** T4 (lihat di bawah). Kilau punya 17 commit lokal yang belum dipush;
+  itu keputusan user.
+
+**Temuan untuk T4 (belum diperbaiki)**
+- Di luar yield, `{a: 1}.cycle`, `each_cons`, `each_slice`, `find_index` benar.
+- Di yield bercampur site Array dan Hash, `yield.cycle` gagal saat runtime:
+  site Hash dijawab `TY_UNKNOWN` oleh inferensi face-pinned
+  (`an_yield_site_builtin_answer`, `src/analyze_infer.c`), jadi codegen memakai
+  jalur "undefined method". Site Array benar (enumerator).
+- Menambah nama ke `yield_site_per_kind_name` tidak cukup. `each_slice` dan
+  `find_index` juga gagal compile saat bercampur (PolyArray vs IntArray).
+- Detail dan kriteria selesai: `RENCANA_K030B_K031_K032.md`, T4.
+
+**Keputusan**
+- Rencana disimpan di kilau (bukan spinel), sesuai permintaan user.
+- Repo spinel: `master` = `origin/master` (929186309), tanpa perubahan lokal.
+
+**Lanjut dari sini**
+1. Perbaiki inferensi face-pinned untuk `cycle` pada Hash tanpa blok, lalu
+   periksa `each_slice`/`each_cons`/`find_index` (T4 langkah 1 dan 2).
+2. Setiap fix: repro CRuby, `test/` dengan `.expected` dari CRuby, `test/infer/`.
+   Gate di fork lewat `gate-shards-17job.yml`, bukan `make gate` lokal.
+3. Catatan K-032 di `docs/CATALOG.md`: ganti "nilai salah diam-diam" dengan
+   "perbedaan yang disengaja dengan default CRuby".
+
+**Pelajaran (detail ada di memory `feedback_spinel_session_lessons_2026_10_20`)**
+- `make bin/spinel` tidak membangun `lib/libspinel_rt.a`. Setelah rebase atau
+  pull, jalankan juga `make lib/libspinel_rt.a`, kalau tidak link gagal dengan
+  "Undefined symbols" pada fungsi `sp_re_*` yang sebenarnya ada di `lib/sp_re.c`.
+- `gh pr checks --watch` dan `gh run watch` bisa keluar dengan exit 0 saat job
+  masih pending. Verifikasi dengan `gh run view <id> --json status`.
+- Gate fork menambah commit trailer (`Gate: ...`) ke branch PR. Setelah itu
+  branch lokal harus disinkronkan (`git reset --hard fork/<branch>`). Pastikan
+  rebase berikutnya memakai head yang sudah di-trailer.
+- Kalau ada dua PR yang bertumpuk, cek tree dengan `git rev-parse <sha>^{tree}`.
+  Tree yang sama berarti hasil gate masih berlaku setelah rebase.
+- Setiap entri katalog harus disisipkan di bagian heading yang tepat. Dua kali
+  status tertambah di akhir file dan masuk ke K-032 yang salah.
+
 ## 2026-10-17 ~03:24 WIB — Rencana 5 Fase C: plan siap, menunggu pilihan eksekusi
 
 **Status**

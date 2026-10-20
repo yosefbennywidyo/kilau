@@ -108,7 +108,25 @@ Status umum (2026-10-20 ~21:50 WIB):
 T1 → T2 → T3. T3 bisa dimulai lebih awal jika #9779 selesai dan T1/T2 sedang
 menunggu gate.
 
+## Ringkasan posisi (2026-10-21 ~01:35 WIB)
+
+Sudah selesai:
+- K-030 (`yield` + builtin numerik per site): merged matz/spinel#9779 (2026-10-20 13:46Z).
+- K-031 (`yield.<=>`): merged matz/spinel#9794 (15:46Z, merge commit `9e6678d2e`).
+- K-030b (`yield.sort` / `yield.reverse`): merged matz/spinel#9795 (15:46Z, merge commit `9923101bd`).
+- K-032 (`frozen?` pada literal): ditutup sebagai perilaku yang disengaja (`docs/limitations.md`).
+- Pembersihan branch lokal dan fork dari pekerjaan ini. Di fork hanya tersisa branch non-pekerjaan ini.
+
+Belum selesai:
+- T4 (Hash Enumerable tanpa blok pada site yield campuran). Diagnosis selesai, perbaikan belum.
+- Catatan K-032 di katalog masih memakai kata "nilai salah diam-diam". Seharusnya "perbedaan yang disengaja dengan default CRuby".
+- Kilau: 17 commit sebelumnya belum dipush ke origin (bukan dari pekerjaan ini). Keputusan push ada di user.
+- Kilau: `sudo make install` perlu dijalankan user agar compiler memuat perbaikan.
+
+Langkah berikutnya yang disarankan: T4, mulai dari `cycle` pada Hash. Lihat catatan "Langkah yang disarankan" di T4.
+
 ## Log status
+- 2026-10-21 ~01:35 WIB: ringkasan posisi dan HANDOFF ditulis.
 - 2026-10-20 ~23:30 WIB: T4 ditemukan dan didiagnosis. Eksperimen perubahan
   dibatalkan, tidak ada perubahan kode yang tersisa.
 
