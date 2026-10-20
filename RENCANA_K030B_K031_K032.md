@@ -42,7 +42,12 @@ Status umum: K-030 sudah diperbaiki secara lokal dan dibuka sebagai matz/spinel#
      Widening ke site String/Hash sebelumnya merusak `yield.inspect`
      (lihat #9779, "Known limits"), jadi hati-hati.
   3. Test: `test/` (CRuby) dan `test/infer/`.
-- Status: belum dimulai.
+- Status: **fix lokal selesai (2026-10-20 ~21:30 WIB).** Commit `aa7deaa5a` di
+  branch `k031-yield-spaceship-site-answer`, di atas head #9779 (`fe86b5f93`).
+  Test: `test/yield_receiver_spaceship_site_kinds.rb` + `test/infer/`. Repro
+  K-031 identik dengan CRuby (`1 nil`). Dibutuhkan pembangunan ulang
+  `lib/libspinel_rt.a` (arsip runtime tertinggal dari sumber; `make bin/spinel`
+  tidak membangunnya). Tidak ada regresi di 67 test `yield.`.
 
 ### T3. K-030b: `yield.sort` / `yield.reverse` gagal compile C saat ada site Hash atau String
 
@@ -54,7 +59,11 @@ Status umum: K-030 sudah diperbaiki secara lokal dan dibuka sebagai matz/spinel#
      membox jawaban per site, jadi ditunda.
   2. Sapuan ulang `kilau/tools/yield-sweep/` untuk memastikan tidak ada regresi.
   3. Test CRuby dan `test/infer/`.
-- Status: belum dimulai. Tunggu #9779 selesai dulu.
+- Status: **fix lokal selesai (2026-10-20 ~21:30 WIB).** Commit `a81bc79ce` di
+  branch `k030b-yield-sort-reverse-nonarray-site`, di atas commit K-031. Helper
+  `yield_site_per_kind_name` menampung nama `<=>`, `sort`, `reverse`. Repro
+  K-030b identik dengan CRuby. Sapuan: `sort` dan `reverse` dari CC_FAIL ke OK,
+  `<=>` dari MISMATCH ke OK. Tidak ada regresi di 67 test `yield.`.
 
 ## Di luar cakupan (belum dijadwalkan)
 
@@ -71,4 +80,5 @@ menunggu gate.
 ## Log status
 
 - 2026-10-20 ~20:15 WIB: rencana dibuat. T1, T2, T3 belum dimulai.
+- 2026-10-20 ~21:30 WIB: T2 (aa7deaa5a) dan T3 (a81bc79ce) fix lokal selesai, bertumpuk di atas #9779. Belum dipush, belum digate.
 - 2026-10-20 ~20:40 WIB: T1 selesai, bukan bug (perilaku sengaja, lihat docs/limitations.md). Catalog K-032 diperbarui. Catatan status K-030 yang sebelumnya salah masuk ke K-032 dipindah ke K-030.
