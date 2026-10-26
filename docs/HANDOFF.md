@@ -18,6 +18,23 @@ Entri terbaru di atas.
 2. Fase F (opsional), diputuskan setelah E.
 3. Uji jalur shard `tools/gate.rb linux --target/--shard` di runner GitHub.
 
+## 2026-10-27 — Rencana 5 Fase D selesai (trie + ambang); Fase E berikutnya
+
+**Status**
+- Pengukuran di `bench/ROUTER.md` (spinel, median 3 run): trie untuk mode table
+  (D-026); mode generate memakai `case` pada segmen pertama + `if` (D-027), dan
+  trie bersarang dari 10 route ke atas (D-028, `NESTED_MIN_ROUTES`).
+- Commit: `c78e45f` di `origin/main`. `make test`: framework 14/14, tool 8/8,
+  blog 4/4. `make e2e` blog: 35 pengecekan, 0 gagal.
+- Pelajaran sesi ada di memory `feedback_kilau_session_lessons_2026_10_27`.
+
+**Lanjut dari sini**
+1. Fase E: parameter bertipe `/:id<int>`. Blog memakai sintaks itu; `/posts/abc`
+   tetap 400; `--warn-widen` tidak bertambah.
+2. Fase F (opsional), diputuskan setelah E.
+3. Uji jalur shard `tools/gate.rb linux --target/--shard` di runner GitHub
+   (spinel `gate-shard-option`, belum upstream).
+
 ## 2026-10-27 — Rencana 5 Fase C selesai; make test dan e2e hijau
 
 **Status**
