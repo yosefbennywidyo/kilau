@@ -18,6 +18,22 @@ Entri terbaru di atas.
 2. Fase F (opsional), diputuskan setelah E.
 3. Uji jalur shard `tools/gate.rb linux --target/--shard` di runner GitHub.
 
+## 2026-10-27 — Rencana 5 Fase F sebagian: nest dan merge (D-030)
+
+**Status**
+- `Routes#nest` dan `Routes#merge` di framework, dan keduanya dibaca `kilau gen
+  routes` di tempat. Commit `3617ee1`..`dbbd856` di `origin/main`.
+- `make test`: framework 16/16, tool 8/8, blog 4/4. `make e2e` blog: 35 pengecekan,
+  0 gagal.
+- Belum dikerjakan, dengan alasan di D-030: `resources` (hanya mode generate, sehingga
+  kedua mode berbeda), nama route dan helper path (non-goal, perlu keputusan
+  pengguna), dan file route tunggal `src/routes.rb` (desainnya belum cukup
+  spesifik di rencana).
+
+**Lanjut dari sini**
+1. Putuskan apakah `resources`, nama route, dan file route tunggal dikerjakan.
+2. Uji jalur shard `tools/gate.rb linux --target/--shard` di runner GitHub.
+
 ## 2026-10-27 — Rencana 5 Fase E selesai: parameter bertipe `:id<int>`
 
 **Status**
