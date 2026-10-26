@@ -1023,5 +1023,5 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Ditemukan: 2026-10-20, sapuan K-030 (kasus `frozen?` pada site String).
 - Yang terjadi: `p "abc".frozen?` dan `x = "abc"; p x.frozen?` → spinel `true true`, CRuby 4.0 `false false` (literal polos belum di-freeze, chilled). Tanpa yield dan tanpa blok.
 - Repro: **repro/k032_string_literal_frozen_p.rb**
-- Klasifikasi: nilai salah diam-diam, di luar keluarga yield. Perlu pemeriksaan terpisah apakah literal dibekukan sengaja (mis. karena `# frozen_string_literal` tak ada).
-- **Status 2026-10-20: BUKAN BUG, perilaku sengaja.** `docs/limitations.md` ("String literals are frozen by default") mendokumentasikan `frozen_string_literal: true` sebagai baseline, tanpa opt-out, dengan alasan (shared-string machinery bergantung pada jaminan literal beku). Tidak ada perubahan compiler.
+- Klasifikasi awal: nilai salah diam-diam, di luar keluarga yield. Setelah diperiksa: perbedaan yang disengaja dengan default CRuby (lihat status di bawah), bukan nilai salah.
+- **Status 2026-10-20: BUKAN BUG, perilaku sengaja.** `docs/limitations.md` ("String literals are frozen by default") mendokumentasikan `frozen_string_literal: true` sebagai baseline, tanpa opt-out, dengan alasan (shared-string machinery bergantung pada jaminan literal beku). Tidak ada perubahan compiler. Yang dipegang: perbedaan yang disengaja dengan default CRuby, bukan bug.
