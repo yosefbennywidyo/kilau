@@ -2,6 +2,26 @@
 
 Entri terbaru di atas.
 
+## 2026-10-27 — Rencana 5 Fase C selesai; make test dan e2e hijau
+
+**Status**
+- Fase C (static menang atas :param, konflik ditolak) selesai dan di-push ke
+  `origin/main` (`4217a29`..`cce3b7f`): `Route#shape_key`/`specificity`,
+  `AppRoutes#add` menolak bentrok, `Dispatcher#call` memilih grup spesifisitas
+  terendah, `gen routes` mengelompokkan dan menolak bentrok dengan `file:baris`.
+  Keputusan: D-025.
+- `make test` (spinel `9d1040375`): framework 13/13, tool 8/8, blog 4/4.
+  `make e2e` blog dan blog_routes: 35 pengecekan lolos, 0 gagal.
+- Memory `bug_kilau_route_segment_shadowing` ditandai FIXED.
+
+**Lanjut dari sini**
+1. Fase D (trie segmen): wajib ukur dulu dengan benchmark mikro di 10/100/1.000
+   route sintetis; hasilnya di `bench/ROUTER.md`, keputusan sebagai D-0xx. Adopsi
+   hanya bila menang di >= 100 route dan tidak kalah di 10 route.
+2. Fase E (parameter bertipe `/:id<int>`), lalu F (opsional).
+3. Uji jalur shard `tools/gate.rb linux --target/--shard` (spinel
+   `gate-shard-option`, belum upstream) di runner GitHub.
+
 ## 2026-10-26 — T4 selesai dan merged upstream
 
 **Status**
