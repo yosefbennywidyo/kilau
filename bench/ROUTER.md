@@ -48,3 +48,30 @@ Dicatat sebagai D-026 di `docs/DECISIONS.md`.
 - `--warn-widen` menunjukkan pelebaran tipe di `route_trie.rb` (poly), seperti
   yang sudah ada di `routes.rb`. Tidak ada koleksi yang mencampur jenis yang
   berbeda. Angka di atas sudah mencakup biaya itu.
+
+## Pengukuran lanjutan: 300, 600, dan 750 route
+
+Sama seperti di atas (spinel `9d1040375`, median 3 run, 20.000 lookup per run).
+Varian gabungan: `case` pada segmen pertama, lalu rantai `if` hanya untuk route
+yang berawalan segmen itu (`bench/router/gen_micro.rb`, `hybrid_source`).
+
+| Route | Trie | Rantai `if` | Gabungan | `if` / trie | gabungan / trie |
+|---|---|---|---|---|---|
+| 300 | 928 | 1.102 | 907 | 1,19x | 0,98x |
+| 600 | 920 | 1.538 | 1.100 | 1,67x | 1,20x |
+| 750 | 913 | 1.782 | 1.203 | 1,95x | 1,32x |
+
+Membaca hasil:
+- Rantai `if` dan trie bersilangan antara 100 dan 300 route. Di bawah itu rantai
+  lebih cepat, di atasnya trie lebih cepat dan selisihnya makin besar.
+- Gabungan `case` + `if` hanya menyamai trie di 300 route. Di tabel ini setiap
+  segmen pertama unik, jadi `case` menjadi perbandingan string berantai dan
+  tumbuh dengan jumlah segmen. Di aplikasi nyata yang banyak route berbagi
+  segmen pertama, bagian `if` di dalam cabang akan ikut tumbuh, dan gabungan
+  bisa berbeda dari angka ini. Itu belum diukur.
+- Trie tetap datar (sekitar 900 ns) di semua ukuran yang diuji.
+
+Keputusan yang belum diambil: aturan Fase D (adopsi di mode generate bila menang
+di >= 100 route dan tidak kalah di 10) berarti mode generate tetap rantai `if`.
+Kalau ingin trie di mode generate untuk aplikasi besar, perlu ambang (misalnya
+di atas 200 route) dan dua jalur kode, dan itu butuh keputusan terpisah.
