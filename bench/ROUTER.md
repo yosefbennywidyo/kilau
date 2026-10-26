@@ -141,3 +141,11 @@ Keputusan yang belum diambil: mengganti gabungan `case`+`if` di `kilau gen
 routes` dengan trie bersarang. Itu menuntut generator yang menyusun pohon
 dengan kedalaman sembarang dan menjaga prioritas Fase C pada grup yang berbagi
 prefix. Itu pekerjaan generator yang cukup besar dan perlu persetujuan dulu.
+
+## Ambang di kilau gen routes (D-028)
+
+Di bawah 10 route (default ikut dihitung), generator memakai `case` pada segmen
+pertama dan `if` (D-027). Dari 10 route ke atas, ia memakai trie bersarang.
+Konstanta: `NESTED_MIN_ROUTES` di `tool/kilau_tool/routes_gen.rb`. Fixture
+(9 route) memakai jalur pertama; blog (10 route) memakai jalur kedua, dan
+keduanya diuji oleh `make test` dan `make e2e`.

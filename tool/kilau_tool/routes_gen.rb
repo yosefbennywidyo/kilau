@@ -323,6 +323,71 @@ module KilauTool
 
     # The first segment of a pattern when it is a literal, or "" when it is a
     # param or the pattern has no segments.
+    # Below this many routes (defaults included) the dispatch is case + if; from
+    # it up, the nested trie. The threshold is measured in bench/ROUTER.md:
+    # the nested trie was never slower than case + if from 10 routes on.
+    NESTED_MIN_ROUTES = 10
+
+    # A node of the dispatch trie: literal children, one param child, and the
+    # group that ends here (-1 when none).
+    class DispatchNode
+      attr_reader :statics
+      attr_accessor :param, :group
+
+      def initialize
+        @statics = {}
+        @param = nil
+        @group = -1
+      end
+    end
+
+    # The segments of a pattern, without the empty ones.
+    def self.split_pattern(pattern) = pattern.split("/").reject { |segment| segment.empty? }
+
+    # One group's if: its conditions, then the verbs of the group, each one's
+    # call, and the 405 / OPTIONS answer for a verb the group does not have.
+    def self.emit_group(sink, g, pad, group_conds, route_group, route_verbs, route_calls, route_pairs)
+      sink << "#{pad}if #{group_conds[g]}"
+      members = []
+      route_group.each_with_index { |rg, r| members << r if rg == g }
+      verbs = members.map { |r| "\"#{route_verbs[r]}\"" }
+      sink << "#{pad}  allowed = [#{verbs.join(", ")}]"
+      sink << "#{pad}  case match_verb"
+      members.each do |r|
+        sink << "#{pad}  when \"#{route_verbs[r]}\""
+        sink << "#{pad}    request.path_params = #{route_pairs[r]}"
+        sink << "#{pad}    response = #{route_calls[r]}"
+        sink << "#{pad}    return verb == \"HEAD\" ? response.without_body : response"
+      end
+      sink << "#{pad}  else"
+      sink << "#{pad}    allowed << \"HEAD\" if allowed.include?(\"GET\") && !allowed.include?(\"HEAD\")"
+      sink << "#{pad}    allowed = allowed.uniq.sort"
+      sink << "#{pad}    return Kilau::Dispatcher.options_response(allowed) if verb == \"OPTIONS\""
+      sink << "#{pad}    response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)"
+      sink << "#{pad}    return verb == \"HEAD\" ? response.without_body : response"
+      sink << "#{pad}  end"
+      sink << "#{pad}end"
+    end
+
+    # The nested dispatch: one case per segment over the literal children, the
+    # param child last, and each group's if at its node. A branch that fails
+    # falls through to the next, so static is tried before param at every depth.
+    def self.emit_tree(sink, node, depth, pad, group_conds, route_group, route_verbs, route_calls, route_pairs)
+      emit_group(sink, node.group, pad, group_conds, route_group, route_verbs, route_calls, route_pairs) if node.group >= 0
+      unless node.statics.empty?
+        sink << "#{pad}case parts[#{depth}]"
+        node.statics.each do |segment, child|
+          sink << "#{pad}when #{segment.inspect}"
+          emit_tree(sink, child, depth + 1, pad + "  ", group_conds, route_group, route_verbs, route_calls, route_pairs)
+        end
+        sink << "#{pad}end"
+      end
+      return if node.param.nil?
+      sink << "#{pad}if parts.size > #{depth} && !parts[#{depth}].empty?"
+      emit_tree(sink, node.param, depth + 1, pad + "  ", group_conds, route_group, route_verbs, route_calls, route_pairs)
+      sink << "#{pad}end"
+    end
+
     def self.first_literal(pattern)
       segment = pattern.split("/").reject { |part| part.empty? }[0]
       segment.nil? || segment.start_with?(":") ? "" : segment
@@ -419,46 +484,44 @@ module KilauTool
         end
         i += 1
       end
-      # The groups whose first segment is a literal are switched on it (a case
-      # with one when per segment, as the measured hybrid in bench/ROUTER.md); a
-      # group inside a when keeps its specificity order. The rest, whose first
-      # segment is a param or absent, follow the switch in their own order: a
-      # literal first segment always outranks a param one at the same length.
+      # Two shapes of dispatch, by the number of routes (D-028). Below
+      # NESTED_MIN_ROUTES: the groups whose first segment is a literal are
+      # switched on it, and the if chain of a group sits inside its when (D-027).
+      # From there up: a trie of case statements, one per segment, with the
+      # if of each group at its leaf (the nested trie, measured in
+      # bench/ROUTER.md). Either way a matched group returns, and the groups
+      # keep their specificity order: static before param, as Fase C requires.
       group_first = []
       group_keys.each_with_index { |_k, g| group_first << first_literal(group_pattern(all_routes, route_group, g)) }
-      buckets = []
-      order.each { |g| buckets << group_first[g] unless group_first[g].empty? || buckets.include?(group_first[g]) }
-      emit = lambda do |g, pad|
-        out << "#{pad}if #{group_conds[g]}"
-        members = []
-        route_group.each_with_index { |rg, r| members << r if rg == g }
-        verbs = members.map { |r| "\"#{route_verbs[r]}\"" }
-        out << "#{pad}  allowed = [#{verbs.join(", ")}]"
-        out << "#{pad}  case match_verb"
-        members.each do |r|
-          out << "#{pad}  when \"#{route_verbs[r]}\""
-          out << "#{pad}    request.path_params = #{route_pairs[r]}"
-          out << "#{pad}    response = #{route_calls[r]}"
-          out << "#{pad}    return verb == \"HEAD\" ? response.without_body : response"
+      if all_routes.size < NESTED_MIN_ROUTES
+        buckets = []
+        order.each { |g| buckets << group_first[g] unless group_first[g].empty? || buckets.include?(group_first[g]) }
+        unless buckets.empty?
+          out << "      case parts[0]"
+          buckets.each do |f|
+            out << "      when #{f.inspect}"
+            order.each { |g| emit_group(out, g, "        ", group_conds, route_group, route_verbs, route_calls, route_pairs) if group_first[g] == f }
+          end
+          out << "      end"
         end
-        out << "#{pad}  else"
-        out << "#{pad}    allowed << \"HEAD\" if allowed.include?(\"GET\") && !allowed.include?(\"HEAD\")"
-        out << "#{pad}    allowed = allowed.uniq.sort"
-        out << "#{pad}    return Kilau::Dispatcher.options_response(allowed) if verb == \"OPTIONS\""
-        out << "#{pad}    response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)"
-        out << "#{pad}    return verb == \"HEAD\" ? response.without_body : response"
-        out << "#{pad}  end"
-        out << "#{pad}end"
-      end
-      unless buckets.empty?
-        out << "      case parts[0]"
-        buckets.each do |f|
-          out << "      when #{f.inspect}"
-          order.each { |g| emit.call(g, "        ") if group_first[g] == f }
+        order.each { |g| emit_group(out, g, "      ", group_conds, route_group, route_verbs, route_calls, route_pairs) if group_first[g].empty? }
+      else
+        root = DispatchNode.new
+        group_keys.each_index do |g|
+          node = root
+          split_pattern(group_pattern(all_routes, route_group, g)).each do |segment|
+            if segment.start_with?(":")
+              node.param = DispatchNode.new if node.param.nil?
+              node = node.param
+            else
+              node.statics[segment] = DispatchNode.new unless node.statics.key?(segment)
+              node = node.statics[segment]
+            end
+          end
+          node.group = g
         end
-        out << "      end"
+        emit_tree(out, root, 0, "      ", group_conds, route_group, route_verbs, route_calls, route_pairs)
       end
-      order.each { |g| emit.call(g, "      ") if group_first[g].empty? }
       out << "      response = Kilau::Dispatcher.error_response(404, \"no route for \#{verb} \#{request.path}\")"
       out << "      verb == \"HEAD\" ? response.without_body : response"
       out << "    rescue Kilau::Error => e"

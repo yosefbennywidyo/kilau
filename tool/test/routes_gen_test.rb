@@ -25,6 +25,21 @@ APP = "class A < Kilau::Hooks\n  def routes = Kilau::AppRoutes.with_default_rout
 
 def controller(line) = "class C < Kilau::Controller\n  def self.routes\n    Kilau::Routes.new\n      #{line}\n  end\nend\n"
 
+T.check("a small app switches on the first segment only (D-028)") do
+  scan = KilauTool::RoutesGen::Scan.new
+  KilauTool::RoutesGen.scan_file("src/a.rb", APP, scan)
+  KilauTool::RoutesGen.scan_file("src/c.rb", controller(".add(\"/x\", get { |a, r| x(a, r) })"), scan)
+  out = KilauTool::RoutesGen.render(scan)
+  out.include?("case parts[0]") && !out.include?("case parts[1]")
+end
+T.check("a large app dispatches through the nested trie (D-028)") do
+  lines = (0...8).map { |i| ".add(\"/s#{i}/t#{i}\", get { |a, r| x(a, r) })" }.join("\n      ")
+  scan = KilauTool::RoutesGen::Scan.new
+  KilauTool::RoutesGen.scan_file("src/a.rb", APP, scan)
+  KilauTool::RoutesGen.scan_file("src/c.rb", controller(lines), scan)
+  out = KilauTool::RoutesGen.render(scan)
+  out.include?("case parts[1]") && out.include?("when \"t3\"")
+end
 T.check("a well-formed app renders") { gen_error({ "src/a.rb" => APP, "src/c.rb" => controller(".add(\"/x\", get { |a, r| x(a, r) })") }) == "" }
 T.check("gen routes: shape_key ignores param names") { KilauTool::RoutesGen.shape_key("/notes/:id") == KilauTool::RoutesGen.shape_key("/notes/:slug") }
 T.check("gen routes: shape_key distinguishes literal from param at the same position") { KilauTool::RoutesGen.shape_key("/notes/bulk") != KilauTool::RoutesGen.shape_key("/notes/:id") }
