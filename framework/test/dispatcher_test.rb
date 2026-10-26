@@ -60,6 +60,28 @@ T.check("the first default route is labeled with index 0") { labeled[0].handler_
 T.check("the second default route is labeled with index 1") { labeled[1].handler_label == "#{labeled[1].verb} #{labeled[1].pattern}#1" }
 T.check("a route from the second composed controller keeps its own position") { labeled[labeled.size - 1].handler_label == "#{labeled[labeled.size - 1].verb} #{labeled[labeled.size - 1].pattern}##{labeled.size - 1}" }
 T.check("every label in the app is unique") { labeled.map { |route| route.handler_label }.uniq.size == labeled.size }
+T.check("AppRoutes#add rejects a literal duplicate of the same verb") do
+  dup_routes = Kilau::Routes.new.prefix("notes").add("/:id", NotesController.get { |c, r| r })
+  begin
+    Kilau::AppRoutes.new.add(NotesController.routes).add(dup_routes)
+    false
+  rescue ArgumentError => e
+    e.message.include?("GET /notes/:id") && e.message.include?("conflicts")
+  end
+end
+T.check("AppRoutes#add rejects an ambiguous param-name-only difference") do
+  ambiguous = Kilau::Routes.new.prefix("notes").add("/:slug", NotesController.get { |c, r| r })
+  begin
+    Kilau::AppRoutes.new.add(NotesController.routes).add(ambiguous)
+    false
+  rescue ArgumentError
+    true
+  end
+end
+T.check("AppRoutes#add allows the same shape for a different verb") do
+  Kilau::AppRoutes.new.add(NotesController.routes).add(Kilau::Routes.new.prefix("notes").add("/:id", NotesController.post { |c, r| r }))
+  true
+end
 
 db = Sqlite::Pool.new(":memory:", 1)
 app_context = Kilau::AppContext.new(db, Kilau::Config.parse("app:\n  name: notes\n", "test.yaml"), "test")

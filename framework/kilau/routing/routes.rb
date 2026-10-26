@@ -93,6 +93,9 @@ module Kilau
 
     def add(routes)
       routes.routes.each do |route|
+        conflict = nil
+        @routes.each { |existing| conflict = existing if conflict.nil? && existing.verb == route.verb && existing.shape_key == route.shape_key }
+        raise ArgumentError, "duplicate route: #{route.verb} #{route.pattern} conflicts with #{conflict.verb} #{conflict.pattern} (same shape)" unless conflict.nil?
         route.handler_label = "#{route.verb} #{route.pattern}##{@routes.size}"
         @routes << route
       end

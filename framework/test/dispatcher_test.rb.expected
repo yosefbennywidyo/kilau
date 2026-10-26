@@ -15,6 +15,9 @@ ok the first default route is labeled with index 0
 ok the second default route is labeled with index 1
 ok a route from the second composed controller keeps its own position
 ok every label in the app is unique
+ok AppRoutes#add rejects a literal duplicate of the same verb
+ok AppRoutes#add rejects an ambiguous param-name-only difference
+ok AppRoutes#add allows the same shape for a different verb
 ok _ping answers ok as JSON
 ok _health answers ok with a working database
 ok a GET reaches its handler with the query and app_context
