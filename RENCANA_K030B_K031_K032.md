@@ -94,7 +94,19 @@ Status umum (2026-10-20 ~21:50 WIB):
   2. Untuk `find_index`, tentukan tipe hasil per site (Integer atau nil), bukan
      tipe elemen.
   3. Test CRuby dan `test/infer/`.
-- Status: belum dikerjakan. Ini lebih besar dari T3.
+- Status: **selesai** (2026-10-26, branch spinel `t4-yield-hash-enum`, 3 commit,
+  belum di-push upstream):
+  - `8d3ac09bc`: cycle, each_slice, each_cons pada receiver yield ikut redispatch
+    pair-array; codegen tidak lagi menimpa view receiver yang diredispatch dengan
+    tipe per-site block (`view_type_top`). Test `yield_hash_enum_mixed_sites`.
+  - `6d693983c`: find_index dijawab per-site (`yield_site_per_kind_name`). Test
+    `yield_hash_find_index_mixed_sites`.
+  - `49743dfc6`: `yield.cycle.first(n)` / `take(n)` dijawab poly array per-site;
+    fold `emit_cycle_bounded_expr` membungkus elemen ke PolyArray bila tipe
+    pemanggil poly. Test `yield_cycle_first_mixed_sites`. Repro headline di atas
+    sekarang keluaran benar `[1, 2, 1]` / `[[:a, 1], [:a, 1], [:a, 1]]`.
+  - Verifikasi: 1591 tes corpus yang memuat yield/cycle/find_index/each_slice/
+    each_cons, semua lolos (2 tes gagal karena cwd runner, lolos dari root).
 
 ## Di luar cakupan (belum dijadwalkan)
 
@@ -118,7 +130,7 @@ Sudah selesai:
 - Pembersihan branch lokal dan fork dari pekerjaan ini. Di fork hanya tersisa branch non-pekerjaan ini.
 
 Belum selesai:
-- T4 (Hash Enumerable tanpa blok pada site yield campuran). Diagnosis selesai, perbaikan belum.
+- T4 (Hash Enumerable tanpa blok pada site yield campuran). Selesai, lihat bagian T4.
 - Catatan K-032 di katalog masih memakai kata "nilai salah diam-diam". Seharusnya "perbedaan yang disengaja dengan default CRuby".
 - Kilau: 17 commit sebelumnya belum dipush ke origin (bukan dari pekerjaan ini). Keputusan push ada di user.
 - Kilau: `sudo make install` perlu dijalankan user agar compiler memuat perbaikan.
@@ -135,3 +147,4 @@ Langkah berikutnya yang disarankan: T4, mulai dari `cycle` pada Hash. Lihat cata
 - 2026-10-20 ~22:46 WIB: #9794 dan #9795 merged (15:46Z). Ketiga tugas selesai.
 - 2026-10-20 ~21:50 WIB: gate fork hijau untuk K-031 dan K-030b, clang fork hijau. Dibuka upstream sebagai #9794 dan #9795. Fork PR #37 dan #38 ditutup. #9779 sudah merged (13:46Z).
 - 2026-10-20 ~20:40 WIB: T1 selesai, bukan bug (perilaku sengaja, lihat docs/limitations.md). Catalog K-032 diperbarui. Catatan status K-030 yang sebelumnya salah masuk ke K-032 dipindah ke K-030.
+- 2026-10-26: T4 selesai (3 commit di spinel branch `t4-yield-hash-enum`). Doc diperbarui.
