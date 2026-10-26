@@ -32,13 +32,27 @@ module KilauTool
       end
     end
 
+    # A nest or merge in a group: after its first `position` routes, the routes
+    # of `target` come in under `prefix` (Fase F).
+    class Link
+      attr_reader :position, :prefix, :target, :where
+
+      def initialize(position, prefix, target, where)
+        @position = position
+        @prefix = prefix
+        @target = target
+        @where = where
+      end
+    end
+
     class Group
-      attr_reader :decls
+      attr_reader :decls, :links
       attr_accessor :prefix
 
       def initialize
         @prefix = ""
         @decls = []
+        @links = []
       end
     end
 
@@ -131,14 +145,56 @@ module KilauTool
         trimmed = name.split("/").reject { |segment| segment.empty? }.join("/")
         scan.groups[key].prefix = trimmed.empty? ? "" : "/" + trimmed
       end
-      pos = text.index(".add(")
-      until pos.nil?
-        raise ArgumentError, "#{where}: .add outside a Kilau::Routes.new chain" if key.empty?
-        pos = add_route(text, pos + 5, owner, scan.groups[key], where)
-        pos = text.index(".add(", pos)
+      loop do
+        at = next_chain_call(text)
+        break if at.nil?
+        name = at[0] == "a" ? "add" : at[0] == "n" ? "nest" : "merge"
+        raise ArgumentError, "#{where}: .#{name} outside a Kilau::Routes.new chain" if key.empty?
+        if text[at[0]] == "a"
+          pos = add_route(text, at[1], owner, scan.groups[key], where)
+        else
+          pos = add_link(text, at[1], at[0] == "n" ? "nest" : "merge", scan.groups[key], where)
+        end
+        text = text[pos, text.size - pos] || ""
       end
       key
     end
+
+    # The next .add(, .nest( or .merge( in text: [kind letter, index after the
+    # call's "("], or nil. The kind is a (add), n (nest) or m (merge).
+    def self.next_chain_call(text)
+      best = nil
+      [[".add(", "a"], [".nest(", "n"], [".merge(", "m"]].each do |token, kind|
+        at = text.index(token)
+        best = [kind, at + token.size, at] if !at.nil? && (best.nil? || at < best[2])
+      end
+      best.nil? ? nil : [best[0], best[1]]
+    end
+
+    # .nest("path", Klass.routes) or .merge(Klass.routes) starting after its
+    # "(". The link keeps the group's prefix at this point, as the framework's
+    # nest does; merge keeps the patterns as they are. Returns the index after
+    # its closing ")".
+    def self.add_link(text, pos, call, group, where)
+      prefix = ""
+      i = skip_space(text, pos)
+      if call == "nest"
+        path = string_at(text, i, where)
+        prefix = join_pattern(group.prefix, path)
+        comma = text.index(",", text.index("\"", i + 1) + 1)
+        raise ArgumentError, "#{where}: expected , after the nest path" if comma.nil?
+        i = comma + 1
+      end
+      close = text.index(")", i)
+      raise ArgumentError, "#{where}: unclosed .#{call}(" if close.nil?
+      target = text[i, close - i].strip
+      unless target.end_with?(".routes") && Template.identifier?(target.delete_suffix(".routes").downcase)
+        raise ArgumentError, "#{where}: gen routes #{call}s a Controller.routes, not #{target}"
+      end
+      group.links << Link.new(group.decls.size, prefix, target, where)
+      close + 1
+    end
+
 
     # .add("path", [Kilau::Controller.]verb { |a, b| body }) starting after
     # ".add(". Returns the index after its closing ")".
@@ -282,11 +338,7 @@ module KilauTool
     def self.ordered(scan)
       raise ArgumentError, "no Kilau::AppRoutes.with_default_routes under src/" if scan.hooks_class.empty?
       decls = []
-      scan.composition.each do |key|
-        group = scan.groups[key]
-        raise ArgumentError, "#{scan.composition_where}: no routes found for #{key.tr("#", " ")}" if group.nil?
-        group.decls.each { |decl| decls << decl }
-      end
+      scan.composition.each { |key| expand(scan, key, "", decls, 0, scan.composition_where) }
       seen = []
       DEFAULTS.each { |d| seen << [d[0], shape_key(d[1]), "<kilau defaults>", d[1]] }
       decls.each { |decl| seen << [decl.verb, shape_key(decl.pattern), decl.where, decl.pattern] }
@@ -333,6 +385,41 @@ module KilauTool
         checks << "raise Kilau::Error::BadRequest, \"#{param_name(segment)} must be a whole number\" unless parts[#{j}].match?(/\\A\\d{1,18}\\z/)"
       end
       checks.join("; ")
+    end
+
+    # A pattern under a prefix: the segments of both, joined; "/" when none. The
+    # same rule as Kilau::Route.join, so the table and the framework agree.
+    def self.join_pattern(*parts)
+      joined = parts.join("/").split("/").reject { |segment| segment.empty? }.join("/")
+      joined.empty? ? "/" : "/" + joined
+    end
+
+    # The routes of group key, in source order, each link expanded in place
+    # under acc, the prefix of the nesting so far (Fase F). A nest cycle is
+    # refused by depth.
+    def self.expand(scan, key, acc, out, depth, where)
+      raise ArgumentError, "#{where}: nested routes nest more than 8 deep, or cycle back to #{key.tr("#", " ")}" if depth > 8
+      group = scan.groups[key]
+      raise ArgumentError, "#{where}: no routes found for #{key.tr("#", " ")}" if group.nil?
+      pos = 0
+      group.links.each do |link|
+        while pos < link.position
+          out << under(group.decls[pos], acc)
+          pos += 1
+        end
+        expand(scan, link.target, acc.empty? ? link.prefix : join_pattern(acc, link.prefix), out, depth + 1, link.where)
+      end
+      while pos < group.decls.size
+        out << under(group.decls[pos], acc)
+        pos += 1
+      end
+      out
+    end
+
+    # A route declaration under acc: its pattern unchanged when acc is empty.
+    def self.under(decl, acc)
+      return decl if acc.empty?
+      Decl.new(decl.verb, join_pattern(acc, decl.pattern), decl.klass, decl.params, decl.body, decl.where)
     end
 
     # The first segment of a pattern when it is a literal, or "" when it is a

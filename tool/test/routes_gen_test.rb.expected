@@ -4,6 +4,9 @@ ok the dispatch switches on the first path segment
 ok a small app switches on the first segment only (D-028)
 ok a large app dispatches through the nested trie (D-028)
 ok a typed param is checked in its verb's branch, before the handler (D-029)
+ok gen routes: a nested group is expanded under the chain prefix and the nest path
+ok gen routes: a merged group keeps its patterns
+ok gen routes: nesting a group that does not exist is refused
 ok a well-formed app renders
 ok gen routes: shape_key ignores param names
 ok gen routes: shape_key distinguishes literal from param at the same position

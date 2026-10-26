@@ -47,6 +47,24 @@ T.check("a typed param is checked in its verb's branch, before the handler (D-02
   out = KilauTool::RoutesGen.render(scan)
   out.include?("raise Kilau::Error::BadRequest, \"n must be a whole number\"") && out.include?("\"n\" => parts[1]")
 end
+# Fase F: a controller nests or merges another controller's routes.
+DNESTED = "class D < Kilau::Controller\n  def self.routes\n    Kilau::Routes.new\n      .add(\"/:id\", get { |a, r| x(a, r) })\n  end\nend\n"
+def scan_with(sources)
+  scan = KilauTool::RoutesGen::Scan.new
+  sources.each { |file, source| KilauTool::RoutesGen.scan_file(file, source, scan) }
+  scan
+end
+T.check("gen routes: a nested group is expanded under the chain prefix and the nest path") do
+  scan = scan_with("src/a.rb" => APP, "src/c.rb" => controller(".prefix(\"blog\").nest(\"/posts\", D.routes)"), "src/d.rb" => DNESTED)
+  KilauTool::RoutesGen.render(scan).include?("\"GET /blog/posts/:id\"")
+end
+T.check("gen routes: a merged group keeps its patterns") do
+  scan = scan_with("src/a.rb" => APP, "src/c.rb" => controller(".merge(D.routes)"), "src/d.rb" => DNESTED)
+  KilauTool::RoutesGen.render(scan).include?("\"GET /:id\"")
+end
+T.check("gen routes: nesting a group that does not exist is refused") do
+  gen_error({ "src/a.rb" => APP, "src/c.rb" => controller(".nest(\"/posts\", Missing.routes)") }).include?("no routes found for Missing.routes")
+end
 T.check("a well-formed app renders") { gen_error({ "src/a.rb" => APP, "src/c.rb" => controller(".add(\"/x\", get { |a, r| x(a, r) })") }) == "" }
 T.check("gen routes: shape_key ignores param names") { KilauTool::RoutesGen.shape_key("/notes/:id") == KilauTool::RoutesGen.shape_key("/notes/:slug") }
 T.check("gen routes: shape_key distinguishes literal from param at the same position") { KilauTool::RoutesGen.shape_key("/notes/bulk") != KilauTool::RoutesGen.shape_key("/notes/:id") }
