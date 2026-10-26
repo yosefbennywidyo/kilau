@@ -13,20 +13,32 @@ module Kilau
       Dispatcher.apply_override(request)
       verb = request.request_method
       match_verb = verb == "HEAD" ? "GET" : verb
-      allowed = []
+      # The winners are the matching routes of the lowest specificity: a static
+      # route beats a :param one at the same depth, whatever the declaration order (Fase C).
+      best = nil
+      winners = []
       @routes.each do |route|
-        params = route.match(request.path)
-        next if params.nil?
-        allowed << route.verb
-        next unless route.verb == match_verb
-        request.path_params = params
-        response = route.endpoint.call(@app_context, request)
-        return verb == "HEAD" ? response.without_body : response
+        next if route.match(request.path).nil?
+        if best.nil? || route.specificity < best
+          best = route.specificity
+          winners = [route]
+        elsif route.specificity == best
+          winners << route
+        end
       end
-      if allowed.empty?
+      if winners.empty?
         response = Dispatcher.error_response(404, "no route for #{verb} #{request.path}")
         return verb == "HEAD" ? response.without_body : response
       end
+      chosen = nil
+      winners.each { |route| chosen = route if chosen.nil? && route.verb == match_verb }
+      unless chosen.nil?
+        request.path_params = chosen.match(request.path)
+        response = chosen.endpoint.call(@app_context, request)
+        return verb == "HEAD" ? response.without_body : response
+      end
+      allowed = []
+      winners.each { |route| allowed << route.verb }
       allowed << "HEAD" if allowed.include?("GET") && !allowed.include?("HEAD")
       allowed = allowed.uniq.sort
       return Dispatcher.options_response(allowed) if verb == "OPTIONS"

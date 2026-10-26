@@ -10,6 +10,7 @@ class NotesController < Kilau::Controller
       .add("/:id", get { |app_context, request| show(app_context, request) })
       .add("/:id", patch { |app_context, request| update(app_context, request) })
       .add("/:id", delete { |app_context, request| remove(app_context, request) })
+      .add("/bulk", post { |app_context, request| Kilau::Format.empty(204) })
   end
 
   def self.list(app_context, request) = Kilau::Format.text("notes page=#{request.query("page").to_s} env=#{app_context.environment}")
@@ -86,6 +87,11 @@ end
 db = Sqlite::Pool.new(":memory:", 1)
 app_context = Kilau::AppContext.new(db, Kilau::Config.parse("app:\n  name: notes\n", "test.yaml"), "test")
 client = Kilau::Testing::Client.new(NotesApp.new, app_context)
+T.check("a static route wins over a colliding :param route even declared after it") { client.post("/notes/bulk", {}).status == 204 }
+T.check("a verb the static winner does not have is 405 with the static route's own Allow, not the shadowed param route's") { r = client.get("/notes/bulk"); r.status == 405 && r.headers["allow"] == "POST" }
+T.check("DELETE on the static winner is 405, not a silent no-op delete through :id") { r = client.delete("/notes/bulk"); r.status == 405 && r.headers["allow"] == "POST" }
+T.check("OPTIONS on the static winner reports only its own Allow") { r = client.options("/notes/bulk"); r.status == 204 && r.headers["allow"] == "POST" }
+T.check("a genuine :id request is unaffected by the new static sibling") { client.get("/notes/7").body == "note 7" }
 
 ping = client.get("/_ping")
 T.check("_ping answers ok as JSON") { ping.status == 200 && ping.body == "{\"ok\":true}" && ping.headers["content-type"] == "application/json" }

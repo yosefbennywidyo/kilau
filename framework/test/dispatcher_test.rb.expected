@@ -18,6 +18,11 @@ ok every label in the app is unique
 ok AppRoutes#add rejects a literal duplicate of the same verb
 ok AppRoutes#add rejects an ambiguous param-name-only difference
 ok AppRoutes#add allows the same shape for a different verb
+ok a static route wins over a colliding :param route even declared after it
+ok a verb the static winner does not have is 405 with the static route's own Allow, not the shadowed param route's
+ok DELETE on the static winner is 405, not a silent no-op delete through :id
+ok OPTIONS on the static winner reports only its own Allow
+ok a genuine :id request is unaffected by the new static sibling
 ok _ping answers ok as JSON
 ok _health answers ok with a working database
 ok a GET reaches its handler with the query and app_context
