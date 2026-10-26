@@ -5,6 +5,7 @@ class NotesController < Kilau::Controller
       .add("/:id", get { |c, r| show(r.path_params.fetch("id")) })
       .add("/:id/tags/:tag", get { |app_context, request| Kilau::Format.render("#{request.path_params["id"]}/#{request.path_params["tag"]} {}") })
       .add("/:id", delete { |app_context, request| Kilau::Format.empty(204) })
+      .add("/bulk", post { |app_context, request| Kilau::Format.empty(204) })
   end
 
   def self.list(app_context, request) = Kilau::Format.render("notes")

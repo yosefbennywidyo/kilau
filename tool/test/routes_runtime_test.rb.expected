@@ -14,4 +14,8 @@ ok HEAD on a parameterized path matches GET's status with no body
 ok OPTIONS on a routed path is 204 with Allow
 ok OPTIONS on an unrouted path is 404
 ok _ping answers
+ok gen mode: a static route wins over a colliding :param route declared after it
+ok gen mode: a verb the static winner lacks is 405 with its own Allow
+ok gen mode: DELETE on the static winner is 405, not routed through :id
+ok gen mode: a genuine :id request is unaffected
 ok _health answers

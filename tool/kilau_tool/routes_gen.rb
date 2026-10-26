@@ -360,28 +360,73 @@ module KilauTool
       out << "      parts.shift"
       out << "      verb = request.request_method"
       out << "      match_verb = verb == \"HEAD\" ? \"GET\" : verb"
-      out << "      allowed = []"
+      # Every route, in table order: its verb, its call, its per-route path_params
+      # pairs, and the shape group it belongs to. Parallel arrays of one element
+      # type each (no Array mixes types).
       all_routes = DEFAULTS.map { |d| [d[0], d[1], "#{d[2]}(app_context, request)"] } +
         decls.each_with_index.map { |decl, i| [decl.verb, decl.pattern, "#{decl.klass}.kilau_route_#{i + DEFAULTS.size}(app_context, request)"] }
+      group_keys = []
+      group_specs = []
+      group_conds = []
+      route_group = []
+      route_verbs = []
+      route_calls = []
+      route_pairs = []
       all_routes.each do |verb, pattern, call|
-        conds, pairs = route_conditions(pattern)
-        out << "      if #{conds.join(" && ")}"
-        out << "        allowed << \"#{verb}\""
-        out << "        if match_verb == \"#{verb}\""
-        out << "          request.path_params = #{pairs.empty? ? "{}" : "{ #{pairs.join(", ")} }"}"
-        out << "          response = #{call}"
+        key = shape_key(pattern)
+        gi = -1
+        group_keys.each_with_index { |k, g| gi = g if gi < 0 && k == key }
+        if gi < 0
+          gi = group_keys.size
+          conds, _pairs = route_conditions(pattern)
+          group_keys << key
+          group_specs << specificity(pattern)
+          group_conds << conds.join(" && ")
+        end
+        route_group << gi
+        route_verbs << verb
+        route_calls << call
+        _conds, pairs = route_conditions(pattern)
+        route_pairs << (pairs.empty? ? "{}" : "{ #{pairs.join(", ")} }")
+      end
+      # Groups in ascending specificity (insertion sort, no sort_by): the first
+      # group whose conditions match is the winner, and every branch returns.
+      order = []
+      group_keys.each_with_index { |_k, g| order << g }
+      i = 1
+      while i < order.size
+        j = i
+        while j > 0 && group_specs[order[j - 1]] > group_specs[order[j]]
+          tmp = order[j - 1]
+          order[j - 1] = order[j]
+          order[j] = tmp
+          j -= 1
+        end
+        i += 1
+      end
+      order.each do |g|
+        out << "      if #{group_conds[g]}"
+        members = []
+        route_group.each_with_index { |rg, r| members << r if rg == g }
+        verbs = members.map { |r| "\"#{route_verbs[r]}\"" }
+        out << "        allowed = [#{verbs.join(", ")}]"
+        out << "        case match_verb"
+        members.each do |r|
+          out << "        when \"#{route_verbs[r]}\""
+          out << "          request.path_params = #{route_pairs[r]}"
+          out << "          response = #{route_calls[r]}"
+          out << "          return verb == \"HEAD\" ? response.without_body : response"
+        end
+        out << "        else"
+        out << "          allowed << \"HEAD\" if allowed.include?(\"GET\") && !allowed.include?(\"HEAD\")"
+        out << "          allowed = allowed.uniq.sort"
+        out << "          return Kilau::Dispatcher.options_response(allowed) if verb == \"OPTIONS\""
+        out << "          response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)"
         out << "          return verb == \"HEAD\" ? response.without_body : response"
         out << "        end"
         out << "      end"
       end
-      out << "      if allowed.empty?"
-      out << "        response = Kilau::Dispatcher.error_response(404, \"no route for \#{verb} \#{request.path}\")"
-      out << "        return verb == \"HEAD\" ? response.without_body : response"
-      out << "      end"
-      out << "      allowed << \"HEAD\" if allowed.include?(\"GET\") && !allowed.include?(\"HEAD\")"
-      out << "      allowed = allowed.uniq.sort"
-      out << "      return Kilau::Dispatcher.options_response(allowed) if verb == \"OPTIONS\""
-      out << "      response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)"
+      out << "      response = Kilau::Dispatcher.error_response(404, \"no route for \#{verb} \#{request.path}\")"
       out << "      verb == \"HEAD\" ? response.without_body : response"
       out << "    rescue Kilau::Error => e"
       out << "      response = Kilau::Dispatcher.error_response(e.status, e.message)"

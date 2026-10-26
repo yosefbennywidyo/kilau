@@ -1,6 +1,11 @@
 ok generate returns the file it wrote
 ok the output matches the committed fixture
 ok a well-formed app renders
+ok gen routes: shape_key ignores param names
+ok gen routes: shape_key distinguishes literal from param at the same position
+ok gen routes: specificity favors literal over param, leftmost first
+ok a duplicate verb+pattern across controllers is refused with both lines
+ok an ambiguous param-name-only duplicate is refused
 ok a block over several lines is refused with its line
 ok a do block is refused
 ok an unknown verb is refused

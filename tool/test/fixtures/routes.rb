@@ -27,11 +27,15 @@ class NotesController
   def self.kilau_route_6(app_context, request)
     Kilau::Format.empty(204)
   end
+  # src/controllers/notes.rb:8: POST /notes/bulk
+  def self.kilau_route_7(app_context, request)
+    Kilau::Format.empty(204)
+  end
 end
 
 module KilauRoutes
   # What the app's route table holds, in order; a test compares the two.
-  TABLE = ["GET /_ping", "GET /_health", "GET /", "GET /notes", "GET /notes/:id", "GET /notes/:id/tags/:tag", "DELETE /notes/:id"]
+  TABLE = ["GET /_ping", "GET /_health", "GET /", "GET /notes", "GET /notes/:id", "GET /notes/:id/tags/:tag", "DELETE /notes/:id", "POST /notes/bulk"]
 
   class Dispatcher
     def initialize(app_context)
@@ -45,71 +49,116 @@ module KilauRoutes
       parts.shift
       verb = request.request_method
       match_verb = verb == "HEAD" ? "GET" : verb
-      allowed = []
       if parts.size == 1 && parts[0] == "_ping"
-        allowed << "GET"
-        if match_verb == "GET"
+        allowed = ["GET"]
+        case match_verb
+        when "GET"
           request.path_params = {}
           response = Kilau::AppRoutes.ping(app_context, request)
+          return verb == "HEAD" ? response.without_body : response
+        else
+          allowed << "HEAD" if allowed.include?("GET") && !allowed.include?("HEAD")
+          allowed = allowed.uniq.sort
+          return Kilau::Dispatcher.options_response(allowed) if verb == "OPTIONS"
+          response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)
           return verb == "HEAD" ? response.without_body : response
         end
       end
       if parts.size == 1 && parts[0] == "_health"
-        allowed << "GET"
-        if match_verb == "GET"
+        allowed = ["GET"]
+        case match_verb
+        when "GET"
           request.path_params = {}
           response = Kilau::AppRoutes.health(app_context, request)
+          return verb == "HEAD" ? response.without_body : response
+        else
+          allowed << "HEAD" if allowed.include?("GET") && !allowed.include?("HEAD")
+          allowed = allowed.uniq.sort
+          return Kilau::Dispatcher.options_response(allowed) if verb == "OPTIONS"
+          response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)
           return verb == "HEAD" ? response.without_body : response
         end
       end
       if parts.empty?
-        allowed << "GET"
-        if match_verb == "GET"
+        allowed = ["GET"]
+        case match_verb
+        when "GET"
           request.path_params = {}
           response = NotesApp.kilau_route_2(app_context, request)
+          return verb == "HEAD" ? response.without_body : response
+        else
+          allowed << "HEAD" if allowed.include?("GET") && !allowed.include?("HEAD")
+          allowed = allowed.uniq.sort
+          return Kilau::Dispatcher.options_response(allowed) if verb == "OPTIONS"
+          response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)
           return verb == "HEAD" ? response.without_body : response
         end
       end
       if parts.size == 1 && parts[0] == "notes"
-        allowed << "GET"
-        if match_verb == "GET"
+        allowed = ["GET"]
+        case match_verb
+        when "GET"
           request.path_params = {}
           response = NotesController.kilau_route_3(app_context, request)
+          return verb == "HEAD" ? response.without_body : response
+        else
+          allowed << "HEAD" if allowed.include?("GET") && !allowed.include?("HEAD")
+          allowed = allowed.uniq.sort
+          return Kilau::Dispatcher.options_response(allowed) if verb == "OPTIONS"
+          response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)
+          return verb == "HEAD" ? response.without_body : response
+        end
+      end
+      if parts.size == 2 && parts[0] == "notes" && parts[1] == "bulk"
+        allowed = ["POST"]
+        case match_verb
+        when "POST"
+          request.path_params = {}
+          response = NotesController.kilau_route_7(app_context, request)
+          return verb == "HEAD" ? response.without_body : response
+        else
+          allowed << "HEAD" if allowed.include?("GET") && !allowed.include?("HEAD")
+          allowed = allowed.uniq.sort
+          return Kilau::Dispatcher.options_response(allowed) if verb == "OPTIONS"
+          response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)
           return verb == "HEAD" ? response.without_body : response
         end
       end
       if parts.size == 2 && parts[0] == "notes" && !parts[1].empty?
-        allowed << "GET"
-        if match_verb == "GET"
+        allowed = ["GET", "DELETE"]
+        case match_verb
+        when "GET"
           request.path_params = { "id" => parts[1] }
           response = NotesController.kilau_route_4(app_context, request)
+          return verb == "HEAD" ? response.without_body : response
+        when "DELETE"
+          request.path_params = { "id" => parts[1] }
+          response = NotesController.kilau_route_6(app_context, request)
+          return verb == "HEAD" ? response.without_body : response
+        else
+          allowed << "HEAD" if allowed.include?("GET") && !allowed.include?("HEAD")
+          allowed = allowed.uniq.sort
+          return Kilau::Dispatcher.options_response(allowed) if verb == "OPTIONS"
+          response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)
           return verb == "HEAD" ? response.without_body : response
         end
       end
       if parts.size == 4 && parts[0] == "notes" && !parts[1].empty? && parts[2] == "tags" && !parts[3].empty?
-        allowed << "GET"
-        if match_verb == "GET"
+        allowed = ["GET"]
+        case match_verb
+        when "GET"
           request.path_params = { "id" => parts[1], "tag" => parts[3] }
           response = NotesController.kilau_route_5(app_context, request)
           return verb == "HEAD" ? response.without_body : response
-        end
-      end
-      if parts.size == 2 && parts[0] == "notes" && !parts[1].empty?
-        allowed << "DELETE"
-        if match_verb == "DELETE"
-          request.path_params = { "id" => parts[1] }
-          response = NotesController.kilau_route_6(app_context, request)
+        else
+          allowed << "HEAD" if allowed.include?("GET") && !allowed.include?("HEAD")
+          allowed = allowed.uniq.sort
+          return Kilau::Dispatcher.options_response(allowed) if verb == "OPTIONS"
+          response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)
           return verb == "HEAD" ? response.without_body : response
         end
       end
-      if allowed.empty?
-        response = Kilau::Dispatcher.error_response(404, "no route for #{verb} #{request.path}")
-        return verb == "HEAD" ? response.without_body : response
-      end
-      allowed << "HEAD" if allowed.include?("GET") && !allowed.include?("HEAD")
-      allowed = allowed.uniq.sort
-      return Kilau::Dispatcher.options_response(allowed) if verb == "OPTIONS"
-      response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)
+      response = Kilau::Dispatcher.error_response(404, "no route for #{verb} #{request.path}")
       verb == "HEAD" ? response.without_body : response
     rescue Kilau::Error => e
       response = Kilau::Dispatcher.error_response(e.status, e.message)

@@ -31,5 +31,9 @@ end
 T.check("OPTIONS on a routed path is 204 with Allow") { r = client.options("/notes/7"); r.status == 204 && r.headers["allow"] == "DELETE, GET, HEAD" }
 T.check("OPTIONS on an unrouted path is 404") { client.options("/totally/unknown/path").status == 404 }
 T.check("_ping answers") { client.get("/_ping").body == "{\"ok\":true}" }
+T.check("gen mode: a static route wins over a colliding :param route declared after it") { client.post("/notes/bulk", {}).status == 204 }
+T.check("gen mode: a verb the static winner lacks is 405 with its own Allow") { r = client.get("/notes/bulk"); r.status == 405 && r.headers["allow"] == "POST" }
+T.check("gen mode: DELETE on the static winner is 405, not routed through :id") { r = client.delete("/notes/bulk"); r.status == 405 && r.headers["allow"] == "POST" }
+T.check("gen mode: a genuine :id request is unaffected") { client.get("/notes/7").body == "note 7" }
 T.check("_health answers") { client.get("/_health").status == 200 }
 db.close
