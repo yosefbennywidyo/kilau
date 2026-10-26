@@ -23,6 +23,25 @@ module Kilau
 
     def self.split(path) = path.split("/").reject { |segment| segment.empty? }
 
+    # The name of a param segment: `:id` and `:id<int>` are both "id" (Fase E).
+    def self.param_name(segment) = segment.delete_prefix(":").sub(/<int>\z/, "")
+
+    # The name of the first typed (`<int>`) param whose value in path is not a
+    # whole number, or nil. The dispatcher answers 400 for it, as path_int does.
+    def bad_param(path)
+      parts = path.split("/")
+      parts.shift
+      i = 0
+      while i < @segments.size
+        segment = @segments[i]
+        if segment.start_with?(":") && segment.end_with?("<int>") && !parts[i].to_s.match?(/\A\d{1,18}\z/)
+          return Route.param_name(segment)
+        end
+        i += 1
+      end
+      nil
+    end
+
     # The :name segments of a matching path, or nil.
     def match(path)
       parts = path.split("/")
@@ -35,7 +54,7 @@ module Kilau
         part = parts[i].to_s
         if segment.start_with?(":")
           return nil if part.empty?
-          params[segment[1, segment.size - 1]] = part
+          params[Route.param_name(segment)] = part
         elsif segment != part
           return nil
         end

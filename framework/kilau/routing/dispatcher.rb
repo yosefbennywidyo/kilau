@@ -36,6 +36,8 @@ module Kilau
       chosen = nil
       winners.each { |route| chosen = route if chosen.nil? && route.verb == match_verb }
       unless chosen.nil?
+        bad = chosen.bad_param(request.path)
+        raise Kilau::Error::BadRequest, "#{bad} must be a whole number" unless bad.nil?
         request.path_params = chosen.match(request.path)
         response = chosen.endpoint.call(@app_context, request)
         return verb == "HEAD" ? response.without_body : response
