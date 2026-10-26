@@ -2,6 +2,22 @@
 
 Entri terbaru di atas.
 
+## 2026-10-27 — Rencana 5 Fase D: trie untuk mode table
+
+**Status**
+- Benchmark di `bench/ROUTER.md` (median 3 run, spinel): mode table linear
+  835 us di 1.000 route, trie 0,9 us. Di 10 dan 100 route, rantai `if` mode
+  generate lebih cepat dari trie, jadi trie hanya diadopsi untuk mode table.
+- `Kilau::RouteTrie` dipakai `Dispatcher` (commit `7278b34`). D-026 dicatat.
+- `make test`: framework 14/14, tool 8/8, blog 4/4. `make e2e`: 35 pengecekan
+  lolos, 0 gagal.
+
+**Lanjut dari sini**
+1. Fase E: parameter bertipe (`/:id<int>`), dengan `/posts/abc` tetap 400 dan
+   `--warn-widen` tidak bertambah di blog.
+2. Fase F (opsional), diputuskan setelah E.
+3. Uji jalur shard `tools/gate.rb linux --target/--shard` di runner GitHub.
+
 ## 2026-10-27 — Rencana 5 Fase C selesai; make test dan e2e hijau
 
 **Status**
