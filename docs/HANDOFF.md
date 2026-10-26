@@ -18,6 +18,34 @@ Entri terbaru di atas.
 2. Fase F (opsional), diputuskan setelah E.
 3. Uji jalur shard `tools/gate.rb linux --target/--shard` di runner GitHub.
 
+## 2026-10-27 — Status akhir sesi: Rencana 5 A–E selesai, F sebagian
+
+**Selesai dan di `origin/main`**
+- Fase A–E (route, HTTP, konflik dan prioritas, trie dan ambang, parameter `<int>`).
+  Keputusan D-023 sampai D-029.
+- Fase F sebagian: `Routes#nest` dan `Routes#merge` di kedua mode (D-030), commit
+  `3617ee1`..`dbbd856`, dokumen di `1ceb8de`.
+- `make test` (framework 16/16, tool 8/8, blog 4/4) dan `make e2e` blog (35 pengecekan)
+  hijau pada commit terakhir.
+
+**Belum dikerjakan (belum ada keputusan atau pekerjaan)**
+1. `resources` ala Rails (Fase F): hanya di mode generate, sehingga paritas dua mode
+   pecah. Perlu keputusan pengguna sebelum dikerjakan.
+2. Nama route dan helper path (`Paths.post(id)`): non-goal spec §6.5, butuh keputusan
+   pengguna.
+3. File route tunggal `src/routes.rb` (Fase F): desainnya belum cukup spesifik di
+   rencana. Perlu spesifikasi sebelum dikerjakan.
+4. Jalur shard `tools/gate.rb linux --target/--shard` (spinel `gate-shard-option`,
+   commit `b0169aea5`, belum upstream): unit test lolos, jalur Docker belum pernah
+   dijalankan. Uji di runner GitHub dengan satu target dulu.
+5. Trie bersarang untuk tabel dengan segmen statis lebih dalam: sudah diukur pada tabel
+   dua tingkat (bench/ROUTER.md), tetapi belum pada aplikasi nyata.
+
+**Catatan**
+- Pelajaran sesi ada di memory `feedback_kilau_session_lessons_2026_10_27`.
+- Angka benchmark mikro berlaku untuk tabel sintetis di mesin ini (M1, spinel
+  `9d1040375`), dan ambang 10 route (D-028) mengikuti angka itu.
+
 ## 2026-10-27 — Rencana 5 Fase F sebagian: nest dan merge (D-030)
 
 **Status**
