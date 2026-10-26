@@ -104,3 +104,40 @@ Trie tetap dipakai di mode table.
 Belum diukur: trie yang disusun sebagai `case` bersarang untuk setiap segmen,
 serta tabel dengan segmen statis di kedalaman 2 dan 3. Tabel sintetis di sini
 hanya punya segmen kedua berupa parameter, jadi `case` kedua tidak bisa dibuat.
+
+## Trie bersarang sebagai kode: tabel dengan dua tingkat segmen statis
+
+Tabel: 5 segmen pertama (`s0`..`s4`), B segmen kedua di bawah masing-masing,
+dan dua pola per kombinasi (`/s<i>/t<j>/:id` dan `/s<i>/t<j>/:id/edit`).
+Jumlah route = 10 x B. Dijalankan dengan `ruby bench/router/nested_micro.rb <dir>`
+(spinel `9d1040375`, median 3 run, 20.000 lookup per run).
+
+- trie: struktur runtime (`Micro.find`)
+- if: satu `if` per route
+- case+if: `case` pada segmen pertama, `if` di dalam (D-027)
+- bersarang: `case` pada segmen pertama, `case` pada segmen kedua, lalu `if` di
+  daun (trie bersarang sebagai kode)
+
+| Route | Trie | if | case+if | bersarang | if/trie | case+if/trie | bersarang/trie |
+|---|---|---|---|---|---|---|---|
+| 10 | 1.159 | 863 | 856 | 860 | 0,74x | 0,74x | 0,74x |
+| 100 | 1.166 | 980 | 889 | 884 | 0,84x | 0,76x | 0,76x |
+| 300 | 1.160 | 1.280 | 941 | 913 | 1,10x | 0,81x | 0,79x |
+| 600 | 1.183 | 1.795 | 1.021 | 941 | 1,52x | 0,86x | 0,80x |
+| 750 | 1.154 | 2.099 | 1.117 | 972 | 1,82x | 0,97x | 0,84x |
+
+Membaca hasil:
+- Trie bersarang tidak pernah lebih lambat dari `case`+`if` yang diukur, dan
+  paling cepat dari 100 route ke atas. Di 10 route, ketiga varian kode berada
+  dalam selisih kecil (4 ns antara bersarang dan case+if, dalam noise).
+- Trie runtime tetap yang paling lambat di semua ukuran di tabel ini, karena
+  setiap langkah berupa lookup Hash, sedangkan varian kode memakai perbandingan
+  string yang langsung.
+- Di tabel dengan segmen statis dalam, `case` bersarang bisa dipakai. Tabel
+  satu tingkat (segmen kedua selalu parameter) tidak bisa, seperti dibahas di
+  bagian sebelumnya.
+
+Keputusan yang belum diambil: mengganti gabungan `case`+`if` di `kilau gen
+routes` dengan trie bersarang. Itu menuntut generator yang menyusun pohon
+dengan kedalaman sembarang dan menjaga prioritas Fase C pada grup yang berbagi
+prefix. Itu pekerjaan generator yang cukup besar dan perlu persetujuan dulu.
