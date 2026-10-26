@@ -1,6 +1,7 @@
 ok the root redirects to the post list
 ok an empty list renders
 ok the new form renders
+ok a non-integer post id is a 400, not a 404 or a crash
 ok DELETE on /posts/new is 405 with GET, HEAD Allow, not routed through :id
 ok an invalid post re-renders the form with 422
 ok the re-rendered form keeps what was typed, escaped

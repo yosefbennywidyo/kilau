@@ -20,10 +20,10 @@ class PostsController < Kilau::Controller
       .add("/", get { |app_context, request| list(app_context, request) })
       .add("/", post { |app_context, request| add(app_context, request) })
       .add("/new", get { |app_context, request| new_form(app_context, request) })
-      .add("/:id", get { |app_context, request| show(app_context, request) })
-      .add("/:id/edit", get { |app_context, request| edit(app_context, request) })
-      .add("/:id", patch { |app_context, request| update(app_context, request) })
-      .add("/:id", delete { |app_context, request| remove(app_context, request) })
+      .add("/:id<int>", get { |app_context, request| show(app_context, request) })
+      .add("/:id<int>/edit", get { |app_context, request| edit(app_context, request) })
+      .add("/:id<int>", patch { |app_context, request| update(app_context, request) })
+      .add("/:id<int>", delete { |app_context, request| remove(app_context, request) })
   end
 
   def self.load_item(app_context, request)

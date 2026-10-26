@@ -16,6 +16,7 @@ T.check("the root redirects to the post list") { home.status == 303 && home.loca
 empty_list = client.get("/posts")
 T.check("an empty list renders") { empty_list.status == 200 && empty_list.body.include?("<h1>Posts</h1>") }
 T.check("the new form renders") { client.get("/posts/new").body.include?("name=\"post[title]\"") }
+T.check("a non-integer post id is a 400, not a 404 or a crash") { client.get("/posts/abc").status == 400 && client.get("/posts/abc/edit").status == 400 }
 T.check("DELETE on /posts/new is 405 with GET, HEAD Allow, not routed through :id") { r = client.delete("/posts/new"); r.status == 405 && r.headers["allow"] == "GET, HEAD" }
 
 bad = client.post("/posts", { "post[title]" => "<", "post[content]" => "" })
