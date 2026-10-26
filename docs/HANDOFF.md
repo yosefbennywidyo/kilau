@@ -18,6 +18,22 @@ Entri terbaru di atas.
 2. Fase F (opsional), diputuskan setelah E.
 3. Uji jalur shard `tools/gate.rb linux --target/--shard` di runner GitHub.
 
+## 2026-10-27 — Rencana 5 Fase E selesai: parameter bertipe `:id<int>`
+
+**Status**
+- `:name<int>` (D-029): route tetap cocok berdasarkan bentuk; nilai bukan bilangan
+  bulat dijawab 400 sebelum handler, dengan pesan seperti `path_int`. Mode table
+  di dispatcher, mode generate di cabang route.
+- Blog memakai `/:id<int>` untuk post. `--warn-widen` blog: 463 sebelum dan sesudah.
+- `make test`: framework 15/15, tool 8/8, blog 4/4. `make e2e` blog: 35 pengecekan,
+  0 gagal. Commit: `50a1534`..`b1c5e2d`.
+
+**Lanjut dari sini**
+1. Fase F (opsional): `Routes#nest`, `Routes#merge`, satu file route opsional,
+   `resources` sebagai sugar di `gen routes`. Diputuskan dulu apakah dikerjakan.
+2. Uji jalur shard `tools/gate.rb linux --target/--shard` di runner GitHub
+   (spinel `gate-shard-option`, belum upstream).
+
 ## 2026-10-27 — Rencana 5 Fase D selesai (trie + ambang); Fase E berikutnya
 
 **Status**
