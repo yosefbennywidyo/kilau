@@ -25,6 +25,15 @@ APP = "class A < Kilau::Hooks\n  def routes = Kilau::AppRoutes.with_default_rout
 def controller(line) = "class C < Kilau::Controller\n  def self.routes\n    Kilau::Routes.new\n      #{line}\n  end\nend\n"
 
 T.check("a well-formed app renders") { gen_error({ "src/a.rb" => APP, "src/c.rb" => controller(".add(\"/x\", get { |a, r| x(a, r) })") }) == "" }
+T.check("gen routes: shape_key ignores param names") { KilauTool::RoutesGen.shape_key("/notes/:id") == KilauTool::RoutesGen.shape_key("/notes/:slug") }
+T.check("gen routes: shape_key distinguishes literal from param at the same position") { KilauTool::RoutesGen.shape_key("/notes/bulk") != KilauTool::RoutesGen.shape_key("/notes/:id") }
+T.check("gen routes: specificity favors literal over param, leftmost first") { KilauTool::RoutesGen.specificity("/:a/b") > KilauTool::RoutesGen.specificity("/a/:b") }
+T.check("a duplicate verb+pattern across controllers is refused with both lines") do
+  gen_error({ "src/a.rb" => APP, "src/c.rb" => controller(".add(\"/x\", get { |a, r| x(a, r) })\n      .add(\"/x\", get { |a, r| y(a, r) })") }).include?("src/c.rb:5")
+end
+T.check("an ambiguous param-name-only duplicate is refused") do
+  gen_error({ "src/a.rb" => APP, "src/c.rb" => controller(".add(\"/:id\", get { |a, r| x(a, r) })\n      .add(\"/:slug\", get { |a, r| y(a, r) })") }).include?("conflicts")
+end
 T.check("a block over several lines is refused with its line") do
   gen_error({ "src/a.rb" => APP, "src/c.rb" => controller(".add(\"/x\", get { |a, r|") }).include?("src/c.rb:4: a route handler must be a { } block on one line")
 end

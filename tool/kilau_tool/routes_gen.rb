@@ -257,8 +257,28 @@ module KilauTool
       raise ArgumentError, "#{where}: a route handler must be a { } block on one line"
     end
 
+    # Two routes share a shape when they have the same literal at every static
+    # position, whatever their param names; specificity is a bitmask with the
+    # leftmost segment as the most significant bit, set where a segment is a
+    # param, so a lower value is more static (Fase C, same as Kilau::Route).
+    def self.shape_key(pattern)
+      pattern.split("/").reject { |segment| segment.empty? }.map { |segment| segment.start_with?(":") ? "\0" : segment }.join("/")
+    end
+
+    def self.specificity(pattern)
+      segments = pattern.split("/").reject { |segment| segment.empty? }
+      value = 0
+      i = 0
+      while i < segments.size
+        value |= (1 << (segments.size - 1 - i)) if segments[i].start_with?(":")
+        i += 1
+      end
+      value
+    end
+
     # The routes in dispatch order: the framework defaults, then each
-    # composed group in the order the app adds it.
+    # composed group in the order the app adds it. Two routes with the same
+    # verb and shape are refused here, with both declarations' lines (Fase C).
     def self.ordered(scan)
       raise ArgumentError, "no Kilau::AppRoutes.with_default_routes under src/" if scan.hooks_class.empty?
       decls = []
@@ -266,6 +286,20 @@ module KilauTool
         group = scan.groups[key]
         raise ArgumentError, "#{scan.composition_where}: no routes found for #{key.tr("#", " ")}" if group.nil?
         group.decls.each { |decl| decls << decl }
+      end
+      seen = []
+      DEFAULTS.each { |d| seen << [d[0], shape_key(d[1]), "<kilau defaults>", d[1]] }
+      decls.each { |decl| seen << [decl.verb, shape_key(decl.pattern), decl.where, decl.pattern] }
+      i = 0
+      while i < seen.size
+        j = 0
+        while j < i
+          if seen[j][0] == seen[i][0] && seen[j][1] == seen[i][1]
+            raise ArgumentError, "#{seen[i][2]}: duplicate route #{seen[i][0]} #{seen[i][3]} conflicts with #{seen[j][2]}: #{seen[j][0]} #{seen[j][3]} (same shape)"
+          end
+          j += 1
+        end
+        i += 1
       end
       decls
     end
