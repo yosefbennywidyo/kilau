@@ -8,16 +8,16 @@ Entri terbaru di atas.
 - T4 (Hash Enumerable dan cycle.first pada yield campuran): merged sebagai
   matz/spinel#10272 (11:57Z) dan fix lanjutan #10283 (15:50Z, `d8094045b`).
 - K-032: tetap ditutup sebagai perilaku sengaja. Catatan di `docs/CATALOG.md`
-  masih menyebut "nilai salah diam-diam"; belum diubah.
+  sudah diperbarui (commit `4f98964`, sudah di-push ke origin).
 - Upstream sudah tidak punya label `gate: verified` atau trailer `Gate:` (commit
   `e9f552b9b`, 2026-10-20). Ringkasan `make gate` harus ditempel ke body PR.
 - Branch lokal `gate-shard-option` (spinel, `b0169aea5`) berisi opsi
   `tools/gate.rb linux --target/--shard` dan `merge`. Jalur Docker belum diuji.
 
 **Lanjut dari sini**
-1. Catatan K-032 di `docs/CATALOG.md`: ganti "nilai salah diam-diam" menjadi
-   "perbedaan yang disengaja dengan default CRuby".
-2. Uji jalur shard di runner GitHub sebelum matriks penuh.
+1. Uji jalur shard (`tools/gate.rb linux --target/--shard`) di runner GitHub
+   sebelum matriks penuh. Branch: spinel `gate-shard-option`, belum upstream.
+2. Fase C rencana route (2026-10-17) masih menunggu dieksekusi.
 
 ## 2026-10-21 ~01:35 WIB — K-030 sampai K-032 selesai; T4 (Hash Enumerable pada yield campuran) siap dikerjakan
 
