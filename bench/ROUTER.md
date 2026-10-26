@@ -92,3 +92,15 @@ Rantai `if` dan gabungan lebih cepat dari trie di semua ukuran ini. Selisihnya
 menyempit dari 0,76x di 10 route ke 0,88x di 100 route, lalu berbalik antara
 100 dan 300 route (lihat bagian di atas). Jadi titik silang trie dan rantai
 `if` berada di antara 100 dan 300 route pada mesin dan kode ini.
+
+## Keputusan: mode generate memakai gabungan
+
+Dipilih `case` pada segmen pertama lalu `if` (D-027). Di 10 sampai 100 route
+gabungan sedikit lebih cepat dari rantai `if`, dan di 300 route ke atas
+gabungan menyamai trie di 300 route. Route yang segmen pertamanya parameter
+tetap diperiksa setelah `case`, dengan prioritas yang sama seperti di Fase C.
+Trie tetap dipakai di mode table.
+
+Belum diukur: trie yang disusun sebagai `case` bersarang untuk setiap segmen,
+serta tabel dengan segmen statis di kedalaman 2 dan 3. Tabel sintetis di sini
+hanya punya segmen kedua berupa parameter, jadi `case` kedua tidak bisa dibuat.

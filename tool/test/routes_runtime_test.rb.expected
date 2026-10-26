@@ -18,4 +18,7 @@ ok gen mode: a static route wins over a colliding :param route declared after it
 ok gen mode: a verb the static winner lacks is 405 with its own Allow
 ok gen mode: DELETE on the static winner is 405, not routed through :id
 ok gen mode: a genuine :id request is unaffected
+ok gen mode: a path whose first segment is a param answers when no literal one matches
+ok gen mode: a literal first segment beats a param one at the root
+ok gen mode: a verb the param-first route lacks is 405 with its Allow
 ok _health answers

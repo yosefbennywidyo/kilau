@@ -321,6 +321,21 @@ module KilauTool
       [conds, pairs]
     end
 
+    # The first segment of a pattern when it is a literal, or "" when it is a
+    # param or the pattern has no segments.
+    def self.first_literal(pattern)
+      segment = pattern.split("/").reject { |part| part.empty? }[0]
+      segment.nil? || segment.start_with?(":") ? "" : segment
+    end
+
+    # Any pattern of group g (the groups share one shape, so their first
+    # segment is the same literal or param).
+    def self.group_pattern(all_routes, route_group, g)
+      r = 0
+      r += 1 while r < route_group.size && route_group[r] != g
+      all_routes[r][1]
+    end
+
     def self.render(scan)
       decls = ordered(scan)
       out = []
@@ -404,28 +419,46 @@ module KilauTool
         end
         i += 1
       end
-      order.each do |g|
-        out << "      if #{group_conds[g]}"
+      # The groups whose first segment is a literal are switched on it (a case
+      # with one when per segment, as the measured hybrid in bench/ROUTER.md); a
+      # group inside a when keeps its specificity order. The rest, whose first
+      # segment is a param or absent, follow the switch in their own order: a
+      # literal first segment always outranks a param one at the same length.
+      group_first = []
+      group_keys.each_with_index { |_k, g| group_first << first_literal(group_pattern(all_routes, route_group, g)) }
+      buckets = []
+      order.each { |g| buckets << group_first[g] unless group_first[g].empty? || buckets.include?(group_first[g]) }
+      emit = lambda do |g, pad|
+        out << "#{pad}if #{group_conds[g]}"
         members = []
         route_group.each_with_index { |rg, r| members << r if rg == g }
         verbs = members.map { |r| "\"#{route_verbs[r]}\"" }
-        out << "        allowed = [#{verbs.join(", ")}]"
-        out << "        case match_verb"
+        out << "#{pad}  allowed = [#{verbs.join(", ")}]"
+        out << "#{pad}  case match_verb"
         members.each do |r|
-          out << "        when \"#{route_verbs[r]}\""
-          out << "          request.path_params = #{route_pairs[r]}"
-          out << "          response = #{route_calls[r]}"
-          out << "          return verb == \"HEAD\" ? response.without_body : response"
+          out << "#{pad}  when \"#{route_verbs[r]}\""
+          out << "#{pad}    request.path_params = #{route_pairs[r]}"
+          out << "#{pad}    response = #{route_calls[r]}"
+          out << "#{pad}    return verb == \"HEAD\" ? response.without_body : response"
         end
-        out << "        else"
-        out << "          allowed << \"HEAD\" if allowed.include?(\"GET\") && !allowed.include?(\"HEAD\")"
-        out << "          allowed = allowed.uniq.sort"
-        out << "          return Kilau::Dispatcher.options_response(allowed) if verb == \"OPTIONS\""
-        out << "          response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)"
-        out << "          return verb == \"HEAD\" ? response.without_body : response"
-        out << "        end"
+        out << "#{pad}  else"
+        out << "#{pad}    allowed << \"HEAD\" if allowed.include?(\"GET\") && !allowed.include?(\"HEAD\")"
+        out << "#{pad}    allowed = allowed.uniq.sort"
+        out << "#{pad}    return Kilau::Dispatcher.options_response(allowed) if verb == \"OPTIONS\""
+        out << "#{pad}    response = Kilau::Dispatcher.method_not_allowed(allowed, verb, request.path)"
+        out << "#{pad}    return verb == \"HEAD\" ? response.without_body : response"
+        out << "#{pad}  end"
+        out << "#{pad}end"
+      end
+      unless buckets.empty?
+        out << "      case parts[0]"
+        buckets.each do |f|
+          out << "      when #{f.inspect}"
+          order.each { |g| emit.call(g, "        ") if group_first[g] == f }
+        end
         out << "      end"
       end
+      order.each { |g| emit.call(g, "      ") if group_first[g].empty? }
       out << "      response = Kilau::Dispatcher.error_response(404, \"no route for \#{verb} \#{request.path}\")"
       out << "      verb == \"HEAD\" ? response.without_body : response"
       out << "    rescue Kilau::Error => e"

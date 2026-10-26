@@ -1,5 +1,6 @@
 ok generate returns the file it wrote
 ok the output matches the committed fixture
+ok the dispatch switches on the first path segment
 ok a well-formed app renders
 ok gen routes: shape_key ignores param names
 ok gen routes: shape_key distinguishes literal from param at the same position

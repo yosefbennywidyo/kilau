@@ -35,5 +35,8 @@ T.check("gen mode: a static route wins over a colliding :param route declared af
 T.check("gen mode: a verb the static winner lacks is 405 with its own Allow") { r = client.get("/notes/bulk"); r.status == 405 && r.headers["allow"] == "POST" }
 T.check("gen mode: DELETE on the static winner is 405, not routed through :id") { r = client.delete("/notes/bulk"); r.status == 405 && r.headers["allow"] == "POST" }
 T.check("gen mode: a genuine :id request is unaffected") { client.get("/notes/7").body == "note 7" }
+T.check("gen mode: a path whose first segment is a param answers when no literal one matches") { client.get("/other").body == "slug other" }
+T.check("gen mode: a literal first segment beats a param one at the root") { client.get("/notes").body == "notes" }
+T.check("gen mode: a verb the param-first route lacks is 405 with its Allow") { r = client.post("/other", {}); r.status == 405 && r.headers["allow"] == "GET, HEAD" }
 T.check("_health answers") { client.get("/_health").status == 200 }
 db.close

@@ -8,6 +8,7 @@ T = Kilau::Testing
 path = KilauTool::RoutesGen.generate("test/fixtures/routes_app")
 T.check("generate returns the file it wrote") { path == "test/fixtures/routes_app/build/gen/routes.rb" }
 T.check("the output matches the committed fixture") { File.read(path) == File.read("test/fixtures/routes.rb") }
+T.check("the dispatch switches on the first path segment") { File.read(path).include?("case parts[0]") }
 
 # The message of the ArgumentError scanning and rendering these sources
 # raises, or "" when they render. sources: path => source.
