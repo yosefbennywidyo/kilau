@@ -1,0 +1,7 @@
+ok nest puts a group under the chain prefix and the nest path
+ok merge keeps the other group's patterns as they are
+ok nest does not change the nested group
+ok a request reaches a nested route under its full path
+ok a request reaches a merged route
+ok a nested param route keeps its param under the nest path
+ok a path under no nested group is 404

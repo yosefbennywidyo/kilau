@@ -23,6 +23,12 @@ module Kilau
 
     def self.split(path) = path.split("/").reject { |segment| segment.empty? }
 
+    # The pattern of parts joined: "/" when they have no segments.
+    def self.join(*parts)
+      joined = Route.split(parts.join("/")).join("/")
+      joined.empty? ? "/" : "/" + joined
+    end
+
     # The name of a param segment: `:id` and `:id<int>` are both "id" (Fase E).
     def self.param_name(segment) = segment.delete_prefix(":").sub(/<int>\z/, "")
 
@@ -82,6 +88,21 @@ module Kilau
     def add(path, endpoint)
       full = @prefix + (path == "/" ? "" : path)
       @routes << Route.new(endpoint.verb, full.empty? ? "/" : full, endpoint)
+      self
+    end
+
+    # Another group's routes under this chain's prefix and path (Fase F).
+    def nest(path, other)
+      other.routes.each do |route|
+        full = Route.join(@prefix, path, route.pattern)
+        @routes << Route.new(route.verb, full, route.endpoint)
+      end
+      self
+    end
+
+    # Another group's routes as they are, patterns unchanged (Fase F).
+    def merge(other)
+      other.routes.each { |route| @routes << route }
       self
     end
   end
