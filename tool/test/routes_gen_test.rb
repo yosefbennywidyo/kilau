@@ -40,6 +40,13 @@ T.check("a large app dispatches through the nested trie (D-028)") do
   out = KilauTool::RoutesGen.render(scan)
   out.include?("case parts[1]") && out.include?("when \"t3\"")
 end
+T.check("a typed param is checked in its verb's branch, before the handler (D-029)") do
+  scan = KilauTool::RoutesGen::Scan.new
+  KilauTool::RoutesGen.scan_file("src/a.rb", APP, scan)
+  KilauTool::RoutesGen.scan_file("src/c.rb", controller(".add(\"/t/:n<int>\", get { |a, r| x(a, r) })"), scan)
+  out = KilauTool::RoutesGen.render(scan)
+  out.include?("raise Kilau::Error::BadRequest, \"n must be a whole number\"") && out.include?("\"n\" => parts[1]")
+end
 T.check("a well-formed app renders") { gen_error({ "src/a.rb" => APP, "src/c.rb" => controller(".add(\"/x\", get { |a, r| x(a, r) })") }) == "" }
 T.check("gen routes: shape_key ignores param names") { KilauTool::RoutesGen.shape_key("/notes/:id") == KilauTool::RoutesGen.shape_key("/notes/:slug") }
 T.check("gen routes: shape_key distinguishes literal from param at the same position") { KilauTool::RoutesGen.shape_key("/notes/bulk") != KilauTool::RoutesGen.shape_key("/notes/:id") }

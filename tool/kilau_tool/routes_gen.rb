@@ -313,12 +313,26 @@ module KilauTool
       segments.each_with_index do |segment, j|
         if segment.start_with?(":")
           conds << "!parts[#{j}].empty?"
-          pairs << "\"#{segment[1, segment.size - 1]}\" => parts[#{j}]"
+          pairs << "\"#{param_name(segment)}\" => parts[#{j}]"
         else
           conds << "parts[#{j}] == #{segment.inspect}"
         end
       end
       [conds, pairs]
+    end
+
+    # The name of a param segment: `:id` and `:id<int>` are both "id" (D-029).
+    def self.param_name(segment) = segment.delete_prefix(":").sub(/<int>\z/, "")
+
+    # The checks of a typed (`<int>`) param, in the branch of its route, before
+    # its handler: a value that is not a whole number answers 400 (D-029).
+    def self.route_check(pattern)
+      checks = []
+      split_pattern(pattern).each_with_index do |segment, j|
+        next unless segment.start_with?(":") && segment.end_with?("<int>")
+        checks << "raise Kilau::Error::BadRequest, \"#{param_name(segment)} must be a whole number\" unless parts[#{j}].match?(/\\A\\d{1,18}\\z/)"
+      end
+      checks.join("; ")
     end
 
     # The first segment of a pattern when it is a literal, or "" when it is a
@@ -346,7 +360,7 @@ module KilauTool
 
     # One group's if: its conditions, then the verbs of the group, each one's
     # call, and the 405 / OPTIONS answer for a verb the group does not have.
-    def self.emit_group(sink, g, pad, group_conds, route_group, route_verbs, route_calls, route_pairs)
+    def self.emit_group(sink, g, pad, group_conds, route_group, route_verbs, route_calls, route_pairs, route_checks)
       sink << "#{pad}if #{group_conds[g]}"
       members = []
       route_group.each_with_index { |rg, r| members << r if rg == g }
@@ -355,6 +369,7 @@ module KilauTool
       sink << "#{pad}  case match_verb"
       members.each do |r|
         sink << "#{pad}  when \"#{route_verbs[r]}\""
+        sink << "#{pad}    #{route_checks[r]}" unless route_checks[r].empty?
         sink << "#{pad}    request.path_params = #{route_pairs[r]}"
         sink << "#{pad}    response = #{route_calls[r]}"
         sink << "#{pad}    return verb == \"HEAD\" ? response.without_body : response"
@@ -372,19 +387,19 @@ module KilauTool
     # The nested dispatch: one case per segment over the literal children, the
     # param child last, and each group's if at its node. A branch that fails
     # falls through to the next, so static is tried before param at every depth.
-    def self.emit_tree(sink, node, depth, pad, group_conds, route_group, route_verbs, route_calls, route_pairs)
-      emit_group(sink, node.group, pad, group_conds, route_group, route_verbs, route_calls, route_pairs) if node.group >= 0
+    def self.emit_tree(sink, node, depth, pad, group_conds, route_group, route_verbs, route_calls, route_pairs, route_checks)
+      emit_group(sink, node.group, pad, group_conds, route_group, route_verbs, route_calls, route_pairs, route_checks) if node.group >= 0
       unless node.statics.empty?
         sink << "#{pad}case parts[#{depth}]"
         node.statics.each do |segment, child|
           sink << "#{pad}when #{segment.inspect}"
-          emit_tree(sink, child, depth + 1, pad + "  ", group_conds, route_group, route_verbs, route_calls, route_pairs)
+          emit_tree(sink, child, depth + 1, pad + "  ", group_conds, route_group, route_verbs, route_calls, route_pairs, route_checks)
         end
         sink << "#{pad}end"
       end
       return if node.param.nil?
       sink << "#{pad}if parts.size > #{depth} && !parts[#{depth}].empty?"
-      emit_tree(sink, node.param, depth + 1, pad + "  ", group_conds, route_group, route_verbs, route_calls, route_pairs)
+      emit_tree(sink, node.param, depth + 1, pad + "  ", group_conds, route_group, route_verbs, route_calls, route_pairs, route_checks)
       sink << "#{pad}end"
     end
 
@@ -452,6 +467,7 @@ module KilauTool
       route_verbs = []
       route_calls = []
       route_pairs = []
+      route_checks = []
       all_routes.each do |verb, pattern, call|
         key = shape_key(pattern)
         gi = -1
@@ -468,6 +484,7 @@ module KilauTool
         route_calls << call
         _conds, pairs = route_conditions(pattern)
         route_pairs << (pairs.empty? ? "{}" : "{ #{pairs.join(", ")} }")
+        route_checks << route_check(pattern)
       end
       # Groups in ascending specificity (insertion sort, no sort_by): the first
       # group whose conditions match is the winner, and every branch returns.
@@ -500,11 +517,11 @@ module KilauTool
           out << "      case parts[0]"
           buckets.each do |f|
             out << "      when #{f.inspect}"
-            order.each { |g| emit_group(out, g, "        ", group_conds, route_group, route_verbs, route_calls, route_pairs) if group_first[g] == f }
+            order.each { |g| emit_group(out, g, "        ", group_conds, route_group, route_verbs, route_calls, route_pairs, route_checks) if group_first[g] == f }
           end
           out << "      end"
         end
-        order.each { |g| emit_group(out, g, "      ", group_conds, route_group, route_verbs, route_calls, route_pairs) if group_first[g].empty? }
+        order.each { |g| emit_group(out, g, "      ", group_conds, route_group, route_verbs, route_calls, route_pairs, route_checks) if group_first[g].empty? }
       else
         root = DispatchNode.new
         group_keys.each_index do |g|
@@ -520,7 +537,7 @@ module KilauTool
           end
           node.group = g
         end
-        emit_tree(out, root, 0, "      ", group_conds, route_group, route_verbs, route_calls, route_pairs)
+        emit_tree(out, root, 0, "      ", group_conds, route_group, route_verbs, route_calls, route_pairs, route_checks)
       end
       out << "      response = Kilau::Dispatcher.error_response(404, \"no route for \#{verb} \#{request.path}\")"
       out << "      verb == \"HEAD\" ? response.without_body : response"
