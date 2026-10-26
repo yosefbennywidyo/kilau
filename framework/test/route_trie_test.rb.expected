@@ -1,0 +1,6 @@
+ok the trie matches the routes Route#match accepts, for every sample path
+ok a static segment and a param at the same depth are both returned, the static one listed too
+ok a path matching nothing returns no routes
+ok the root route is reached by the empty path
+ok a trailing slash matches as Route#match does
+ok an empty segment never binds a param

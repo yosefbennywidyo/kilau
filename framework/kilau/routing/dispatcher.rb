@@ -6,6 +6,7 @@ module Kilau
 
     def initialize(app_routes, app_context)
       @routes = app_routes.routes
+      @trie = RouteTrie.build(@routes)
       @app_context = app_context
     end
 
@@ -17,8 +18,10 @@ module Kilau
       # route beats a :param one at the same depth, whatever the declaration order (Fase C).
       best = nil
       winners = []
-      @routes.each do |route|
-        next if route.match(request.path).nil?
+      # The trie names the matching routes; declaration order is kept, so the
+      # first winner with the request's verb is the one declared first (Fase D).
+      @trie.matches(request.path).sort.each do |index|
+        route = @routes[index]
         if best.nil? || route.specificity < best
           best = route.specificity
           winners = [route]
