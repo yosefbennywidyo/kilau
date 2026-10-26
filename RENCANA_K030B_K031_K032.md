@@ -94,8 +94,11 @@ Status umum (2026-10-20 ~21:50 WIB):
   2. Untuk `find_index`, tentukan tipe hasil per site (Integer atau nil), bukan
      tipe elemen.
   3. Test CRuby dan `test/infer/`.
-- Status: **selesai** (2026-10-26, branch spinel `t4-yield-hash-enum`, 3 commit,
-  belum di-push upstream):
+- Status: **selesai dan sudah di-merge upstream** (2026-10-26):
+  - matz/spinel#10272 (3 commit: cycle/each_slice/each_cons, find_index,
+    cycle.first/take), merged 2026-10-26 11:57Z.
+  - matz/spinel#10283 (fix `Enumerator#first`/`take` yang dibuka ulang), merged
+    2026-10-26 15:50Z sebagai `d8094045b`.
   - `8d3ac09bc`: cycle, each_slice, each_cons pada receiver yield ikut redispatch
     pair-array; codegen tidak lagi menimpa view receiver yang diredispatch dengan
     tipe per-site block (`view_type_top`). Test `yield_hash_enum_mixed_sites`.
@@ -148,3 +151,4 @@ Langkah berikutnya yang disarankan: T4, mulai dari `cycle` pada Hash. Lihat cata
 - 2026-10-20 ~21:50 WIB: gate fork hijau untuk K-031 dan K-030b, clang fork hijau. Dibuka upstream sebagai #9794 dan #9795. Fork PR #37 dan #38 ditutup. #9779 sudah merged (13:46Z).
 - 2026-10-20 ~20:40 WIB: T1 selesai, bukan bug (perilaku sengaja, lihat docs/limitations.md). Catalog K-032 diperbarui. Catatan status K-030 yang sebelumnya salah masuk ke K-032 dipindah ke K-030.
 - 2026-10-26: T4 selesai (3 commit di spinel branch `t4-yield-hash-enum`). Doc diperbarui.
+- 2026-10-26: #10272 dan #10283 merged upstream. Label gate sudah tidak ada upstream (e9f552b9b).
