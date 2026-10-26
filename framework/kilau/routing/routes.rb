@@ -1,6 +1,6 @@
 module Kilau
   class Route
-    attr_reader :verb, :pattern, :endpoint
+    attr_reader :verb, :pattern, :endpoint, :shape_key, :specificity
     attr_accessor :handler_label
 
     def initialize(verb, pattern, endpoint)
@@ -8,6 +8,17 @@ module Kilau
       @pattern = pattern
       @endpoint = endpoint
       @segments = Route.split(pattern)
+      # Two routes share a shape_key when they have the same literal at every
+      # static position, whatever their param names (Fase C).
+      @shape_key = @segments.map { |segment| segment.start_with?(":") ? "\0" : segment }.join("/")
+      # Bit set for each param segment, MSB = leftmost: a lower value is a more
+      # static route, which wins at the same depth (Fase C).
+      @specificity = 0
+      i = 0
+      while i < @segments.size
+        @specificity |= (1 << (@segments.size - 1 - i)) if @segments[i].start_with?(":")
+        i += 1
+      end
     end
 
     def self.split(path) = path.split("/").reject { |segment| segment.empty? }

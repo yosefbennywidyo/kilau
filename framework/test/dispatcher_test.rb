@@ -44,6 +44,13 @@ end
 route = Kilau::Route.new("GET", "/notes/:id/edit", NotesController.get { |app_context, request| Kilau::Format.empty(204) })
 T.check("a route captures its params") { route.match("/notes/7/edit") == { "id" => "7" } }
 T.check("a route refuses a different shape") { route.match("/notes/7").nil? && route.match("/notes//edit").nil? }
+T.check("two routes with the same literal pattern share a shape_key") { Kilau::Route.new("GET", "/notes/bulk", NotesController.get { |c, r| r }).shape_key == Kilau::Route.new("GET", "/notes/bulk", NotesController.get { |c, r| r }).shape_key }
+T.check("a param position's name does not affect shape_key") { Kilau::Route.new("GET", "/notes/:id", NotesController.get { |c, r| r }).shape_key == Kilau::Route.new("GET", "/notes/:slug", NotesController.get { |c, r| r }).shape_key }
+T.check("a literal and a param at the same position have different shape_key") { Kilau::Route.new("GET", "/notes/bulk", NotesController.get { |c, r| r }).shape_key != Kilau::Route.new("GET", "/notes/:id", NotesController.get { |c, r| r }).shape_key }
+T.check("different segment counts have different shape_key") { Kilau::Route.new("GET", "/notes/:id", NotesController.get { |c, r| r }).shape_key != Kilau::Route.new("GET", "/notes/:id/edit", NotesController.get { |c, r| r }).shape_key }
+T.check("an all-literal route has specificity 0") { Kilau::Route.new("GET", "/notes/bulk", NotesController.get { |c, r| r }).specificity == 0 }
+T.check("a param is less specific than a literal at the same position") { Kilau::Route.new("GET", "/notes/:id", NotesController.get { |c, r| r }).specificity > Kilau::Route.new("GET", "/notes/bulk", NotesController.get { |c, r| r }).specificity }
+T.check("a leftmost param outweighs a rightmost one") { Kilau::Route.new("GET", "/:a/b", NotesController.get { |c, r| r }).specificity > Kilau::Route.new("GET", "/a/:b", NotesController.get { |c, r| r }).specificity }
 T.check("prefix and / make the prefix itself") { Kilau::Routes.new.prefix("/notes/").add("/", NotesController.get { |c, r| Kilau::Format.empty(204) }).routes[0].pattern == "/notes" }
 
 app = NotesApp.new

@@ -2,6 +2,13 @@ kilau: RuntimeError: boom
 ok a Hooks without routes raises NotImplementedError
 ok a route captures its params
 ok a route refuses a different shape
+ok two routes with the same literal pattern share a shape_key
+ok a param position's name does not affect shape_key
+ok a literal and a param at the same position have different shape_key
+ok different segment counts have different shape_key
+ok an all-literal route has specificity 0
+ok a param is less specific than a literal at the same position
+ok a leftmost param outweighs a rightmost one
 ok prefix and / make the prefix itself
 ok a route's handler_label is nil before AppRoutes assigns it
 ok the first default route is labeled with index 0
