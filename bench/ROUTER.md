@@ -75,3 +75,20 @@ Keputusan yang belum diambil: aturan Fase D (adopsi di mode generate bila menang
 di >= 100 route dan tidak kalah di 10) berarti mode generate tetap rantai `if`.
 Kalau ingin trie di mode generate untuk aplikasi besar, perlu ambang (misalnya
 di atas 200 route) dan dua jalur kode, dan itu butuh keputusan terpisah.
+
+## Pengukuran kecil: 10, 30, 60, dan 100 route
+
+Cara sama seperti di atas (spinel `9d1040375`, median 3 run, 20.000 lookup per
+run). Dijalankan dengan `ruby bench/router/gen_micro.rb <dir> 10 30 60 100`.
+
+| Route | Trie | Rantai `if` | Gabungan | `if` / trie | gabungan / trie |
+|---|---|---|---|---|---|
+| 10 | 904 | 691 | 685 | 0,76x | 0,76x |
+| 30 | 926 | 723 | 721 | 0,78x | 0,78x |
+| 60 | 922 | 757 | 742 | 0,82x | 0,80x |
+| 100 | 915 | 806 | 763 | 0,88x | 0,83x |
+
+Rantai `if` dan gabungan lebih cepat dari trie di semua ukuran ini. Selisihnya
+menyempit dari 0,76x di 10 route ke 0,88x di 100 route, lalu berbalik antara
+100 dan 300 route (lihat bagian di atas). Jadi titik silang trie dan rantai
+`if` berada di antara 100 dan 300 route pada mesin dan kode ini.

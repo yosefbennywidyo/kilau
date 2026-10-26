@@ -80,6 +80,8 @@ end
 
 if $PROGRAM_NAME == __FILE__
   out_dir = ARGV.fetch(0)
-  # index counts: 2 routes per index, so 300, 600 and 750 routes
-  [150, 300, 375].each { |n| puts GenMicro.emit(n, out_dir) }
+  # index counts: 2 routes per index. Default 300, 600 and 750 routes; any
+  # other sizes come as route counts after OUT_DIR, e.g. 10 30 60 100.
+  counts = ARGV.size > 1 ? ARGV[1..].map { |c| c.to_i / 2 } : [150, 300, 375]
+  counts.each { |n| puts GenMicro.emit(n, out_dir) }
 end
