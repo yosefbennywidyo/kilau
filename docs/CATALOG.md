@@ -1064,7 +1064,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   cuma kena di site call yang berbeda (mutasi in-place) daripada `frozen?` langsung. Diklasifikasikan
   di sini, bukan K-033, supaya satu root cause punya satu entri. Tetap BUKAN BUG per keputusan di atas.
 
-## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030) -- 18 DIPERBAIKI lokal, 5 masih terbuka
+## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030) -- 22 DIPERBAIKI lokal, 1 masih terbuka (`minmax`)
 - Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + hook codegen
   `yield_builtin_method_site_type`/`src/codegen_util.c` -- sama mekanisme dengan K-024/K-029/K-030)
 - Ditemukan: 2026-10-28, menyisir caveat "unswept names" K-029 yang sebelumnya ditutup kolektif
@@ -1180,16 +1180,52 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   worktree `e85ebfcf2` (branch `k033-hash-min-max-uniq-dig-fetch`, belum
   di-push ke fork/upstream).
 
-  **Sisa 5 nama BELUM diperbaiki** (benar-benar lebih sulit, dikonfirmasi
-  empiris bukan cuma teori):
-  - `minmax` pada site Hash -- gap boxing di compiled-body non-inline method
-    (lihat di atas), beda dari yang berhasil diperbaiki untuk min/max/uniq;
-  - `itself` -- gagal saat site campuran luas (scalar+Array+Hash dalam satu
-    method), beda mekanisme dari Hash-pair-shape di atas, belum diselidiki;
-  - `capitalize`/`downcase`/`upcase`/`swapcase` -- butuh jalur
-    `an_yield_site_builtin_answer` (`src/analyze_infer.c`) diperluas ke
-    String/Symbol, BUKAN `ty_recv_builtin_result`; komentar compiler sendiri
-    (fix K-030, commit `89d0a721d`) secara eksplisit memperingatkan "widening
-    a yield over String or Hash sites... reaches emitters that do not yet
-    box a per-site answer into the poly slot" -- perlu verifikasi apakah
-    emitter-nya sudah siap untuk String/Symbol sebelum mencoba.
+- **2026-10-29 -- `itself` dan keluarga `capitalize`/`downcase`/`upcase`/
+  `swapcase` JUGA DIPERBAIKI (5 nama lagi), commit kedua di worktree yang
+  sama.** Teori sebelumnya ("butuh `an_yield_site_builtin_answer` di
+  `analyze_infer.c`, BUKAN `ty_recv_builtin_result`") **TERNYATA SALAH**
+  -- dikoreksi setelah membaca C yang dihasilkan sungguhan (`spinel -S`)
+  sebelum menulis fix, bukan menebak dari pola:
+  - `itself`: ternyata tidak punya row Hash SAMA SEKALI di `builtin_ops.c`
+    (bukan "row-nya `TY_UNKNOWN`" seperti min/max/uniq -- benar-benar tak
+    ada baris). Tanpa site Hash terjawab, `yield_recv_builtin_every_site`
+    (mekanisme nyata di balik "widen ke poly lalu box per-site" --
+    ditemukan dengan membaca `analyze_infer.c`'s `YU_RECEIVER` arm, bukan
+    diasumsikan) menolak men-widen SELURUH method, sehingga tetap pakai
+    tipe C situs pertama (skalar `sp_int` kalau site pertamanya Integer) --
+    situs Array/Hash berikutnya memaksakan pointer ke slot `sp_int` itu,
+    gagal compile. Fix: tambah satu row `{ BOP_ANY_HASH, "itself", 0, 127,
+    BF_ANY, BOPR_SELF, BOPE_NONE }` (emisi asli `itself` tetap lewat jalur
+    universal `BOP_ANY_RECV`/`BSH_RECV` terpisah -- row ini cuma supaya
+    tabel per-site ADA sesuatu konkret untuk ditemukan), lalu masukkan
+    `itself` SENDIRIAN (bukan `dup`/`clone`/`freeze` yang tak pernah jadi
+    bagian bug ini) ke kondisi yang menerima `ty_is_hash(recv)`.
+  - `capitalize`/`downcase`/`upcase`/`swapcase`: ternyata TIDAK butuh
+    `an_yield_site_builtin_answer` sama sekali -- cukup tambahkan String
+    DAN Symbol ke `yield_site_listed` yang sudah ada (mekanisme SAMA
+    dengan fix `itself`/Hash di atas), karena keduanya sudah punya row
+    konkret (`TY_STRING`→`TY_STRING`, `TY_SYMBOL`→`TY_SYMBOL`) tapi
+    sebelumnya tak satu pun site pernah dicek lewat tabel ini untuk nama
+    ini. Akibatnya method tetap tak ter-widen, dan site Symbol dipaksa
+    lewat representasi String (`SP_STR_B` pada Symbol yang baru di-intern
+    ulang) -- bukan gagal compile, tapi `nil` diam-diam (karena representasi
+    C String dan Symbol di Spinel kebetulan bisa "numpang" di slot sempit
+    yang sama tanpa compiler sadar ada clash).
+  TDD: RED via `git stash` (langsung di-pop lagi), GREEN setelah restore,
+  `test/yield_receiver_builtin_itself_hash_and_case_methods.rb` cocok CRuby
+  persis. Sapuan 258-probe: **68→67 CC_FAIL** (itself), **59→55 MISMATCH**
+  (4 metode case), nol regresi. `infer-test`/`reject-test` lolos, test lama
+  tetap cocok. Commit worktree kedua: `f7d87e4d3` (branch
+  `k033-hash-min-max-uniq-dig-fetch`, masih belum di-push).
+
+  **Sisa 1 nama BELUM diperbaiki: `minmax` pada site Hash.** Dicoba dengan
+  mekanisme IDENTIK (row `TY_POLY_ARRAY` + masuk daftar `yield_site_listed`)
+  dan GAGAL dengan error BERBEDA dari yang lain: diagnosis presisi lewat
+  `spinel -S` menunjukkan jawaban site Array (`BOPE_ARRAY_MINMAX`'s
+  konstruksi `sp_IntArray`) di-emit MENTAH, tidak pernah di-"box" ke slot
+  poly -- beda dari jawaban berbasis panggilan fungsi biasa (`sp_IntArray_uniq`)
+  yang OTOMATIS di-box. Ini gap codegen nyata dan spesifik di cara jawaban
+  array hasil TEMPLATE (bukan hasil panggilan fungsi polos) di-boks ke slot
+  poly -- didokumentasikan presisi, bukan dipaksakan. Kandidat kerja
+  terpisah kalau user mau menyelidiki emitter boxing-nya (kemungkinan di
+  `src/codegen_call_array.c` atau `src/codegen_util.c`, belum diselidiki).
