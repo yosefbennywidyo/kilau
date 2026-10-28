@@ -1064,7 +1064,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   cuma kena di site call yang berbeda (mutasi in-place) daripada `frozen?` langsung. Diklasifikasikan
   di sini, bukan K-033, supaya satu root cause punya satu entri. Tetap BUKAN BUG per keputusan di atas.
 
-## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030, belum tuntas)
+## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030) -- 13 DIPERBAIKI lokal, 10 masih terbuka
 - Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + hook codegen
   `yield_builtin_method_site_type`/`src/codegen_util.c` -- sama mekanisme dengan K-024/K-029/K-030)
 - Ditemukan: 2026-10-28, menyisir caveat "unswept names" K-029 yang sebelumnya ditutup kolektif
@@ -1127,11 +1127,38 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `fetch`/`delete`/`delete_at`/`assoc`/`rassoc`/`values_at`/`pop(n)`; nilai salah diam-diam
   untuk 4 nama -- `capitalize`/`downcase`/`upcase`/`swapcase`)
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
-- **Belum difilex upstream, belum diperbaiki.** Semua 23 nama sudah terverifikasi (tidak ada
-  lagi sisa "belum disisir" dari K-029). Kandidat untuk sesi berikutnya jika user mau investasi
-  memperluas allowlist generik `ty_recv_builtin_result` (mekanisme yang sama dengan fix
-  K-029/#9460) ke nama-nama ini. Dua sub-pola butuh penanganan berbeda dari sekadar menambah
-  row ke allowlist biasa: (a) `first`/`min`/`max`/`shift`'s Hash-pair-shape celah (`Hash#NAME`
-  mengembalikan `[k,v]`, bukan elemen tunggal seperti receiver Array/String); (b)
-  `capitalize`/`downcase`/`upcase`/`swapcase`'s String-vs-Symbol representasi celah (`sp_RbVal`
-  string tidak cocok untuk Symbol).
+- **2026-10-28/29 -- 13 dari 23 nama DIPERBAIKI lokal (belum upstream).** Diperluas dua
+  allowlist di `src/types.c` (`yield_site_listed` dan `bop_result_fallback_allowed`), mekanisme
+  yang sama persis dengan fix K-029/#9460 -- bukan Tier B/C, ternyata cukup gating saja karena
+  row Hash/Array-nya sudah konkret:
+  - `clear`, `flatten`, `first` (0-arg), `shift` (0-arg) -- ditambah ke `yield_site_listed`
+    dengan `ty_is_hash(recv)` di samping `ty_recv_is_plain_array(recv)` (row Hash-nya sudah
+    konkret: BOPR_SELF/TY_POLY_ARRAY/TY_POLY/TY_POLY -- beda dari `min`/`max`/`minmax`/`uniq`
+    yang row Hash-nya `TY_UNKNOWN`, sengaja TIDAK disentuh);
+  - `[]`, `slice`, `delete`, `delete_at`, `assoc`, `rassoc`, `values_at`, `pop(n)`, `shift(n)`
+    -- ditambah ke `bop_result_fallback_allowed` (tidak perlu Hash sama sekali untuk kasus
+    yang ditemukan K-033; perbaikan ini juga otomatis mencakup site Hash untuk `[]`/`slice`/
+    `delete`/`assoc`/`rassoc`/`values_at` karena baris Hash-nya juga konkret).
+  TDD: RED dikonfirmasi dulu lewat `git stash` (build sebelum patch gagal compile persis di
+  titik yang diharapkan), lalu GREEN setelah di-restore, `test/
+  yield_receiver_builtin_more_array_hash_shared.rb` (spinel) cocok CRuby persis. Sapuan
+  `tools/yield-sweep/sweep.sh` penuh (258 probe) diuji ulang sebelum/sesudah: **73→57 CC_FAIL,
+  59 MISMATCH tetap, 126→142 OK** -- persis 16 probe pindah ke OK (16, bukan 13 nama, karena
+  beberapa nama punya >1 probe argc), nol regresi ke arah sebaliknya. `infer-test`/`reject-test`
+  lolos; semua `test/yield_receiver_*.rb`/`test/respond_to*.rb` yang sudah ada tetap cocok.
+  Commit lokal spinel `4c43bb779` (belum di-push ke fork/upstream, menunggu konfirmasi user).
+  **Sisa 10 nama BELUM diperbaiki** (Tier B/C, butuh pekerjaan lebih dalam dari gating):
+  - `min`, `max`, `minmax`, `uniq` pada site Hash -- row `BOP_ANY_HASH` untuk keempatnya
+    literal `TY_UNKNOWN` di `builtin_ops.c`, belum ada implementasi SAMA SEKALI (bukan celah
+    gating) -- perlu row/template baru (semantik Hash#min/max/minmax/uniq via Enumerable,
+    pasangan `[k,v]`), pekerjaan fitur sungguhan;
+  - `dig`(≥1 arg)/`fetch`(2 arg) pada site Hash -- sama, row-nya `TY_UNKNOWN`;
+  - `itself` -- gagal saat site campuran luas (scalar+Array+Hash dalam satu method), beda
+    mekanisme dari Hash-pair-shape di atas, belum diselidiki;
+  - `capitalize`/`downcase`/`upcase`/`swapcase` -- butuh jalur `an_yield_site_builtin_answer`
+    (`src/analyze_infer.c`) diperluas ke String/Symbol, BUKAN `ty_recv_builtin_result`; komentar
+    compiler sendiri (fix K-030, commit `89d0a721d`) secara eksplisit memperingatkan "widening
+    a yield over String or Hash sites... reaches emitters that do not yet box a per-site answer
+    into the poly slot" -- perlu verifikasi apakah emitter-nya sudah siap untuk String/Symbol
+    (beda dari Array/Hash yang sudah terbukti aman lewat `ty_recv_builtin_result`'s jalur
+    sendiri) sebelum mencoba.
