@@ -14,9 +14,10 @@ Entri terbaru di atas.
   - K-007: bukan bug lagi. Spinel mencetak `undefined method 'save' for an instance of Gadget
     (NoMethodError)`. CRuby juga mencetak cuplikan kode, jadi hanya format diagnostik yang
     berbeda.
-  - K-015 (`endpoint_save_crash`): **belum terverifikasi**. Repro ini butuh app blog. Dijalankan
-    standalone gagal dengan `cannot load such file -- migration/migrator.rb`. Verifikasi
-    dengan menjalankan dari `examples/blog`.
+  - K-015 (`endpoint_save_crash`): **terverifikasi di spinel** dari `examples/blog` (sesuai
+    header repro). Spinel `9d1040375` mencetak `303` dan keluar 0, tanpa segfault (header
+    mencatat 139 sebelum fix). Pembanding CRuby hanya dari header repro: framework memuat
+    `sqlite` versi Spinel, jadi CRuby tidak bisa dijalankan langsung dari sini.
 - Upstream (menurut CATALOG): K-004 matz/spinel#6029, K-007 #6093, K-013 #6063, K-015 dan K-016
   #6008, K-017 #8679. K-010 dan K-011 lulus sejak `1ba12fb74`.
 
