@@ -1064,7 +1064,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   cuma kena di site call yang berbeda (mutasi in-place) daripada `frozen?` langsung. Diklasifikasikan
   di sini, bukan K-033, supaya satu root cause punya satu entri. Tetap BUKAN BUG per keputusan di atas.
 
-## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030) -- 13 DIPERBAIKI lokal, 10 masih terbuka
+## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030) -- 18 DIPERBAIKI lokal, 5 masih terbuka
 - Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + hook codegen
   `yield_builtin_method_site_type`/`src/codegen_util.c` -- sama mekanisme dengan K-024/K-029/K-030)
 - Ditemukan: 2026-10-28, menyisir caveat "unswept names" K-029 yang sebelumnya ditutup kolektif
@@ -1147,18 +1147,49 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   beberapa nama punya >1 probe argc), nol regresi ke arah sebaliknya. `infer-test`/`reject-test`
   lolos; semua `test/yield_receiver_*.rb`/`test/respond_to*.rb` yang sudah ada tetap cocok.
   Commit lokal spinel `4c43bb779` (belum di-push ke fork/upstream, menunggu konfirmasi user).
-  **Sisa 10 nama BELUM diperbaiki** (Tier B/C, butuh pekerjaan lebih dalam dari gating):
-  - `min`, `max`, `minmax`, `uniq` pada site Hash -- row `BOP_ANY_HASH` untuk keempatnya
-    literal `TY_UNKNOWN` di `builtin_ops.c`, belum ada implementasi SAMA SEKALI (bukan celah
-    gating) -- perlu row/template baru (semantik Hash#min/max/minmax/uniq via Enumerable,
-    pasangan `[k,v]`), pekerjaan fitur sungguhan;
-  - `dig`(≥1 arg)/`fetch`(2 arg) pada site Hash -- sama, row-nya `TY_UNKNOWN`;
-  - `itself` -- gagal saat site campuran luas (scalar+Array+Hash dalam satu method), beda
-    mekanisme dari Hash-pair-shape di atas, belum diselidiki;
-  - `capitalize`/`downcase`/`upcase`/`swapcase` -- butuh jalur `an_yield_site_builtin_answer`
-    (`src/analyze_infer.c`) diperluas ke String/Symbol, BUKAN `ty_recv_builtin_result`; komentar
-    compiler sendiri (fix K-030, commit `89d0a721d`) secara eksplisit memperingatkan "widening
-    a yield over String or Hash sites... reaches emitters that do not yet box a per-site answer
-    into the poly slot" -- perlu verifikasi apakah emitter-nya sudah siap untuk String/Symbol
-    (beda dari Array/Hash yang sudah terbukti aman lewat `ty_recv_builtin_result`'s jalur
-    sendiri) sebelum mencoba.
+- **2026-10-29 -- 5 LAGI dari sisa 10 DIPERBAIKI, di worktree terpisah
+  (`k033-hash-min-max-uniq-dig-fetch`, belum di-push).** `min`/`max`/`uniq`
+  pada site Hash ternyata TIDAK butuh row/template `builtin_ops.c` baru:
+  panggilan langsung (bukan yield) `{a:1}.min`/`.max`/`.uniq` SUDAH benar
+  hari ini lewat `hash_enum_redispatch` (`analyze_infer.c`) yang memperlakukan
+  pasangan `[key, value]` Hash sebagai Poly Array untuk keperluan tipe --
+  tabel per-site `ty_recv_builtin_result` saja yang belum pernah berkonsultasi
+  ke jawaban itu. Fix: cek khusus di awal `ty_recv_builtin_result` yang,
+  untuk `min`/`max`/`uniq` pada receiver Hash, mencari row di famili
+  `TY_POLY_ARRAY` (bukan famili Hash yang row-nya `TY_UNKNOWN`) dan me-resolve
+  `bop_result` terhadap `TY_POLY_ARRAY` juga (bukan Hash asli) -- meniru
+  logika `hash_enum_redispatch` persis. Diverifikasi empiris (bukan diasumsikan
+  dari pola): karena method satu baris (`def t_min = yield.min`) di-inline
+  per call-site, setiap site mem-boks jawabannya sendiri ke slot poly bersama
+  -- mekanisme yang sama yang sudah dipakai `sort!`/`reverse!`/dll. `dig`(1
+  arg, bukan ≥1 seperti dikira sebelumnya -- CRuby sendiri `TypeError` untuk
+  `dig` 2+ key kecuali value perantara punya `#dig`, jadi 2+ key sengaja
+  TIDAK disentuh) dan `fetch`(2 arg, default value) pada Hash juga diperbaiki
+  dengan arm tangan baru, mirip arm Array yang sudah ada, pakai `ty_hash_val`.
+  **`minmax` DIKECUALIKAN setelah diuji empiris** -- site Hash di samping
+  site Array compile GAGAL dengan error BERBEDA (`incompatible pointer types
+  assigning to 'sp_PolyArray *' from 'sp_IntArray *'` pada baris `yield.minmax`
+  method itu sendiri, bukan di titik panggil) -- gap pra-ada di jalur
+  compiled-body non-inline, TIDAK terkait tabel ini; didokumentasikan apa
+  adanya, tidak dipaksa.
+  TDD: RED via `git stash` (langsung di-pop lagi), GREEN setelah restore,
+  `test/yield_receiver_builtin_hash_pair_enumerable.rb` cocok CRuby persis.
+  Sapuan 258-probe diuji ulang: **73→68 CC_FAIL**, 59 MISMATCH tetap,
+  126→131 OK -- persis 5 probe pindah (min/max/uniq/dig/fetch), nol regresi.
+  `infer-test`/`reject-test` lolos, semua test lama tetap cocok. Commit
+  worktree `e85ebfcf2` (branch `k033-hash-min-max-uniq-dig-fetch`, belum
+  di-push ke fork/upstream).
+
+  **Sisa 5 nama BELUM diperbaiki** (benar-benar lebih sulit, dikonfirmasi
+  empiris bukan cuma teori):
+  - `minmax` pada site Hash -- gap boxing di compiled-body non-inline method
+    (lihat di atas), beda dari yang berhasil diperbaiki untuk min/max/uniq;
+  - `itself` -- gagal saat site campuran luas (scalar+Array+Hash dalam satu
+    method), beda mekanisme dari Hash-pair-shape di atas, belum diselidiki;
+  - `capitalize`/`downcase`/`upcase`/`swapcase` -- butuh jalur
+    `an_yield_site_builtin_answer` (`src/analyze_infer.c`) diperluas ke
+    String/Symbol, BUKAN `ty_recv_builtin_result`; komentar compiler sendiri
+    (fix K-030, commit `89d0a721d`) secara eksplisit memperingatkan "widening
+    a yield over String or Hash sites... reaches emitters that do not yet
+    box a per-site answer into the poly slot" -- perlu verifikasi apakah
+    emitter-nya sudah siap untuk String/Symbol sebelum mencoba.
