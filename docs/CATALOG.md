@@ -1064,7 +1064,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   cuma kena di site call yang berbeda (mutasi in-place) daripada `frozen?` langsung. Diklasifikasikan
   di sini, bukan K-033, supaya satu root cause punya satu entri. Tetap BUKAN BUG per keputusan di atas.
 
-## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030) -- 22 DIPERBAIKI lokal, 1 masih terbuka (`minmax`)
+## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030) -- SEMUA 23 DIPERBAIKI, dua PR upstream menunggu merge
 - Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + hook codegen
   `yield_builtin_method_site_type`/`src/codegen_util.c` -- sama mekanisme dengan K-024/K-029/K-030)
 - Ditemukan: 2026-10-28, menyisir caveat "unswept names" K-029 yang sebelumnya ditutup kolektif
@@ -1246,3 +1246,39 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   tabel allowlist), berisiko meregresi kasus `minmax` Array-tunggal yang
   sudah benar kalau tidak hati-hati. Belum dicoba -- di luar budget aman
   sesi ini, kandidat kerja terpisah dengan scope jelas untuk sesi berikutnya.
+
+- **2026-10-28 (lanjutan sesi yang sama) -- `minmax` JUGA DIPERBAIKI, diagnosis
+  di atas KOREKSI DIRI.** Sebelum menyerah, dicek dulu hal paling dasar yang
+  belum pernah diuji terisolasi: `minmax` dengan HANYA 2 site Array biasa
+  (tanpa Hash sama sekali) -- dan itu JUGA gagal compile! Ternyata `minmax`
+  tidak pernah dimasukkan ke `yield_site_listed` SAMA SEKALI (beda dari
+  `min`/`max` yang sudah ada di sana sejak awal) -- bug yang lebih dasar
+  daripada "gap boxing emitter" yang didiagnosis sebelumnya. "Gap boxing"
+  itu BUKAN akar masalah -- itu simtom dari site Array yang belum ter-widen
+  ke poly sama sekali (karena tak terdaftar), jadi `emit_op_array_minmax`
+  dipanggil dengan `rt` konkret bukan `TY_POLY_ARRAY`, bukan "emitter tidak
+  mau mem-box". Setelah `minmax` ditambahkan ke daftar plain-array (pola
+  SAMA PERSIS seperti `min`/`max`/`clear`/`flatten`), DAN ditambahkan ke
+  blok redirect Hash yang sudah ada -- keduanya bekerja langsung, termasuk
+  kombinasi 3-kind penuh (Array-Int + Array-String + Hash).
+  **Pelajaran metodologi**: sebelum menulis "akar masalah presisi" yang
+  menyimpulkan perlu perubahan emitter besar dan berisiko, uji dulu ablasi
+  PALING DASAR (di sini: "apakah base case tanpa Hash sama sekali bahkan
+  sudah benar?") -- bukan diasumsikan benar hanya karena tiga nama lain
+  (`min`/`max`/`uniq`) di keluarga yang sama berhasil dengan pola itu.
+  TDD: RED via `git stash` (langsung di-pop lagi), GREEN setelah restore,
+  `test/yield_receiver_builtin_minmax_array_and_hash.rb` cocok CRuby persis
+  untuk ketiga site. Sapuan 258-probe final: **73→66 CC_FAIL** (7 nama:
+  min/max/uniq/dig/fetch/itself/minmax), **59→55 MISMATCH** (4 nama case),
+  **126→137 OK** -- nol regresi di SETIAP tahap sesi ini. `infer-test`/
+  `reject-test` lolos, semua test lama tetap cocok. Commit `0e8fd623b`
+  (branch `k033-hash-min-max-uniq-dig-fetch`, worktree
+  `../spinel-wt-k033-hash-tierb`, SUDAH DIHAPUS setelah push -- commit aman
+  di fork).
+  **K-033 KINI TUNTAS 23/23.** Dua PR upstream menunggu review/merge:
+  **matz/spinel#10476** (Tier A, 13 nama) dan **matz/spinel#10481** (Tier B,
+  10 nama termasuk `minmax`, update terakhir otomatis ikut PR yang sama
+  karena branch fork sama). Kedua PR: CI+gate+CodeRabbit+GuardRails hijau
+  (Tier A sepenuhnya; Tier B gate+CodeRabbit+GuardRails hijau, CI terakhir
+  dicek masih berjalan normal). **Tidak ada pekerjaan tersisa di K-033**
+  kecuali menunggu matz me-review/merge kedua PR.
