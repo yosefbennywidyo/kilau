@@ -2,6 +2,28 @@
 
 Entri terbaru di atas.
 
+## 2026-10-28 17:37 WIB — Verifikasi kandidat upstream: semua sudah diperbaiki
+
+**Status**
+- Kandidat "belum dilaporkan" di entri 2026-09-29 dan 2026-09-30 (K-004, K-007, K-010,
+  K-011, K-013, K-015, K-016, K-017) sudah diperbaiki upstream. Tidak ada yang perlu
+  dilaporkan ulang.
+- Diverifikasi dengan menjalankan repro terhadap `bin/spinel` di HEAD `9d1040375`, dibandingkan
+  dengan CRuby:
+  - Sama dengan CRuby: K-004, K-010, K-011, K-013, K-015 (`user_each`), K-016, K-017, K-017b.
+  - K-007: bukan bug lagi. Spinel mencetak `undefined method 'save' for an instance of Gadget
+    (NoMethodError)`. CRuby juga mencetak cuplikan kode, jadi hanya format diagnostik yang
+    berbeda.
+  - K-015 (`endpoint_save_crash`): **belum terverifikasi**. Repro ini butuh app blog. Dijalankan
+    standalone gagal dengan `cannot load such file -- migration/migrator.rb`. Verifikasi
+    dengan menjalankan dari `examples/blog`.
+- Upstream (menurut CATALOG): K-004 matz/spinel#6029, K-007 #6093, K-013 #6063, K-015 dan K-016
+  #6008, K-017 #8679. K-010 dan K-011 lulus sejak `1ba12fb74`.
+
+**Catatan**
+- Entri lama di bawah tidak diubah; daftar "kandidat upstream" di dalamnya adalah catatan
+  historis pada tanggalnya.
+
 ## 2026-10-27 — Rencana 5 Fase D: trie untuk mode table
 
 **Status**
