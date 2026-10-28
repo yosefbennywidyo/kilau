@@ -1226,6 +1226,23 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   poly -- beda dari jawaban berbasis panggilan fungsi biasa (`sp_IntArray_uniq`)
   yang OTOMATIS di-box. Ini gap codegen nyata dan spesifik di cara jawaban
   array hasil TEMPLATE (bukan hasil panggilan fungsi polos) di-boks ke slot
-  poly -- didokumentasikan presisi, bukan dipaksakan. Kandidat kerja
-  terpisah kalau user mau menyelidiki emitter boxing-nya (kemungkinan di
-  `src/codegen_call_array.c` atau `src/codegen_util.c`, belum diselidiki).
+  poly -- didokumentasikan presisi, bukan dipaksakan.
+  **Akar masalah presisi (ditemukan, belum diperbaiki)**: `emit_op_array_minmax`
+  (`src/codegen_call_array.c:894`) PUNYA cabang poly-aware
+  (`if (rt == TY_POLY_ARRAY) {...}`) yang akan menghasilkan kode yang benar --
+  tapi cabang itu hanya terpakai kalau parameter `rt` yang diterima emitter
+  ITU SENDIRI sudah `TY_POLY_ARRAY`. Site Array `minmax` tetap menjawab lewat
+  mekanisme LAMA yang tak disentuh fix ini (`ty_recv_is_plain_array` di
+  `yield_site_listed`), yang menjawab kind KONKRET milik Array itu sendiri
+  (`TY_INT_ARRAY`), bukan `TY_POLY_ARRAY` -- jadi emitter dipanggil dengan
+  `rt=TY_INT_ARRAY` dan mengambil cabang lain yang TIDAK pernah mem-box.
+  Beda dengan `uniq` (row-nya `BOPE_NONE`, jalur emisi generik/default) yang
+  SELALU dibungkus boxing oleh dispatcher di luar terlepas dari `rt` yang
+  dijawab per site -- `minmax` yang punya emitter C KHUSUS (`BOPE_ARRAY_MINMAX`)
+  membuat keputusan boxing-nya sendiri berdasarkan `rt`, tidak diserahkan ke
+  pembungkus generik. Perbaikan yang aman butuh site Array `minmax` JUGA
+  menjawab `TY_POLY_ARRAY` (bukan kind konkretnya) KHUSUS saat site Hash-nya
+  hadir bersamanya -- mengubah jawaban per-site itu sendiri (bukan cuma
+  tabel allowlist), berisiko meregresi kasus `minmax` Array-tunggal yang
+  sudah benar kalau tidak hati-hati. Belum dicoba -- di luar budget aman
+  sesi ini, kandidat kerja terpisah dengan scope jelas untuk sesi berikutnya.
