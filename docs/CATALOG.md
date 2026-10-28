@@ -1064,7 +1064,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   cuma kena di site call yang berbeda (mutasi in-place) daripada `frozen?` langsung. Diklasifikasikan
   di sini, bukan K-033, supaya satu root cause punya satu entri. Tetap BUKAN BUG per keputusan di atas.
 
-## K-033: tujuh lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030, belum tuntas)
+## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030, belum tuntas)
 - Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + hook codegen
   `yield_builtin_method_site_type`/`src/codegen_util.c` -- sama mekanisme dengan K-024/K-029/K-030)
 - Ditemukan: 2026-10-28, menyisir caveat "unswept names" K-029 yang sebelumnya ditutup kolektif
@@ -1094,27 +1094,44 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     mengembalikan pasangan `[key, value]` (bentuk Array), beda dari elemen tunggal yang
     `Array#first` kembalikan -- celah BARU dibanding klaim lama "first/last tanpa argumen
     sudah ditangani" (klaim itu hanya diuji dengan site Array, tidak pernah dengan Hash);
-  - `capitalize` (0-arg, kemungkinan juga `downcase`/`upcase`/`swapcase` -- pola sama, belum
-    diverifikasi satu-satu) -- NILAI SALAH diam-diam, bukan gagal compile: site Symbol
-    (`:ab.capitalize` → `:Ab` di CRuby) dijawab `nil` di spinel, karena tabel menjawab lewat
-    jalur site String (`sp_RbVal` string) yang tidak cocok untuk representasi Symbol.
-  **Belum disisir satu-per-satu**: `min`/`max` (0-arg, muncul CC_FAIL di sapuan, kemungkinan
-  varian tunggal dari `minmax`, belum diverifikasi terpisah); `downcase`/`upcase`/`swapcase`
-  (kemungkinan sama dengan `capitalize`); beberapa nama arg-1/arg-2 (`[]`, `slice`, `dig`,
-  `fetch`, `delete`, `delete_at`, `assoc`, `rassoc`, `values_at`, `pop(n)`, `shift(n)`) yang
-  CC_FAIL tapi belum dipastikan apakah pola "return elemen/slice sejenis receiver" (sama
-  keluarga, bisa diperbaiki) atau sesuatu yang lain.
-- Repro: **repro/k033_yield_receiver_more_builtins_still_bad.rb** (7 nama terverifikasi:
-  `clear`/`uniq`/`flatten`/`minmax`/`itself`/`first`/`capitalize`; CRuby jalan bersih, spinel
-  gagal compile di 5 titik, nilai salah di 1 titik `capitalize`).
+  - `capitalize`, `downcase`, `upcase`, `swapcase` (0-arg) -- **diverifikasi semua 4, bukan
+    hanya `capitalize`**: NILAI SALAH diam-diam, bukan gagal compile. Site Symbol
+    (mis. `:ab.capitalize` → `:Ab` di CRuby) dijawab `nil` di keempatnya di spinel, karena
+    tabel menjawab lewat jalur site String (`sp_RbVal` string) yang tidak cocok untuk
+    representasi Symbol;
+  - `min`, `max` (0-arg) -- **diverifikasi, sama pola dengan `minmax`**: C tak valid
+    (`assigning to 'sp_oint' from incompatible type 'sp_RbVal'`) saat salah satu site-nya
+    Hash (pasangan `[key, value]` lagi, sama mekanisme dengan `first`);
+  - `shift` (0-arg) -- **diverifikasi, sub-kasus BARU**: C tak valid saat site-nya Hash,
+    mekanisme identik `first`/`min`/`max` (`Hash#shift` juga mengembalikan pasangan
+    `[key, value]`). `shift(n)` (bentuk SLICE, argc≠0) juga CC_FAIL, pola array-kind-mismatch
+    biasa (`incompatible pointer types ... 'sp_IntArray *' from 'sp_StrArray *'`).
+    Catatan: `pop` (0-arg) TETAP OK -- Hash tidak punya `#pop`, jadi tidak pernah kena site
+    pasangan ini; hanya `shift`/`first`/`min`/`max` yang punya varian Hash.
+  - Sembilan nama arg-1/arg-2 lain -- **diverifikasi, semua pola array/elemen-sejenis-
+    receiver yang sama** (tabel belum menjawab kombinasi kind ini, codegen memilih satu
+    tipe C lalu gagal saat site lain memberi tipe berbeda): `[]`(1 atau 2 arg), `slice`(1
+    atau 2 arg), `dig`(1 arg), `fetch`(2 arg), `delete`(1 arg), `delete_at`(1 arg),
+    `assoc`(1 arg), `rassoc`(1 arg), `values_at` (0/1/2 arg), `pop(n)`.
+- Repro: **repro/k033_yield_receiver_more_builtins_still_bad.rb** (9 nama representatif:
+  `clear`/`uniq`/`flatten`/`minmax`/`itself`/`first`/`shift`/`values_at`/`capitalize`; CRuby
+  jalan bersih, spinel gagal compile di 8 titik, nilai salah di 1 titik `capitalize`). Daftar
+  lengkap 23 nama terverifikasi ada di breakdown di atas; tidak semua dimasukkan repro supaya
+  tetap ringkas -- `tools/yield-sweep/sweep.sh` tetap sumber kebenaran untuk melihat semuanya.
 - Alat baru: **`tools/yield-sweep/sweep.sh`** (kilau) -- generate+run+classify dalam satu
   perintah (`SPINEL=/path/to/spinel tools/yield-sweep/sweep.sh <outdir>`), menggantikan
   langkah manual gen.rb+run.sh+join yang dipakai sesi 2026-10-20 dan sesi ini. Gunakan ini
   untuk sapuan berikutnya alih-alih menulis ulang join/klasifikasi dari nol.
-- Klasifikasi: bug-compiler (campuran: gagal compile LOUD untuk `clear`/`uniq`/`flatten`/
-  `minmax`/`itself`/`first`; nilai salah diam-diam untuk `capitalize`)
+- Klasifikasi: bug-compiler (campuran: gagal compile LOUD untuk 18 nama -- `clear`/`uniq`/
+  `flatten`/`minmax`/`itself`/`first`/`min`/`max`/`shift`(0 & n-arg)/`[]`/`slice`/`dig`/
+  `fetch`/`delete`/`delete_at`/`assoc`/`rassoc`/`values_at`/`pop(n)`; nilai salah diam-diam
+  untuk 4 nama -- `capitalize`/`downcase`/`upcase`/`swapcase`)
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
-- **Belum difilex upstream, belum diperbaiki.** Kandidat untuk sesi berikutnya jika user mau
-  investasi memperluas allowlist generik `ty_recv_builtin_result` (mekanisme yang sama dengan
-  fix K-029/#9460) ke nama-nama ini, plus kasus BARU `first`-vs-Hash-shape yang perlu
-  penanganan berbeda dari sekadar menambah row ke allowlist biasa.
+- **Belum difilex upstream, belum diperbaiki.** Semua 23 nama sudah terverifikasi (tidak ada
+  lagi sisa "belum disisir" dari K-029). Kandidat untuk sesi berikutnya jika user mau investasi
+  memperluas allowlist generik `ty_recv_builtin_result` (mekanisme yang sama dengan fix
+  K-029/#9460) ke nama-nama ini. Dua sub-pola butuh penanganan berbeda dari sekadar menambah
+  row ke allowlist biasa: (a) `first`/`min`/`max`/`shift`'s Hash-pair-shape celah (`Hash#NAME`
+  mengembalikan `[k,v]`, bukan elemen tunggal seperti receiver Array/String); (b)
+  `capitalize`/`downcase`/`upcase`/`swapcase`'s String-vs-Symbol representasi celah (`sp_RbVal`
+  string tidak cocok untuk Symbol).

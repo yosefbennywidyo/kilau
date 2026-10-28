@@ -18,6 +18,7 @@ def w_uniq
 end
 w_uniq { [3, 1, 2] }
 w_uniq { ["b", "a"] }
+w_uniq { { a: 1 } }
 
 def w_flatten
   v = yield.flatten
@@ -51,6 +52,20 @@ def w_first
 end
 w_first { [3, 1, 2] }
 w_first { { a: 1 } }
+
+def w_shift
+  v = yield.shift
+  p v
+end
+w_shift { [3, 1, 2] }
+w_shift { { a: 1 } }
+
+def w_values_at
+  v = yield.values_at(1)
+  p v
+end
+w_values_at { [3, 1, 2] }
+w_values_at { ["b", "a"] }
 
 def w_capitalize
   v = yield.capitalize
