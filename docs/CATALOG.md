@@ -1,5 +1,17 @@
 # Katalog batas AOT
 
+**Sweep 2026-10-28** (build lokal, bukan compiler terpasang): `spinel` master
+`1c98820c4` (tag `2026.10.25` + beberapa commit, dibangun `plain make` di
+`~/apps/me/gems/spinel`, bukan `sudo make install`). Repro suite diuji ulang penuh
+(29 file, dibandingkan manual dengan CRuby 4.0.6): tidak ada regresi baru. Dua
+batasan lama ternyata sudah **resolved** sejak sweep sebelumnya: K-001
+(`Time.parse` sekarang didukung asli, matz/spinel#10131) dan K-002 (`YAML` sekarang
+tersedia lewat paket `psych`/`yaml`, `f5410937a`). Sisa diff (K-003, K-006, K-026's
+`to_set` artifact lingkungan, K-032) sesuai yang sudah terdokumentasi; K-015/K-023
+tetap butuh `-I`/ditolak compile seperti desainnya. Kompiler **terpasang**
+(`/usr/local/bin/spinel`) belum di-bump ke commit ini -- catatan versi terpasang
+di bawah masih berlaku sampai `sudo make install` dijalankan ulang.
+
 Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.09.12+10567 (3e3653a55)`
 sejak 2026-10-17 (`sudo make install`, 215 commit di depan `d20573c47` -- termasuk
 matz/spinel#9419, K-024's dig/succ/sum followup). Repro suite (`repro/*.rb`,
@@ -146,6 +158,14 @@ Tidak ada regresi baru di luar K-017.
 - Biaya: timestamp di CLI `sqlite3` perlu `datetime(col, 'unixepoch')` agar terbaca
 - Upstream: **diperbaiki** (matz/spinel#8029, di-merge 2026-10-08 10:13 WIB). `Time.parse`/`Time.strptime` sekarang ditolak saat compile, bukan `NoMethodError` saat runtime; penolakan dikunci ke rantai method `Time` sendiri (bukan sembarang kelas bernama `Time`). Follow-up **matz/spinel#8115** (di-merge 2026-10-08 21:50 WIB) membuat penolakan ini bisa dideferred lewat `--defer-refusals` seperti penolakan lain.
 - **Uji ulang 2026-10-09** dengan spinel master `961718cc9`: `repro/k001_time_parse.rb` kini ditolak saat compile (bukan lagi lolos tanpa peringatan). **K-001: Fixed.**
+- **Uji ulang 2026-10-28** dengan spinel master `1c98820c4` (sweep repro vs CRuby): `Time.parse`
+  sekarang BENAR-BENAR didukung, bukan sekadar ditolak saat compile. `repro/k001_time_parse.rb`
+  compile sukses dan outputnya (`1790582400`) persis sama dengan CRuby. Upstream
+  **matz/spinel#10131** ("Time.parse and Time.strptime read through CRuby's time.rb") men-splice
+  `time.rb` milik CRuby sendiri lewat `packages/time` saat program memanggil `Time.parse`/
+  `Time.strptime` lewat nama `Time` secara langsung (lihat `docs/limitations.md` baris ~103).
+  **K-001 kini fully resolved** — kolom INTEGER + `Time.at` workaround tidak lagi wajib, tapi
+  tetap valid sebagai pola alternatif.
 
 ## K-002: `YAML` tidak tersedia
 - Lapisan: config
@@ -155,7 +175,13 @@ Tidak ada regresi baru di luar K-017.
 - Klasifikasi: batasan-terdokumentasi (stdlib C-extension)
 - Solusi yang dipakai: `Kilau::Config`, parser subset YAML milik framework dengan getter bertipe dan override `KILAU_*` (spec §3.1a, diimplementasikan di Rencana 2). Selama Rencana 1, `blog_schema` menerima `--db PATH`.
 - Biaya: belum terukur
-- Upstream: tidak perlu
+- Upstream: tidak perlu (tapi lihat update di bawah — sekarang tersedia juga)
+- **Uji ulang 2026-10-28** dengan spinel master `1c98820c4` (sweep repro vs CRuby): `require
+  "yaml"` sekarang compile sukses dan `YAML.load("port: 3000")` menghasilkan `{"port" => 3000}`,
+  persis sama dengan CRuby. Upstream menambahkan paket `psych`/`yaml` (`matz/spinel@f5410937a`,
+  "packages: psych and yaml, YAML loading and dumping in Ruby"). **K-002 kini resolved** — YAML
+  asli tersedia; `Kilau::Config` tetap valid sebagai pola yang sudah dipakai, tidak wajib
+  dimigrasikan.
 
 ## K-003: `require` di cabang `RUBY_ENGINE` yang mati tetap di-resolve
 - Lapisan: db
