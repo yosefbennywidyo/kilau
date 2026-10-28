@@ -1056,3 +1056,65 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Repro: **repro/k032_string_literal_frozen_p.rb**
 - Klasifikasi awal: nilai salah diam-diam, di luar keluarga yield. Setelah diperiksa: perbedaan yang disengaja dengan default CRuby (lihat status di bawah), bukan nilai salah.
 - **Status 2026-10-20: BUKAN BUG, perilaku sengaja.** `docs/limitations.md` ("String literals are frozen by default") mendokumentasikan `frozen_string_literal: true` sebagai baseline, tanpa opt-out, dengan alasan (shared-string machinery bergantung pada jaminan literal beku). Tidak ada perubahan compiler. Yang dipegang: perbedaan yang disengaja dengan default CRuby, bukan bug.
+- **Tambahan 2026-10-28** (ditemukan lewat sapuan K-033 di bawah): akibat yang sama terlihat lagi di
+  `yield.reverse!` dan `yield.slice!(2)` ketika salah satu site-nya String literal --
+  `can't modify frozen String: "abc" (FrozenError)` saat runtime, padahal CRuby 4.0 (string
+  literal "chilled", bukan frozen) menjalankannya bersih. Ini bukan gap tabel baru seperti K-029/
+  K-030/K-033 -- ini SAMA dengan root cause K-032 (literal String memang dibuat frozen oleh spinel),
+  cuma kena di site call yang berbeda (mutasi in-place) daripada `frozen?` langsung. Diklasifikasikan
+  di sini, bukan K-033, supaya satu root cause punya satu entri. Tetap BUKAN BUG per keputusan di atas.
+
+## K-033: tujuh lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030, belum tuntas)
+- Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + hook codegen
+  `yield_builtin_method_site_type`/`src/codegen_util.c` -- sama mekanisme dengan K-024/K-029/K-030)
+- Ditemukan: 2026-10-28, menyisir caveat "unswept names" K-029 yang sebelumnya ditutup kolektif
+  oleh sapuan K-030 (218 nama, 258 probe) tanpa triase satu-per-satu untuk nama di luar
+  K-030/K-030b/K-031/K-032. Menjalankan ulang generator yang sama
+  (`tools/yield-sweep/sweep.sh`, baru ditambahkan sesi ini) terhadap spinel master `1c98820c4`:
+  73 CC_FAIL + 59 MISMATCH dari 258 probe. Mayoritas BUKAN bug baru setelah ditriase tangan:
+  - penolakan elemen-beda-tipe yang disengaja, sama seperti `push`/`<<` (K-030b's catatan) --
+    `append`/`concat`/`insert`/`prepend`/`unshift`/`fill` dengan argumen elemen baru;
+  - metode refleksi/metaprogramming yang WAJAR berbeda per tipe (bukan bug) --
+    `public_methods`/`private_methods`/`protected_methods`/`singleton_methods`;
+  - `singleton_class` -- ditolak saat compile BY DESIGN (gateway ke per-object method table,
+    sudah ada diagnostiknya sendiri, lihat `docs/limitations.md`), bukan bug;
+  - metode yang mengembalikan Enumerator tanpa blok (`chain`/`cycle`/`lazy`/`detect`/`find`/
+    `grep`/`partition`/dll.) -- `inspect` Enumerator berbeda secara wajar, noise generator;
+  - `to_set`/`to_proc` -- artefak lingkungan (butuh `require "set"`, sama seperti K-026's catatan);
+  - `reverse!`/`slice!` pada site String literal -- BUKAN gap tabel baru, itu gejala K-032
+    (lihat tambahan di atas), dipindah ke sana.
+  Sisa yang DIVERIFIKASI sebagai bug baru nyata, pola sama dengan K-029/K-030 (kode C tak valid
+  atau nilai salah diam-diam karena tabel belum menjawab nama ini untuk kombinasi kind tertentu):
+  - `clear`, `uniq`, `flatten`, `minmax` (0-arg) -- C tak valid lintas site Array-Integer/
+    Array-String/Hash (`incompatible pointer types assigning to 'sp_IntArray *' from
+    'sp_StrArray *'/'sp_SymPolyHash *'`);
+  - `itself` (0-arg) -- C tak valid saat site-nya campuran cukup luas (scalar + Array + Hash
+    dalam satu method), `incompatible pointer to integer conversion`;
+  - `first` (0-arg) -- C tak valid KHUSUS kalau salah satu site-nya Hash: `Hash#first`
+    mengembalikan pasangan `[key, value]` (bentuk Array), beda dari elemen tunggal yang
+    `Array#first` kembalikan -- celah BARU dibanding klaim lama "first/last tanpa argumen
+    sudah ditangani" (klaim itu hanya diuji dengan site Array, tidak pernah dengan Hash);
+  - `capitalize` (0-arg, kemungkinan juga `downcase`/`upcase`/`swapcase` -- pola sama, belum
+    diverifikasi satu-satu) -- NILAI SALAH diam-diam, bukan gagal compile: site Symbol
+    (`:ab.capitalize` → `:Ab` di CRuby) dijawab `nil` di spinel, karena tabel menjawab lewat
+    jalur site String (`sp_RbVal` string) yang tidak cocok untuk representasi Symbol.
+  **Belum disisir satu-per-satu**: `min`/`max` (0-arg, muncul CC_FAIL di sapuan, kemungkinan
+  varian tunggal dari `minmax`, belum diverifikasi terpisah); `downcase`/`upcase`/`swapcase`
+  (kemungkinan sama dengan `capitalize`); beberapa nama arg-1/arg-2 (`[]`, `slice`, `dig`,
+  `fetch`, `delete`, `delete_at`, `assoc`, `rassoc`, `values_at`, `pop(n)`, `shift(n)`) yang
+  CC_FAIL tapi belum dipastikan apakah pola "return elemen/slice sejenis receiver" (sama
+  keluarga, bisa diperbaiki) atau sesuatu yang lain.
+- Repro: **repro/k033_yield_receiver_more_builtins_still_bad.rb** (7 nama terverifikasi:
+  `clear`/`uniq`/`flatten`/`minmax`/`itself`/`first`/`capitalize`; CRuby jalan bersih, spinel
+  gagal compile di 5 titik, nilai salah di 1 titik `capitalize`).
+- Alat baru: **`tools/yield-sweep/sweep.sh`** (kilau) -- generate+run+classify dalam satu
+  perintah (`SPINEL=/path/to/spinel tools/yield-sweep/sweep.sh <outdir>`), menggantikan
+  langkah manual gen.rb+run.sh+join yang dipakai sesi 2026-10-20 dan sesi ini. Gunakan ini
+  untuk sapuan berikutnya alih-alih menulis ulang join/klasifikasi dari nol.
+- Klasifikasi: bug-compiler (campuran: gagal compile LOUD untuk `clear`/`uniq`/`flatten`/
+  `minmax`/`itself`/`first`; nilai salah diam-diam untuk `capitalize`)
+- Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
+- **Belum difilex upstream, belum diperbaiki.** Kandidat untuk sesi berikutnya jika user mau
+  investasi memperluas allowlist generik `ty_recv_builtin_result` (mekanisme yang sama dengan
+  fix K-029/#9460) ke nama-nama ini, plus kasus BARU `first`-vs-Hash-shape yang perlu
+  penanganan berbeda dari sekadar menambah row ke allowlist biasa.
