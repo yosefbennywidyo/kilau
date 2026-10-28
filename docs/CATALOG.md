@@ -993,7 +993,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Repro: **repro/k030_yield_receiver_numeric_wrong_value.rb** (keluaran: `49.0` vs CRuby `49`).
 - Klasifikasi: bug-compiler, nilai salah diam-diam (lebih buruk daripada K-029, yang gagal compile)
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
-- Belum diperbaiki. Fix ada di compiler spinel (tabel per-site untuk nama di luar allowlist), perlu PR upstream.
+- Fix: tabel per-site untuk nama di luar allowlist (lihat status di bawah).
 
 - **Diperbaiki upstream 2026-10-20 13:46Z** (~20:46 WIB): matz/spinel#9779, merge commit `4ab5183b5`, head `fe86b5f93`. Test: `test/yield_receiver_numeric_site_kinds.rb`. Repro K-030 identik dengan CRuby. Sapuan ulang 258 probe: 18 pindah ke OK, tanpa regresi.
 
@@ -1003,8 +1003,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Yang terjadi: `t_sort { [3,1,2] }` + `t_sort { {a: 1} }` → `assigning to 'sp_IntArray *' from 'sp_PolyArray *'`; `t_reverse { "abc" }` + `t_reverse { [3,1,2] }` → `assigning to 'const char *' from 'sp_IntArray *'`.
 - Repro: **repro/k030b_yield_receiver_nonarray_site_bad_c.rb**
 - Klasifikasi: bug-compiler (refusal palsu untuk program Ruby valid, gagal keras)
-- Belum diperbaiki.
-- Catatan sapuan lain: lihat K-031 (`<=>`) dan K-032 (`frozen?`) di bawah. Penolakan yang disengaja (`push`, `<<`, `append`, `unshift` dengan elemen tipe lain) adalah penolakan bernama, bukan bug. Nama yang hanya mismatch karena enumerator atau method yang tak ada di Hash (`cycle`, `each_cons`, `each_slice`, `find_index`) belum diverifikasi ke akar.
+- Catatan sapuan lain: lihat K-031 (`<=>`) dan K-032 (`frozen?`) di bawah. Penolakan yang disengaja (`push`, `<<`, `append`, `unshift` dengan elemen tipe lain) adalah penolakan bernama, bukan bug. Nama Hash tanpa blok (`cycle`, `each_cons`, `each_slice`, `find_index`) ditangani di T4 (`RENCANA_K030B_K031_K032.md`, matz/spinel#10272 dan #10283).
 
 **Diperbaiki upstream: merged 2026-10-20 15:46Z (~22:46 WIB)**, matz/spinel#9795, merge commit `9923101bd`. Fix asli commit `898cac013` di branch `k030b-yield-sort-reverse-nonarray-site`, di atas commit K-031. Dibuka sebagai matz/spinel#9795, bergantung pada #9794. Gate sharded di fork hijau (run `39431467735`, tests 8278/0 pada tree yang sama dengan hasil rebase `a154ead72`), clang di fork hijau. Test: `test/yield_receiver_sort_reverse_site_kinds.rb` + `test/infer/`. Repro K-030b identik dengan CRuby.
 
@@ -1014,7 +1013,6 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Yang terjadi (master `30e71a00a`): `w { 7 }` lalu `w { "abc" }` (atau Array/Hash/Symbol di posisi kedua) → spinel mencetak `1` lalu melempar `TypeError: no implicit conversion from nil to integer`. CRuby: `1`, `nil`. Urutan penting: `w { "abc" }` lalu `w { 7 }` benar (`nil`, `1`), jadi jawaban tipe diambil dari site pertama.
 - Repro: **repro/k031_yield_receiver_spaceship_integer_site_typeerror.rb**
 - Klasifikasi: bug-compiler, gagal keras di runtime (bukan nilai salah diam-diam)
-- Belum diperbaiki.
 
 **Diperbaiki upstream: merged 2026-10-20 15:46Z (~22:46 WIB)**, matz/spinel#9794, merge commit `9e6678d2e`. Fix asli commit `d847a1d6c` di branch `k031-yield-spaceship-site-answer`, dibuka sebagai matz/spinel#9794 dari master terbaru (tidak bertumpuk lagi). Gate sharded di fork hijau (run `39431458277`, tests 8277/0), clang di fork hijau. Test: `test/yield_receiver_spaceship_site_kinds.rb` + `test/infer/`. Repro K-031 identik dengan CRuby (`1 nil`).
 
