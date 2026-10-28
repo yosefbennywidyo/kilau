@@ -8,11 +8,18 @@ batasan lama ternyata sudah **resolved** sejak sweep sebelumnya: K-001
 (`Time.parse` sekarang didukung asli, matz/spinel#10131) dan K-002 (`YAML` sekarang
 tersedia lewat paket `psych`/`yaml`, `f5410937a`). Sisa diff (K-003, K-006, K-026's
 `to_set` artifact lingkungan, K-032) sesuai yang sudah terdokumentasi; K-015/K-023
-tetap butuh `-I`/ditolak compile seperti desainnya. Kompiler **terpasang**
-(`/usr/local/bin/spinel`) belum di-bump ke commit ini -- catatan versi terpasang
-di bawah masih berlaku sampai `sudo make install` dijalankan ulang.
+tetap butuh `-I`/ditolak compile seperti desainnya. User kemudian menjalankan
+`sudo make install` sendiri (kali ini tanpa meninggalkan artefak root-owned di
+pohon kerja spinel, berbeda dari kejadian build gagal diam-diam sebelum sweep ini
+-- lihat [[spinel-pr-workflow]] rule 8) -- compiler terpasang sekarang
+`2026.10.25+917 (1c98820c4)`, commit yang sama dengan sweep di atas. `make test`
+kilau diuji ulang dengan compiler terpasang baru ini: **28/28 lulus** (16/16
+framework -- bertambah dari 13 sebelumnya, 8/8 tool, 4/4 examples/blog), tanpa
+regresi.
 
-Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.09.12+10567 (3e3653a55)`
+Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.10.25+917 (1c98820c4)`
+sejak 2026-10-28 (`sudo make install`, dari tag `2026.09.12+10567 (3e3653a55)`).
+Riwayat versi sebelumnya:
 sejak 2026-10-17 (`sudo make install`, 215 commit di depan `d20573c47` -- termasuk
 matz/spinel#9419, K-024's dig/succ/sum followup). Repro suite (`repro/*.rb`,
 dibandingkan manual dengan CRuby karena tak ada `.expected` sidecar) diuji ulang
