@@ -1064,7 +1064,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   cuma kena di site call yang berbeda (mutasi in-place) daripada `frozen?` langsung. Diklasifikasikan
   di sini, bukan K-033, supaya satu root cause punya satu entri. Tetap BUKAN BUG per keputusan di atas.
 
-## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030) -- SEMUA 23 DIPERBAIKI, dua PR upstream menunggu merge
+## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030) -- SEMUA 23 DIPERBAIKI, KEDUA PR UPSTREAM MERGED
 - Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + hook codegen
   `yield_builtin_method_site_type`/`src/codegen_util.c` -- sama mekanisme dengan K-024/K-029/K-030)
 - Ditemukan: 2026-10-28, menyisir caveat "unswept names" K-029 yang sebelumnya ditutup kolektif
@@ -1275,10 +1275,78 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   (branch `k033-hash-min-max-uniq-dig-fetch`, worktree
   `../spinel-wt-k033-hash-tierb`, SUDAH DIHAPUS setelah push -- commit aman
   di fork).
-  **K-033 KINI TUNTAS 23/23.** Dua PR upstream menunggu review/merge:
-  **matz/spinel#10476** (Tier A, 13 nama) dan **matz/spinel#10481** (Tier B,
-  10 nama termasuk `minmax`, update terakhir otomatis ikut PR yang sama
-  karena branch fork sama). Kedua PR: CI+gate+CodeRabbit+GuardRails hijau
-  (Tier A sepenuhnya; Tier B gate+CodeRabbit+GuardRails hijau, CI terakhir
-  dicek masih berjalan normal). **Tidak ada pekerjaan tersisa di K-033**
-  kecuali menunggu matz me-review/merge kedua PR.
+  **K-033 KINI TUNTAS 23/23, KEDUA PR UPSTREAM MERGED 2026-10-28:**
+  **matz/spinel#10476** (Tier A, 13 nama) merged 22:51Z, merge commit
+  `8b54cd405`. **matz/spinel#10481** (Tier B, 10 nama termasuk `minmax`)
+  merged 23:07:30Z, merge commit `91f7d660f`. Keduanya tanpa perubahan
+  diminta. **K-033 sepenuhnya tertutup -- tidak ada pekerjaan tersisa.**
+  **Diverifikasi end-to-end 2026-10-29**: compiler Kilau dinaikkan ke
+  `8ad86746d` (`sudo make install`, berisi kedua merge commit di atas).
+  `repro/k033_yield_receiver_more_builtins_still_bad.rb` dijalankan ulang:
+  output spinel cocok byte-for-byte dengan CRuby di semua 24 baris,
+  termasuk baris yang sebelumnya salah (`:Ab` untuk `capitalize` pada
+  Symbol, pasangan `[:a, 1]` untuk `first`/`min` pada site Hash). Tidak
+  ada langkah tersisa untuk K-033.
+
+## K-034: 16 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030/K-033, satu layar lagi)
+- Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + hook codegen
+  `yield_builtin_method_site_type`/`src/codegen_util.c` -- mekanisme identik K-024/K-029/K-030/K-033)
+- Ditemukan: 2026-10-29, menjalankan ulang `tools/yield-sweep/sweep.sh` (258 probe)
+  terhadap spinel master `8ad86746d` (compiler Kilau yang baru dinaikkan, sudah berisi
+  kedua PR K-033). Hasil: 153 OK, 50 CC_FAIL, 55 MISMATCH -- naik dari 137 OK yang
+  dicatat di akhir K-033 (angka itu berasal dari worktree lokal sebelum kedua PR
+  benar-benar merge; sapuan K-034 ini yang pertama jalan terhadap compiler ter-install
+  sesungguhnya). Ditriase tangan nama per nama (bukan cuma pola nama) sebelum
+  dimasukkan ke sini:
+  - Mayoritas CC_FAIL BUKAN bug baru: `spinel` sudah menjawabnya dengan diagnostik
+    bernama yang benar (`spinel: ... unsupported ... a call no route of the compiler
+    took ...`), bukan error C mentah -- `bsearch_index`, `collect!`/`map!`/`select!`/
+    `filter!`/`reject!`/`keep_if`/`delete_if`/`sort_by!` (method yang butuh blok,
+    dipanggil tanpa blok -- celah terpisah, bukan keluarga ini), `end_with?`/
+    `start_with?` (pada Symbol), dan `singleton_class` (ditolak by design, sudah
+    didokumentasikan). Sebagian besar MISMATCH juga BUKAN bug: metode yang balikin
+    Enumerator tanpa blok (`chain`/`cycle`/`lazy`/`detect`/`find`/`grep`/`partition`/
+    `chunk`/`collect_concat`/`filter_map`/`flat_map`/`each_cons`/`each_entry`/
+    `each_slice`/`each_with_object`/`reverse_each`/`drop_while`/`take_while`/
+    `group_by`/`max_by`/`min_by`/`minmax_by`/`rfind`/`find_all`/`find_index`/
+    `permutation`/`slice_after`/`slice_before` -- `inspect` Enumerator berbeda,
+    noise generator yang sama dengan K-033's catatan); metode refleksi
+    (`public_methods`/`private_methods`/`protected_methods`/`singleton_methods`);
+    `to_set`/`to_proc` (artefak lingkungan, perlu `require "set"`); `frozen?`/
+    `reverse!`/`slice!(2)` (gejala K-032 yang sama -- literal String yang
+    dianggap frozen di spinel, bukan gap tabel baru).
+  - Sisa yang DIVERIFIKASI sebagai bug baru nyata (pola persis K-029/K-030/K-033:
+    error C mentah `incompatible pointer types ... sp_IntArray/sp_StrArray/
+    sp_PolyArray/SymPolyHash`, CRuby jalan bersih di semua site):
+    - **`clear`** -- REGRESI dari fix Tier A K-033: perbaikan sebelumnya cuma
+      menambah site Hash ke `clear`/`flatten`/`first`/`shift`, tidak memperhitungkan
+      bahwa **String** juga merespons `#clear` (`"abc".clear` -> `""`). Campuran
+      String + Array-Int + Array-Str + Hash sekarang gagal compile.
+    - `compact`, `concat`, `deconstruct`, `difference`, `entries`, `fetch_values`,
+      `intersection`, `to_a`, `to_ary`, `union` (0-arg) -- nama-nama ini TIDAK PERNAH
+      masuk `yield_site_listed` sama sekali untuk kelompok Array biasa (gagal
+      compile bahkan HANYA dengan 2 site Array-Int/Array-Str, tanpa Hash sekalipun
+      -- pola sama dengan temuan `minmax` di K-033: "base case tanpa Hash" belum
+      pernah diuji, bukan cuma "butuh row Hash").
+    - **`next`** -- alias dari `succ` (Integer/String/Symbol), yang 0-arg-nya sudah
+      diperbaiki K-024 (#9419) termasuk arm Symbol -- tapi alias `next` sendiri
+      tidak pernah dimasukkan ke daftar yang sama, jadi tetap gagal compile dengan
+      error C mentah persis seperti sebelum K-024.
+    - `flatten(2)`, `max(2)`, `min(2)`, `insert(2)` (bentuk berargumen) -- sama
+      seperti bentuk 0-arg di atas, tidak pernah masuk `yield_site_listed` untuk
+      bentuk SATU ARGUMEN-nya, walau bentuk 0-arg (`flatten`/`max`/`min`) atau
+      tanpa argumen (`insert` butuh argumen, jadi ini murni bentuk barunya) sudah
+      diperbaiki/ada di K-033.
+- Repro: **repro/k034_yield_receiver_even_more_builtins_still_bad.rb** (5 nama
+  representatif: `clear`/`compact`/`to_a`/`max(2)`/`next`; CRuby jalan bersih,
+  semua 5 gagal compile C di spinel `8ad86746d`). Daftar lengkap 16 nama ada di
+  breakdown di atas; `tools/yield-sweep/sweep.sh` tetap sumber kebenaran untuk
+  melihat semuanya (lihat CC_FAIL/MISMATCH report, filter noise sesuai daftar
+  di atas).
+- Klasifikasi: bug-compiler (error C mentah/gagal compile LOUD untuk semua 16 nama,
+  tidak ada nilai salah diam-diam di batch ini)
+- Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
+- Status: **BELUM diperbaiki** -- kandidat kerja selanjutnya, mekanisme fix yang
+  sama dengan K-033 (perluas `yield_site_listed`/`bop_result_fallback_allowed` di
+  `src/types.c` per nama, baca row `builtin_ops.c` dulu sebelum menulis fix per
+  pelajaran DRY/KISS/YAGNI dan ablasi-dulu dari K-033).

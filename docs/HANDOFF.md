@@ -2,6 +2,52 @@
 
 Entri terbaru di atas.
 
+## 2026-10-29 — K-033 diverifikasi end-to-end: compiler Kilau naik ke 8ad86746d
+
+**Status**
+- Root-owned leftover dari `sudo make install` sebelumnya (`spinel`,
+  `build/spin_version.rb`, `bin/spinel*`, `bin/spin`, `build/csrc/main.o`
+  di repo spinel) sempat memblokir rebuild non-root — `chown` ulang oleh
+  user, lalu `make -j2` bersih dan `sudo make install` sukses.
+- `/usr/local/bin/spinel` sekarang `2026.10.25+1046 (8ad86746d)`, berisi
+  kedua merge commit K-033 (`8b54cd405` dan `91f7d660f`).
+- `repro/k033_yield_receiver_more_builtins_still_bad.rb`: output spinel
+  cocok CRuby persis di semua 24 baris. `docs/CATALOG.md` K-033 diperbarui
+  mencatat verifikasi ini.
+
+**Lanjut dari sini**
+- Tidak ada pekerjaan tersisa di K-033.
+- Cek `docs/CATALOG.md` untuk K-item lain yang masih terbuka sebelum
+  memulai pekerjaan baru (lihat daftar `## K-0xx` di file itu).
+
+## 2026-10-29 — K-033 (23 builtin pada receiver `yield`) tertutup: kedua PR upstream MERGED
+
+**Status**
+- **matz/spinel#10476** (Tier A, 13 nama: `clear`/`flatten`/`first`/`shift`(0-arg) +
+  Hash, plus 9 nama arg-1/2) merged 2026-10-28 22:51:47Z, merge commit `8b54cd405`.
+- **matz/spinel#10481** (Tier B, 10 nama: `min`/`max`/`uniq`/`dig`/`fetch`/`itself`
+  pada Hash, `minmax`, dan `capitalize`/`downcase`/`upcase`/`swapcase` pada Symbol)
+  merged 2026-10-28 23:07:30Z, merge commit `91f7d660f`.
+- Keduanya merged tanpa perubahan diminta (CI+gate+CodeRabbit+GuardRails hijau).
+  `docs/CATALOG.md` K-033 entri diperbarui untuk mencatat status MERGED (sebelumnya
+  tercatat "menunggu review/merge").
+
+**Catatan**
+- Compiler Kilau yang terpasang (`/usr/local/bin/spinel`) masih di commit sebelum
+  kedua fix ini — belum perlu dinaikkan untuk kerja saat ini, tapi harus dinaikkan
+  sebelum menutup/memverifikasi K-033 secara end-to-end di Kilau.
+- Branch kerja di repo spinel (`yield-receiver-array-hash-shared-builtins`,
+  worktree `k033-hash-min-max-uniq-dig-fetch`) sudah landed via PR di atas; aman
+  dibersihkan (lihat memory `project_kilau_k030_yield_sweep` di sesi Claude untuk
+  daftar cleanup fork branch yang masih menunggu tindakan manual).
+
+**Lanjut dari sini**
+1. `sudo make install` spinel master terbaru (berisi kedua merge commit di atas),
+   lalu jalankan ulang `repro/k033_yield_receiver_more_builtins_still_bad.rb` untuk
+   konfirmasi end-to-end di Kilau.
+2. Tidak ada K-item lain yang diketahui terbuka saat ini — cek `docs/CATALOG.md`
+   untuk kandidat baru sebelum memulai pekerjaan berikutnya.
+
 ## 2026-10-28 17:37 WIB — Verifikasi kandidat upstream: semua sudah diperbaiki
 
 **Status**
