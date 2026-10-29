@@ -1063,6 +1063,10 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   K-030/K-033 -- ini SAMA dengan root cause K-032 (literal String memang dibuat frozen oleh spinel),
   cuma kena di site call yang berbeda (mutasi in-place) daripada `frozen?` langsung. Diklasifikasikan
   di sini, bukan K-033, supaya satu root cause punya satu entri. Tetap BUKAN BUG per keputusan di atas.
+- **Tambahan 2026-10-29** (ditemukan memperbaiki K-034 di bawah): akibat yang sama muncul lagi di
+  `yield.clear` dan `yield.concat` begitu site String-nya bisa dicompile sama sekali (sebelum
+  K-034's fix, kombinasi itu malah gagal compile, jadi gejala frozen-nya belum pernah kelihatan).
+  SAMA root cause, bukan bug baru dari K-034. Tetap BUKAN BUG per keputusan di atas.
 
 ## K-033: 23 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030) -- SEMUA 23 DIPERBAIKI, KEDUA PR UPSTREAM MERGED
 - Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + hook codegen
@@ -1288,7 +1292,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   Symbol, pasangan `[:a, 1]` untuk `first`/`min` pada site Hash). Tidak
   ada langkah tersisa untuk K-033.
 
-## K-034: 16 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030/K-033, satu layar lagi)
+## K-034: 16 lagi builtin pada receiver `yield` tanpa blok sendiri masih salah (keluarga K-029/K-030/K-033, satu layar lagi) -- 14/16 DIPERBAIKI, 2/16 gejala K-032
 - Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + hook codegen
   `yield_builtin_method_site_type`/`src/codegen_util.c` -- mekanisme identik K-024/K-029/K-030/K-033)
 - Ditemukan: 2026-10-29, menjalankan ulang `tools/yield-sweep/sweep.sh` (258 probe)
@@ -1346,7 +1350,50 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Klasifikasi: bug-compiler (error C mentah/gagal compile LOUD untuk semua 16 nama,
   tidak ada nilai salah diam-diam di batch ini)
 - Solusi yang dipakai: tidak dibutuhkan Kilau saat ini
-- Status: **BELUM diperbaiki** -- kandidat kerja selanjutnya, mekanisme fix yang
-  sama dengan K-033 (perluas `yield_site_listed`/`bop_result_fallback_allowed` di
-  `src/types.c` per nama, baca row `builtin_ops.c` dulu sebelum menulis fix per
-  pelajaran DRY/KISS/YAGNI dan ablasi-dulu dari K-033).
+- **Status 2026-10-29: 14/16 DIPERBAIKI, 2/16 ternyata gejala K-032 bukan bug baru.**
+  Fix di `src/types.c` (branch spinel `k034-more-yield-receiver-builtins`, mekanisme
+  sama persis K-033 setelah membaca row `builtin_ops.c` tiap nama dulu, bukan menebak):
+  - `yield_site_listed`: `clear` ditambah `|| recv == TY_STRING` (row String-nya
+    `BOPR_SELF`/`#2332`, konkret); `compact`/`to_a` dipisah dari grup
+    sort/reverse/uniq/last/min/max/pop lalu ditambah `|| ty_is_hash(recv)` (row
+    Hash-nya konkret, `BOPE_HASH_COMPACT`/`BOPE_HASH_TO_A`); `entries`/
+    `fetch_values` ditambah baru dengan `ty_recv_is_plain_array || ty_is_hash`
+    (row Hash-nya konkret untuk keduanya); `concat` ditambah baru dengan
+    `ty_recv_is_plain_array || recv == TY_STRING`; `deconstruct`/`difference`/
+    `intersection`/`to_ary`/`union` ditambah baru dengan `ty_recv_is_plain_array`
+    saja (tidak ada di Hash/String sama sekali untuk nama-nama ini).
+  - `succ`'s arm diperluas menerima nama `next` juga (alias, row terpisah per
+    tipe tapi lookup-nya sudah generik lewat `name`, tidak perlu diubah).
+  - `bop_result_fallback_allowed`: `flatten`/`max`/`min`/`insert` ditambah untuk
+    bentuk SATU ARGUMEN (row `BOP_ANY_ARRAY` argc 0-1/1-1 konkret untuk semua
+    empat). `max(n)`/`min(n)` pada site Hash TERNYATA perlu arm tambahan
+    terpisah (bukan cukup allowlist) -- fallback allowlist cuma menjawab site
+    Array, site Hash-nya tetap tidak terjawab sehingga seluruh method tidak
+    ikut melebar (prinsip "semua site harus terjawab", sama seperti K-033).
+    Ditambah satu blok baru persis setelah blok redirect 0-arg min/max/uniq/
+    minmax, tapi untuk `argc==1`, lookup row di famili `TY_POLY_ARRAY` dengan
+    argc 1 (bukan 0) -- diverifikasi `{a: 1}.max(2)` CRuby menjawab `[[:a, 1]]`,
+    mekanisme pasangan-sebagai-poly-array yang sama dengan K-033 Tier B.
+  - **`clear` dan `concat` TIDAK sepenuhnya "diperbaiki"** -- setelah bisa
+    compile, keduanya sekarang kena gejala K-032 (literal String dianggap
+    frozen di spinel) begitu site String-nya dicoba mutasi (`"abc".clear`/
+    `.concat`) -- SAMA root cause, bukan bug baru, dicatat sebagai tambahan
+    K-032 di atas, bukan di sini.
+  TDD: RED dikonfirmasi (`test/yield_receiver_builtin_array_hash_string_more_shared.rb`
+  gagal compile semua 16 cara sebelum fix, termasuk lewat endless-method form yang
+  justru menjawab dengan diagnostik `unsupported` bernama untuk `clear` -- gotcha
+  kecil: bentuk `def f = expr` (inlined per call site) vs `def f; ...; end` (shared
+  body) menampakkan gejala BERBEDA untuk gap yang SAMA, keduanya digerbangi fungsi
+  `yield_site_listed` yang sama). GREEN setelah fix, cocok CRuby persis (memakai
+  `+"abc"` bukan literal telanjang untuk site String yang di-clear/concat, supaya
+  tidak ketimpa gejala K-032 di test ini). Sapuan 258-probe sebelum/sesudah:
+  **50->34 CC_FAIL, 55->57 MISMATCH (persis +2: clear/concat pindah ke sini, bukan
+  regresi baru), 153->167 OK** -- 14 nama pindah bersih ke OK, nol regresi di 242
+  probe lainnya (diverifikasi dengan `join` antara dua hasil sapuan). 82 test
+  `yield_receiver_*`/`respond_to*` lama tetap cocok.
+- Repro Kilau (`repro/k034_yield_receiver_even_more_builtins_still_bad.rb`) masih
+  berlaku sebagai dokumentasi; belum diupdate untuk mencatat hasil fix -- update
+  setelah PR terkirim dan compiler Kilau dinaikkan.
+- **Belum**: `sudo make install` spinel yang berisi fix ini, lalu verifikasi
+  end-to-end di Kilau sama seperti K-033; buka PR upstream (menunggu konfirmasi
+  user per alur kerja standar).
