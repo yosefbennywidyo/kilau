@@ -2,6 +2,38 @@
 
 Entri terbaru di atas.
 
+## 2026-10-30 — K-034 (16 lagi builtin pada `yield`) ditemukan, 14/16 diperbaiki, PR fork hijau, menunggu sharded gate
+
+**Status**
+- Ditemukan 2026-10-29 lewat sapuan ulang `tools/yield-sweep/sweep.sh` terhadap
+  compiler yang baru dinaikkan ke `8ad86746d` (berisi K-033). 14/16 nama
+  diperbaiki di spinel (`clear`/`compact`/`to_a`/`entries`/`fetch_values`/
+  `concat`/`deconstruct`/`difference`/`intersection`/`to_ary`/`union`/`next`/
+  `flatten(n)`/`max(n)`/`min(n)`/`insert(n)`). 2/16 (`clear`, `concat`) TIDAK
+  dihitung sebagai bug baru -- setelah bisa compile, keduanya cuma menampakkan
+  gejala K-032 (literal String dianggap frozen), dicatat sebagai addendum
+  K-032, bukan sisa kerja K-034.
+- Detail lengkap, breakdown per nama, dan hasil verifikasi (sapuan 258-probe
+  50→34 CC_FAIL, nol regresi) ada di `docs/CATALOG.md` K-034.
+- CodeRabbit menemukan satu bug nyata tambahan di fix pertama (fallback
+  generik `flatten(n)` salah untuk receiver nested array, `TY_INT_ARRAY_ARRAY`/
+  `TY_FLOAT_ARRAY_ARRAY` -- row `BOPR_SELF` seharusnya `ty_array_elem`).
+  Diperbaiki di commit kedua; diverifikasi TIDAK reachable lewat `yield`
+  biasa (forward inference tidak pernah melebar ke tipe nested itu), jadi
+  fix-nya defensif/table-level, bukan memperbaiki gejala runtime yang
+  terpisah (gap lama di poly dispatch, bukan dari K-034).
+- Fork PR **#42** (https://github.com/yosefbennywidyo/spinel/pull/42): CI
+  clang hijau, GuardRails hijau, CodeRabbit kena rate-limit di commit kedua
+  (sudah ditanggapi manual). Branch `gate/k034-more-yield-receiver-builtins`
+  sudah di-push, sharded gate (17 job) sedang jalan.
+
+**Belum**
+1. Tunggu verdict sharded gate, lalu buka PR upstream ke `matz/spinel`.
+2. Setelah merge: `sudo make install` compiler terbaru, jalankan ulang
+   `repro/k034_yield_receiver_even_more_builtins_still_bad.rb`, update
+   `docs/CATALOG.md`/`docs/HANDOFF.md` dengan hasil verifikasi end-to-end
+   (pola yang sama dengan K-033).
+
 ## 2026-10-29 — K-033 diverifikasi end-to-end: compiler Kilau naik ke 8ad86746d
 
 **Status**
