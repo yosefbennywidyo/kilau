@@ -1399,9 +1399,17 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   shard `test` 1153 pass/0 fail/0 error). Fork PR #42 ditutup, **dibuka ke
   upstream sebagai matz/spinel#10571** (termasuk fix CodeRabbit untuk
   `flatten(1)` pada receiver nested array). **MERGED 2026-10-30T02:29:01Z.**
-- **Belum**: `sudo make install` spinel terbaru, jalankan
-  ulang `repro/k034_yield_receiver_even_more_builtins_still_bad.rb`, update
-  catatan end-to-end (pola sama K-033).
+- **Diverifikasi end-to-end 2026-10-30** (dengan binary lokal `spinel`
+  `8ffa1ab4a`, berisi #10571 + #10579 -- `sudo make install` masih belum
+  dijalankan user, compiler terpasang masih `8ad86746d`):
+  `repro/k034_yield_receiver_even_more_builtins_still_bad.rb` diperbaiki
+  dulu (site `clear`-nya pakai `+"abc"`, bukan literal polos -- literal
+  polos kena gejala K-032 duluan sebelum 15 baris sisanya pernah jalan,
+  bukan yang mau diuji repro ini). Setelah itu: output cocok CRuby persis
+  di semua 16 baris. kilau commit `c663a61`.
+- **Belum**: user menjalankan `sudo make install` sendiri untuk memasang
+  binary ini ke `/usr/local/bin/spinel` (perlu password, tak bisa
+  non-interaktif).
 - **Tambahan 2026-10-30** (bug terpisah, ditemukan verifikasi catatan CodeRabbit
   di atas): catatan CodeRabbit soal `flatten(1)`/nested array ternyata false
   positive (branch barunya tidak reachable lewat forward inference yield), tapi
