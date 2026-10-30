@@ -1403,34 +1403,61 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   ulang `repro/k034_yield_receiver_even_more_builtins_still_bad.rb`, update
   catatan end-to-end (pola sama K-033).
 
-## K-035: `prepend` (0-arg) dan `slice!(1,2)` pada site String campur Array masih gagal compile (keluarga K-029/K-034, lagi) -- ditemukan, belum diperbaiki
-- Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + row
-  `builtin_ops.c` -- mekanisme identik K-024/K-029/K-030/K-033/K-034)
-- Ditemukan: 2026-10-30, triase ulang sisa 34 CC_FAIL dari sapuan K-034 secara
-  teliti (baca `.cc.log` tiap probe, bukan cuma pola nama) -- dua nama yang
-  sebelumnya salah dimasukkan ke "sama seperti push, bukan bug" ternyata
-  punya diagnostik C MENTAH, bukan refusal bernama, persis sinyal keluarga ini:
-  - **`slice!(1, 2)`** (bentuk 2-argumen) -- site String + Array-Int +
-    Array-Str. CRuby jalan bersih (`"bc"`, `[1, 2]`, `["a"]`). Row
-    `builtin_ops.c`-nya **konkret untuk kedua sisi**: `TY_STRING` argc 1-2
-    (`TY_STRING`, `BOPE_STRING_SLICE`) dan `BOP_ANY_ARRAY` argc 2
-    (`BOPR_SELF`, `BOPE_TEMPLATE`) -- pola fix-nya identik `clear`/`concat`
-    K-034 (tinggal gating, bukan kerja baru). Kemungkinan setelah fix,
-    site String literal akan kena gejala K-032 (frozen literal) seperti
-    `clear`/`concat`/`reverse!` -- dicatat sebagai addendum K-032, bukan
-    sisa K-035, kalau terjadi.
-  - **`prepend`** (0-arg, tanpa nilai) -- site String + Array-Int + Array-Str.
-    CRuby jalan bersih (balikan diri sendiri tak berubah). Row `builtin_ops.c`
-    untuk `BOP_ANY_ARRAY, "prepend"` (argc 0-127) masih **`TY_UNKNOWN`
-    placeholder** -- BUKAN sekadar gating, butuh arm tangan baru dulu
-    (mirip pola `insert`'s "tanpa nilai: diri sendiri" di K-033/#9460)
-    sebelum bisa digating di tabel yield.
-  Catatan: `<<`(2) yang tadinya disangka masuk kategori sama ternyata BUKAN
-  bug -- sudah dijawab diagnostik bernama yang benar (sama seperti
-  `push`/`append`), dipindah kembali ke daftar noise.
-- Repro: belum dibuat file terpisah; dua kasus di atas cukup jelas dari
-  breakdown ini dan `tools/yield-sweep/sweep.sh`'s probe `p0167_prepend`/
-  `p0218_slice_33` (direktori sapuan sesi ini, tidak disimpan permanen).
-- Status: **BELUM diperbaiki** -- kandidat kerja selanjutnya. `slice!(1,2)`
-  siap langsung (gating, pola K-034); `prepend` butuh keputusan dulu soal
-  arm barunya (nilai BOPR_SELF untuk argc 0, sebelum digating).
+## K-035: `*`(n), `+@`, `prepend` (0-arg) dan `slice!(1,2)` pada `yield` -- SEMUA 4 DIPERBAIKI
+- Lapisan: compiler, EMPAT gap berbeda di bawah satu keluarga (K-024/K-029/
+  K-030/K-033/K-034):
+  1. `yield_operator_site_type` (`src/codegen_util.c`) -- fungsi yang
+     me-recover jawaban tiap site operator aritmatika untuk di-box ke slot
+     poly bersama -- tidak punya cabang Array sama sekali untuk `*`.
+  2. `yield_site_listed`/row `builtin_ops.c` (`src/types.c`) -- `+@` tidak
+     pernah digating sama sekali (beda dari `-@` yang sudah), dan row
+     String-nya juga masih placeholder `TY_UNKNOWN`.
+  3. Row `builtin_ops.c` untuk `prepend` (0-arg) masih placeholder
+     `TY_UNKNOWN` -- butuh arm baru (bukan cuma gating), mirip pola
+     `insert`'s "tanpa nilai: diri sendiri" di K-033.
+  4. `str_fresh_value` (`src/codegen_call_string.c`) -- fungsi yang
+     menentukan apakah receiver String "aman dimutasi tanpa ditulis-balik"
+     untuk emitter `slice!(start,len)` -- tidak pernah "menembus" sebuah
+     `yield` untuk melihat ekspresi blok yang sebenarnya di site itu.
+- Ditemukan: 2026-10-30, triase ulang sisa 34 CC_FAIL dari sapuan K-034
+  secara teliti (baca `.cc.log` tiap probe, bukan cuma pola nama).
+  `*`(2)/`+@` awalnya disangka masuk kategori "struktur beda, scalar vs
+  array" yang lebih berat (seperti gap `minmax` K-033) -- setelah ditrace
+  sampai titik pastinya, keduanya TERNYATA gap biasa di keluarga ini juga,
+  bukan sesuatu yang perlu didesain ulang. `<<`(2) yang tadinya disangka
+  masuk kategori sama ternyata BUKAN bug sama sekali -- sudah dijawab
+  diagnostik bernama yang benar (sama seperti `push`/`append`).
+- **Fix 1 (`*`(n))**: tambah cabang Array di `yield_operator_site_type` --
+  `at == TY_STRING` menjawab `TY_STRING` (join), `at == TY_INT/TY_FLOAT`
+  menjawab `rt` (kind receiver sendiri, mengulang array), persis aturan
+  `analyze_infer.c`'s arm untuk panggilan langsung.
+- **Fix 2 (`+@`)**: `yield_site_listed`'s baris `-@` diperluas menerima
+  `+@` juga; row `TY_STRING, "+@"` diubah dari `TY_UNKNOWN` ke `TY_STRING`
+  (row `direct call`-nya sendiri sudah benar lewat flag `BOPF_SELF_CLASS`,
+  field `result`-nya saja yang tak pernah dipakai sampai sekarang).
+- **Fix 3 (`prepend`)**: row baru `{ BOP_ANY_ARRAY, "prepend", 0, 0, ...,
+  BOPR_SELF, BOPE_TEMPLATE, "..." }` (self, atau `FrozenError`), identik
+  pola `insert`'s row argc-0 K-033; ditambahkan ke `bop_result_fallback_allowed`.
+- **Fix 4 (`slice!(1,2)`)**: setelah menambah `slice!` ke
+  `bop_result_fallback_allowed` (jawaban tipe benar, compile sukses), site
+  String ternyata masih crash RUNTIME (`NoMethodError`) -- ditrace dengan
+  debug fprintf ber-gerbang `getenv` (bukan nebak) sampai ke
+  `emit_op_string_slice`'s guard `str_fresh_value`: fungsi ini memeriksa
+  BENTUK AST receiver (interpolasi, `+"..."`, variable) tapi tidak pernah
+  memeriksa `NK_YieldNode` sama sekali -- padahal untuk site yang di-inline
+  per-call-site, `yield` SECARA HARFIAH disubstitusi dengan ekspresi blok
+  di site itu, jadi "fresh"-nya `yield` DI SITE INI sama dengan "fresh"-nya
+  ekspresi blok itu sendiri. Fix: `str_fresh_value` sekarang menembus
+  `yield` (pola lookup identik `sp_yield_site_type`'s sendiri -- tail
+  blok `g_block_id`, diteruskan lewat level `wrap { yield }` manapun) dan
+  bertanya pertanyaan yang SAMA soal ekspresi yang ditemukan.
+- Repro: **test/yield_receiver_builtin_star_plusat_prepend_slice_bang.rb**
+  (spinel) -- 4 nama, CRuby jalan bersih, spinel sekarang cocok persis.
+- TDD + regresi: `infer-test`/`reject-test` lolos; sapuan penuh
+  `yield_receiver_*`/`respond_to*`/`string_*` (569 file) cocok tanpa
+  perubahan hasil, nol regresi.
+- **Status 2026-10-30: SEMUA 4 DIPERBAIKI, commit spinel `a2f5f6a8e`
+  (branch `k035-yield-receiver-star-plusat-prepend-slicebang`, berbasis
+  master yang sudah berisi K-034/#10571).** Belum: push ke fork, PR fork
+  untuk CI+CodeRabbit, sharded gate, PR upstream (menunggu konfirmasi
+  user per alur kerja standar).
