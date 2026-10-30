@@ -7,11 +7,16 @@
 # sweep turns up once those are fixed. Not every failing name from the
 # sweep is included here, only a representative subset; `docs/CATALOG.md`
 # K-034 has the full 16-name list.
+#
+# clear's site uses +"abc" (an unfrozen copy), not a bare literal -- a bare
+# literal's #clear would hit K-032's own already-documented frozen-literal
+# symptom (FrozenError) before the rest of this repro ever got to run,
+# which is not what this repro is checking.
 def w
   v = yield.clear
   p v
 end
-w { "abc" }
+w { +"abc" }
 w { [3, 1, 2] }
 w { ["b", "a"] }
 w { { a: 1 } }
