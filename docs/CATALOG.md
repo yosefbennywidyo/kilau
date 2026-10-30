@@ -1480,8 +1480,14 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - TDD + regresi: `infer-test`/`reject-test` lolos; sapuan penuh
   `yield_receiver_*`/`respond_to*`/`string_*` (569 file) cocok tanpa
   perubahan hasil, nol regresi.
-- **Status 2026-10-30: SEMUA 4 DIPERBAIKI, commit spinel `a2f5f6a8e`
-  (branch `k035-yield-receiver-star-plusat-prepend-slicebang`, berbasis
-  master yang sudah berisi K-034/#10571).** Belum: push ke fork, PR fork
-  untuk CI+CodeRabbit, sharded gate, PR upstream (menunggu konfirmasi
-  user per alur kerja standar).
+- **Status 2026-10-30: SEMUA 4 DIPERBAIKI dan MERGED upstream.** Fork PR
+  #44: CI clang sempat 1h15m (cache sccache dingin, dikonfirmasi BUKAN
+  hang lewat sapuan lokal 9.390 file dengan timeout), GuardRails hijau,
+  CodeRabbit rate-limited. Sharded gate 17/17 hijau (run `41004652314`,
+  27m53s). **Dibuka ke upstream sebagai matz/spinel#10580, MERGED
+  2026-10-30T05:28:28Z** (merge commit `4a8b2e89b`). Fork PR #44 ditutup.
+- **Diverifikasi end-to-end 2026-10-30**: compiler Kilau dinaikkan ke
+  `d0625b2a7` (`sudo make install`, berisi merge commit di atas).
+  `test/yield_receiver_builtin_star_plusat_prepend_slice_bang.rb` (spinel)
+  dijalankan terhadap binary terpasang: cocok persis. **K-035 tuntas
+  sepenuhnya, tidak ada langkah tersisa.**
