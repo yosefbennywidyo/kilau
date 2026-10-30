@@ -1398,10 +1398,24 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   https://github.com/yosefbennywidyo/spinel/actions/runs/40986049485, setiap
   shard `test` 1153 pass/0 fail/0 error). Fork PR #42 ditutup, **dibuka ke
   upstream sebagai matz/spinel#10571** (termasuk fix CodeRabbit untuk
-  `flatten(1)` pada receiver nested array). Menunggu review/merge Matz.
-- **Belum**: setelah #10571 merge, `sudo make install` spinel terbaru, jalankan
+  `flatten(1)` pada receiver nested array). **MERGED 2026-10-30T02:29:01Z.**
+- **Belum**: `sudo make install` spinel terbaru, jalankan
   ulang `repro/k034_yield_receiver_even_more_builtins_still_bad.rb`, update
   catatan end-to-end (pola sama K-033).
+- **Tambahan 2026-10-30** (bug terpisah, ditemukan verifikasi catatan CodeRabbit
+  di atas): catatan CodeRabbit soal `flatten(1)`/nested array ternyata false
+  positive (branch barunya tidak reachable lewat forward inference yield), tapi
+  investigasinya menemukan bug lain yang nyata dan pre-existing (bukan dari
+  #10571): `yield.flatten` TANPA argumen, dicampur lintas dua site berbeda jenis
+  (poly array vs typed array biasa), gagal compile C mentah
+  (`incompatible pointer types ... sp_PolyArray * from sp_IntArray *`).
+  Mekanisme sama keluarga ini tapi arm codegen beda (`emit_op_array_flatten`'s
+  `argc == 0` branch, bukan tabel `ty_recv_builtin_result`). Diperbaiki +
+  diperketat (review CodeRabbit menemukan nil-receiver dan frozen-flag ikut
+  salah di fix pertama), **MERGED upstream sebagai matz/spinel#10579**
+  (2026-10-30T05:02:32Z, `8ffa1ab4a`). Belum diberi nomor K- sendiri -- bukan
+  dari sapuan `tools/yield-sweep/sweep.sh`, ditemukan manual; pertimbangkan
+  K-036 kalau sapuan berikutnya menemukan pola serupa di nama lain.
 
 ## K-035: `*`(n), `+@`, `prepend` (0-arg) dan `slice!(1,2)` pada `yield` -- SEMUA 4 DIPERBAIKI
 - Lapisan: compiler, EMPAT gap berbeda di bawah satu keluarga (K-024/K-029/
