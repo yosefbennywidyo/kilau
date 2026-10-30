@@ -1407,9 +1407,11 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   polos kena gejala K-032 duluan sebelum 15 baris sisanya pernah jalan,
   bukan yang mau diuji repro ini). Setelah itu: output cocok CRuby persis
   di semua 16 baris. kilau commit `c663a61`.
-- **Belum**: user menjalankan `sudo make install` sendiri untuk memasang
-  binary ini ke `/usr/local/bin/spinel` (perlu password, tak bisa
-  non-interaktif).
+- **Compiler terpasang dinaikkan 2026-10-30**: `sudo make install` dijalankan
+  user, `/usr/local/bin/spinel` sekarang `2026.10.25+1266 (8ffa1ab4a)`.
+  Repro dijalankan ulang terhadap binary terpasang ini (bukan cuma build
+  lokal): cocok CRuby persis di semua 16 baris. **K-034 tuntas sepenuhnya,
+  tidak ada langkah tersisa.**
 - **Tambahan 2026-10-30** (bug terpisah, ditemukan verifikasi catatan CodeRabbit
   di atas): catatan CodeRabbit soal `flatten(1)`/nested array ternyata false
   positive (branch barunya tidak reachable lewat forward inference yield), tapi
