@@ -1393,7 +1393,44 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `yield_receiver_*`/`respond_to*` lama tetap cocok.
 - Repro Kilau (`repro/k034_yield_receiver_even_more_builtins_still_bad.rb`) masih
   berlaku sebagai dokumentasi; belum diupdate untuk mencatat hasil fix -- update
-  setelah PR terkirim dan compiler Kilau dinaikkan.
-- **Belum**: `sudo make install` spinel yang berisi fix ini, lalu verifikasi
-  end-to-end di Kilau sama seperti K-033; buka PR upstream (menunggu konfirmasi
-  user per alur kerja standar).
+  setelah compiler Kilau dinaikkan.
+- **2026-10-30**: sharded gate hijau penuh (17/17 job, run
+  https://github.com/yosefbennywidyo/spinel/actions/runs/40986049485, setiap
+  shard `test` 1153 pass/0 fail/0 error). Fork PR #42 ditutup, **dibuka ke
+  upstream sebagai matz/spinel#10571** (termasuk fix CodeRabbit untuk
+  `flatten(1)` pada receiver nested array). Menunggu review/merge Matz.
+- **Belum**: setelah #10571 merge, `sudo make install` spinel terbaru, jalankan
+  ulang `repro/k034_yield_receiver_even_more_builtins_still_bad.rb`, update
+  catatan end-to-end (pola sama K-033).
+
+## K-035: `prepend` (0-arg) dan `slice!(1,2)` pada site String campur Array masih gagal compile (keluarga K-029/K-034, lagi) -- ditemukan, belum diperbaiki
+- Lapisan: compiler (tabel `ty_recv_builtin_result`/`src/types.c` + row
+  `builtin_ops.c` -- mekanisme identik K-024/K-029/K-030/K-033/K-034)
+- Ditemukan: 2026-10-30, triase ulang sisa 34 CC_FAIL dari sapuan K-034 secara
+  teliti (baca `.cc.log` tiap probe, bukan cuma pola nama) -- dua nama yang
+  sebelumnya salah dimasukkan ke "sama seperti push, bukan bug" ternyata
+  punya diagnostik C MENTAH, bukan refusal bernama, persis sinyal keluarga ini:
+  - **`slice!(1, 2)`** (bentuk 2-argumen) -- site String + Array-Int +
+    Array-Str. CRuby jalan bersih (`"bc"`, `[1, 2]`, `["a"]`). Row
+    `builtin_ops.c`-nya **konkret untuk kedua sisi**: `TY_STRING` argc 1-2
+    (`TY_STRING`, `BOPE_STRING_SLICE`) dan `BOP_ANY_ARRAY` argc 2
+    (`BOPR_SELF`, `BOPE_TEMPLATE`) -- pola fix-nya identik `clear`/`concat`
+    K-034 (tinggal gating, bukan kerja baru). Kemungkinan setelah fix,
+    site String literal akan kena gejala K-032 (frozen literal) seperti
+    `clear`/`concat`/`reverse!` -- dicatat sebagai addendum K-032, bukan
+    sisa K-035, kalau terjadi.
+  - **`prepend`** (0-arg, tanpa nilai) -- site String + Array-Int + Array-Str.
+    CRuby jalan bersih (balikan diri sendiri tak berubah). Row `builtin_ops.c`
+    untuk `BOP_ANY_ARRAY, "prepend"` (argc 0-127) masih **`TY_UNKNOWN`
+    placeholder** -- BUKAN sekadar gating, butuh arm tangan baru dulu
+    (mirip pola `insert`'s "tanpa nilai: diri sendiri" di K-033/#9460)
+    sebelum bisa digating di tabel yield.
+  Catatan: `<<`(2) yang tadinya disangka masuk kategori sama ternyata BUKAN
+  bug -- sudah dijawab diagnostik bernama yang benar (sama seperti
+  `push`/`append`), dipindah kembali ke daftar noise.
+- Repro: belum dibuat file terpisah; dua kasus di atas cukup jelas dari
+  breakdown ini dan `tools/yield-sweep/sweep.sh`'s probe `p0167_prepend`/
+  `p0218_slice_33` (direktori sapuan sesi ini, tidak disimpan permanen).
+- Status: **BELUM diperbaiki** -- kandidat kerja selanjutnya. `slice!(1,2)`
+  siap langsung (gating, pola K-034); `prepend` butuh keputusan dulu soal
+  arm barunya (nilai BOPR_SELF untuk argc 0, sebelum digating).
