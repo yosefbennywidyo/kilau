@@ -1502,3 +1502,54 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `test/yield_receiver_builtin_star_plusat_prepend_slice_bang.rb` (spinel)
   dijalankan terhadap binary terpasang: cocok persis. **K-035 tuntas
   sepenuhnya, tidak ada langkah tersisa.**
+
+## K-036: sapuan `yield-sweep` pasca-bump 2026-11-04 -- 87/258 probe masih MISMATCH/CC_FAIL, BELUM ditriase satu-per-satu (dicatat mentah, bukan daftar bug terverifikasi)
+
+- Lapisan: diduga compiler, mekanisme yang sama dengan K-029/K-030/K-033/K-034/
+  K-035 (`ty_recv_builtin_result`/`yield_builtin_method_site_type`) -- belum
+  dikonfirmasi per nama di sesi ini.
+- Ditemukan: 2026-11-04, `SPINEL=/usr/local/bin/spinel tools/yield-sweep/sweep.sh`
+  dijalankan terhadap compiler terpasang `2026.10.25+2306 (60ab41731)` (bump
+  terbaru, lihat header file ini) sebagai bagian dari sapuan rutin
+  pasca-bump. 218 nama kandidat, 258 probe: **171 OK, 56 MISMATCH, 31
+  CC_FAIL, 0 RUBY_ERR**.
+- **PENTING -- belum ditriase tangan seperti K-034 (yang membedah byte demi
+  byte mana noise vs bug nyata).** Membandingkan daftar nama mentah terhadap
+  kategori "BUKAN bug" yang sudah didokumentasikan K-034 di atas, SEBAGIAN
+  BESAR nama di MISMATCH/CC_FAIL kali ini kemungkinan noise yang sama:
+  - Enumerator-tanpa-blok (`inspect` beda, bukan bug nyata): `chain`, `chunk`,
+    `collect_concat`, `cycle`, `detect`, `drop_while`, `each_cons`,
+    `each_entry`, `each_slice`, `each_with_object`, `filter_map`, `find`,
+    `find_all`, `find_index`, `flat_map`, `group_by`, `max_by`, `min_by`,
+    `minmax_by`, `partition`, `permutation`, `rfind`, `slice_after`,
+    `slice_before`
+  - Refleksi (di luar scope AOT-typed receiver): `private_methods`,
+    `protected_methods`, `public_methods`, `singleton_methods`,
+    `singleton_class`
+  - Artefak lingkungan (butuh `require "set"`): `to_set`, `to_proc`
+  - Gejala K-032 (frozen-literal by design, bukan gap tabel baru):
+    `frozen?`, `reverse!`, `slice!(2)`
+  - Butuh blok, dipanggil tanpa blok (celah terpisah, bukan keluarga ini):
+    `collect!`, `map!`, `select!`, `filter!`, `reject!`, `keep_if`,
+    `delete_if`, `sort_by!`, `bsearch_index`
+  - Pada receiver Symbol (sudah diketahui): `end_with?`, `start_with?`
+  - `lazy` (ditolak by design, sudah terdokumentasi)
+  - **Belum punya kategori "bukan bug" dari sesi K-034 manapun** -- kandidat
+    paling layak dilihat duluan sesi berikutnya: `<<` (2-arg), `append`
+    (0/1/2-arg), `fill` (1/2-arg), `find_index` (2-arg), `insert` (1/2-arg),
+    `push` (0/1/2-arg), `rotate!` (0/2-arg), `unshift` (0/1/2-arg), `clear`,
+    `concat` (K-034 sudah menandai `clear` dan `concat` sebagai bug NYATA,
+    jadi dua ini kemungkinan besar regresi atau belum pernah benar-benar
+    diperbaiki -- cek dulu sebelum asumsi), dan **`prepend`** (muncul lagi di
+    MISMATCH padahal K-035 mengklaim `prepend` 0-arg SUDAH diperbaiki dan
+    diverifikasi -- ini pantas dicek paling dulu, kemungkinan regresi atau
+    kombinasi site yang belum tercakup fix K-035).
+- Hasil mentah (classify.sh report lengkap, daftar MATCH/DIFF per nama) ada
+  di memory Claude -- cari sesi 2026-11-04 di `project_spinel_next_steps` /
+  cari percakapan yang menjalankan subagent sapuan ini. Direktori probe
+  (`/tmp/kilau_yield_sweep_run`, 258 file × 4 artefak) TIDAK disimpan permanen
+  (di `/tmp`, bisa hilang) -- jalankan ulang `tools/yield-sweep/sweep.sh`
+  untuk reproduksi, lalu triase tangan nama-per-nama seperti K-034 sebelum
+  menulis ulang entri ini jadi daftar bug terverifikasi.
+- **Status: dicatat, BELUM ditriase, BELUM diperbaiki.** Tunggu keputusan
+  user untuk memulai triase/fix pada sesi berikutnya.
