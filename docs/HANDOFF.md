@@ -2,6 +2,69 @@
 
 Entri terbaru di atas.
 
+## 2026-10-30 — K-034 dan K-035 tuntas (entri di bawah usang); bug baru `slice!` ditemukan+diperbaiki upstream; bug Regexp non-literal untuk sesi selanjutnya
+
+**Koreksi status entri di bawah (K-034, 2026-10-29/30):** "Belum"-nya sudah
+usang. Sharded gate lulus, PR upstream dibuka DAN merged (matz/spinel#10571,
+2026-10-30), compiler sudah dinaikkan+diverifikasi end-to-end. **K-034
+sepenuhnya tuntas.** K-035 (4 nama lagi: `*`(n), `+@`, `prepend` 0-arg,
+`slice!(1,2)`) ditemukan sesudahnya, juga tuntas: merged matz/spinel#10580,
+diverifikasi. Detail lengkap kedua K-item ini sudah ada di memory Claude
+(`project_kilau_k034_more_yield_builtins`, `project_kilau_k035_star_plusat_prepend_slicebang`)
+— tidak perlu dikerjakan ulang.
+
+**Bug baru (bukan dari sapuan kilau `repro/*.rb`, ditemukan langsung di
+spinel lewat `tools/yield-sweep/sweep.sh`):** `String#slice!(start, len)`
+pada receiver yang BUKAN variabel (literal, ternary, chain method) salah
+`NoMethodError` padahal harus `FrozenError`/hasil cut yang benar. Root
+cause: gate `span2` di `emit_op_string_slice` (`src/codegen_call_string.c`)
+mensyaratkan `str_fresh_value(recv)` yang sebenarnya tidak perlu, sisa dari
+fix K-035. **Diperbaiki dan MERGED penuh upstream**: matz/spinel#10593
+(merge `0f769039f`) + follow-up #10603 (merge `97cea860a`, dua commit yang
+landed telat untuk #10593 karena matz merge duluan). Sepanjang jalan,
+CodeRabbit juga menemukan dan membantu memperbaiki dua bug terkait (Range
+sebagai argumen pertama bentuk 2-argumen `slice!`, dan urutan evaluasi
+argumen) — keduanya sudah ikut MERGED di dua PR itu. Detail lengkap: memory
+Claude `project_spinel_pr10593_slice_bang_nonvar_recv`.
+
+**UPDATE 2026-11-04: kedua item di bawah sudah tuntas, "Belum" ini usang.**
+Item 1 (`slice!(regexp_non_literal, n)`) diperbaiki dan **MERGED upstream
+matz/spinel#10838** (`0e840deb4`, 2026-11-03), termasuk addendum GC-root-nya
+yang matz landed langsung sebagai commit master `5112de68d` setelah merge.
+Item 2 (`sudo make install` + sapuan `repro/*.rb`) juga sudah dijalankan:
+compiler terpasang sekarang `2026.10.25+2306 (60ab41731)`, `make test` kilau
+**28/28 lulus**, tanpa regresi. Detail lengkap: memory Claude
+`project_spinel_pr10838_slice_bang_nonlit_regexp` dan
+`project_spinel_next_steps` entri 16. Bagian "Belum" aslinya tetap di bawah
+sebagai riwayat.
+
+**Belum — untuk sesi selanjutnya (usang, lihat UPDATE di atas):**
+1. **Bug `String#slice!(regexp_non_literal, n)`**: `slice!(re, n)` dengan
+   `re` sebuah `Regexp` yang dipegang variabel/parameter (BUKAN literal
+   `/.../ ` langsung di call site) salah `TypeError: no implicit conversion
+   of Regexp into Integer` padahal CRuby mengembalikan capture group ke-`n`.
+   Dikonfirmasi UNIVERSAL di semua jenis receiver (termasuk variabel mutable
+   biasa, tidak terkait `span2`/PR di atas sama sekali) dan PRE-EXISTING
+   (bukan regresi dari #10593). Root cause: satu-satunya arm 2-argumen untuk
+   regex-capture di `emit_op_string_slice` hanya menjawab untuk Regexp
+   LITERAL (`re_lit_index(c, argv[0]) >= 0`); Regexp di variabel tidak
+   pernah punya arm sama sekali. Perbaikannya butuh menambah arm baru yang
+   compile/match Regexp non-literal saat runtime — fitur baru, bukan fix
+   satu baris seperti kasus Range. Repro:
+   ```ruby
+   def go(re)
+     s = +"abcdef"
+     p s.slice!(re, 1)   # CRuby: "b"; spinel: TypeError
+   end
+   go(/(b)/)
+   ```
+   Belum ditulis sebagai `repro/*.rb` kilau — tulis dulu repro di kilau
+   (format K-0xx baru di `docs/CATALOG.md`) sebelum mulai perbaikan di
+   spinel, sesuai pola kerja biasa.
+2. Jalankan `sudo make install` spinel master terbaru (berisi #10593 +
+   #10603), lalu sapuan `repro/*.rb` kilau penuh untuk pastikan tidak ada
+   regresi (pola yang sama dengan verifikasi K-033/K-034/K-035).
+
 ## 2026-10-30 — K-034 (16 lagi builtin pada `yield`) ditemukan, 14/16 diperbaiki, PR fork hijau, menunggu sharded gate
 
 **Status**

@@ -1,5 +1,14 @@
 # Katalog batas AOT
 
+**Bump 2026-11-04**: user menjalankan `sudo make install` di
+`~/apps/me/gems/spinel` setelah `git pull` + `make all` bersih dari
+`origin/master` `60ab41731` (termasuk matz/spinel#10838 -- nonliteral-Regexp
+`slice!(re, n)` -- dan GC-root addendumnya `5112de68d`, plus #10932/#10933).
+Compiler terpasang sekarang `2026.10.25+2306 (60ab41731)`, naik dari
+`1c98820c4` (sweep 2026-10-28 di bawah). `make test` kilau diuji ulang
+penuh dengan compiler terpasang baru ini: **28/28 lulus** (16/16 framework,
+8/8 tool, 4/4 examples/blog), exit 0, tanpa regresi.
+
 **Sweep 2026-10-28** (build lokal, bukan compiler terpasang): `spinel` master
 `1c98820c4` (tag `2026.10.25` + beberapa commit, dibangun `plain make` di
 `~/apps/me/gems/spinel`, bukan `sudo make install`). Repro suite diuji ulang penuh
@@ -17,7 +26,9 @@ kilau diuji ulang dengan compiler terpasang baru ini: **28/28 lulus** (16/16
 framework -- bertambah dari 13 sebelumnya, 8/8 tool, 4/4 examples/blog), tanpa
 regresi.
 
-Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.10.25+917 (1c98820c4)`
+Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.10.25+2306 (60ab41731)`
+sejak 2026-11-04 (`sudo make install`, lihat bump di atas). Riwayat versi sebelumnya:
+`2026.10.25+917 (1c98820c4)`
 sejak 2026-10-28 (`sudo make install`, dari tag `2026.09.12+10567 (3e3653a55)`).
 Riwayat versi sebelumnya:
 sejak 2026-10-17 (`sudo make install`, 215 commit di depan `d20573c47` -- termasuk
