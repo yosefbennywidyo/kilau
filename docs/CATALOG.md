@@ -1503,7 +1503,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   dijalankan terhadap binary terpasang: cocok persis. **K-035 tuntas
   sepenuhnya, tidak ada langkah tersisa.**
 
-## K-036: sapuan `yield-sweep` pasca-bump 2026-11-04 -- 87/258 probe masih MISMATCH/CC_FAIL, BELUM ditriase satu-per-satu (dicatat mentah, bukan daftar bug terverifikasi)
+## K-036: sapuan `yield-sweep` pasca-bump 2026-11-04 -- `push`/`append`/`unshift`/`rotate!` (0-arg) DIPERBAIKI, sisanya triase/K-037 lihat di bawah
 
 - Lapisan: diduga compiler, mekanisme yang sama dengan K-029/K-030/K-033/K-034/
   K-035 (`ty_recv_builtin_result`/`yield_builtin_method_site_type`) -- belum
@@ -1549,7 +1549,90 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   cari percakapan yang menjalankan subagent sapuan ini. Direktori probe
   (`/tmp/kilau_yield_sweep_run`, 258 file × 4 artefak) TIDAK disimpan permanen
   (di `/tmp`, bisa hilang) -- jalankan ulang `tools/yield-sweep/sweep.sh`
-  untuk reproduksi, lalu triase tangan nama-per-nama seperti K-034 sebelum
-  menulis ulang entri ini jadi daftar bug terverifikasi.
-- **Status: dicatat, BELUM ditriase, BELUM diperbaiki.** Tunggu keputusan
-  user untuk memulai triase/fix pada sesi berikutnya.
+  untuk reproduksi.
+- **Triase 2026-11-04, sesi lanjutan.** Membuka probe file mentah satu per
+  satu (bukan cuma cocok nama) untuk tiga nama paling mencurigakan di atas:
+  - `prepend` (0-arg, bare) dan `clear`/`concat` (0-arg): **BUKAN regresi**.
+    Ketiganya gagal karena probe-nya menyertakan site `"abc"` (String
+    literal), yang kena K-032 (`FrozenError` palsu pada String literal) --
+    site Array/Hash di baliknya tidak pernah tereksekusi. Fix K-035's
+    `prepend` dan K-034's `clear`/`concat` masih valid, tidak regresi.
+  - `append`, `push`, `unshift`, `rotate!` (0-arg) dan `rotate!(n)`: bug
+    NYATA, pola persis K-029/K-030/K-033/K-034 -- `incompatible pointer
+    types assigning to 'sp_IntArray *' from 'sp_StrArray *'` (C compile
+    error mentah, bukan diagnostik bernama). `rotate!`'s row di
+    `src/builtin_ops.c` sudah `BOPR_SELF` di semua argc; `push`/`append`/
+    `unshift` butuh arm tulisan-tangan baru (lihat di bawah, bukan ubah row
+    tabel bersama -- mengubah row itu langsung ke `BOPR_SELF` meregresi
+    `test/array_push_lift_splat.rb`, panggilan langsung non-yield yang
+    tidak berkaitan). **DIPERBAIKI, PR fork
+    yosefbennywidyo/spinel#48 dibuka 2026-11-04**, menunggu CI/gate hijau
+    sebelum PR upstream. Test baru
+    `test/yield_receiver_push_append_unshift_rotate_bang_site_kinds.rb`
+    (spinel), RED->GREEN dikonfirmasi, 112 test korpus terkait diverifikasi
+    tanpa regresi. Detail penuh: memory Claude
+    `project_spinel_pr_yield_push_append_unshift_rotate_bang` (dibuat sesi
+    ini).
+  - `insert(1,2)`, `prepend(2)`/`prepend(1,2)`, `fill(1,2)`/`fill(2)`,
+    `<<(2)`, `push(2)`/`push(1,2)`, `append(2)`/`append(1,2)`,
+    `unshift(2)`/`unshift(1,2)`: **bug BERBEDA, root cause lebih dalam,
+    dipisah jadi K-037 di bawah** -- bukan C compile error, tapi diagnostik
+    refusal resmi spinel sendiri.
+  - `find_index(2)`: **bug KETIGA, independen**, dipisah jadi K-037 juga
+    (penjelasan di bawah) -- root cause-nya salah wrap `sp_oint` di jalur
+    generic Enumerable, tidak berkaitan dengan dua bug di atas.
+- **Sisa nama lain** (Enumerator-tanpa-blok, refleksi, artefak lingkungan,
+  gejala K-032, butuh-blok, Symbol, `lazy`) kemungkinan besar noise seperti
+  sudah dicatat sebelumnya -- tidak ditriase ulang byte-per-byte sesi ini,
+  masih berupa hipotesis dari pencocokan nama dengan kategori K-034.
+- **Status: SEBAGIAN diperbaiki** (klaster `push`/`append`/`unshift`/
+  `rotate!`, menunggu merge), sisanya dipecah ke K-037 atau masih hipotesis
+  noise yang belum diverifikasi ulang.
+
+## K-037: `push`/`append`/`unshift`/`insert`/`prepend`/`fill`/`<<` BERARGUMEN pada receiver `yield` -- ditolak diagnostik resmi, root cause lebih dalam dari K-036 (BELUM diperbaiki)
+
+- Lapisan: compiler, tapi BUKAN mekanisme sama dengan K-036/K-029-035.
+  K-036 adalah soal tabel jawaban-tipe (`yield_site_listed`/
+  `bop_result_fallback_allowed` di `src/types.c`) untuk RECEIVER. K-037 ini
+  soal **inferensi elemen-array whole-program**: Array literal seperti
+  `["b", "a"]` diinferensikan sebagai `StrArray` (representasi C homogen,
+  elemen `const char *`), tapi kalau nanti di-push sebuah Integer
+  (`.push(2)`), CRuby membiarkannya (Array CRuby heterogen) sementara
+  Spinel menolak di compile time karena `StrArray`-nya tidak bisa menyimpan
+  Integer di slot `const char *` miliknya.
+- Root cause tepat: `emit_op_array_push`/`emit_coerce` di
+  `src/codegen_call_array.c` (fungsi generik "typed array push", sekitar
+  baris 2446-2482) memanggil `emit_coerce(c, argv[a], elem, CO_HOLD, "an
+  Array push", b)` begitu argumen yang didorong bukan Array/Hash/object dan
+  bukan nilai boxed/unresolved -- untuk Integer ke slot `const char*`
+  (StrArray), tidak ada conversion, jadi `unsupported_feature` dipanggil
+  dengan pesan persis yang kita lihat ("an Array push given a Integer,
+  which no conversion keeps in its const char * slot"). Ini BUKAN bug di
+  jalur "yield per-site" K-036 pakai (receiver-nya sudah benar typed per
+  site setelah fix K-036) -- ini murni Array literal `["b","a"]` yang
+  seharusnya SEJAK AWAL diinferensikan sebagai `PolyArray` (bukan
+  `StrArray`), karena somewhere di program itu ada push Integer ke
+  dalamnya. Confirmed: kalau receiver-nya memang `TY_POLY_ARRAY` (bukan
+  StrArray konkret), `emit_op_array_push`'s cabang poly (baris 1258-1273)
+  sudah benar: `emit_boxed(argv[0])`, tidak ada masalah.
+- **Kenapa ini jauh lebih besar dari K-036**: memperbaikinya butuh
+  mengubah/melebarkan keputusan tipe elemen Array LITERAL di analisis
+  whole-program (kapan sebuah Array literal harus dianggap Poly karena
+  nanti di-push nilai kelas lain), bukan sekadar menambah nama ke satu
+  tabel baris tunggal. Berisiko tinggi (bisa melebar ke SEMUA Array
+  literal di program, bukan cuma yang lewat `yield`) dan belum ada test
+  RED/GREEN yang mengisolasi scope-nya.
+- `find_index(2)` punya root cause SENDIRI, SAMA SEKALI TIDAK BERKAITAN:
+  generated C-nya salah bungkus `sp_IntArray_index_poly(_t3,
+  sp_oint_arg(sp_oint_of(2LL)))` padahal fungsi runtime itu
+  (`lib/sp_array.c`) menerima `sp_int` polos, bukan `sp_oint` yang
+  dibungkus -- `error: passing 'sp_int' to parameter of incompatible type
+  'sp_oint'`. Berasal dari jalur generic Enumerable `find_index` di
+  `builtins/enumerable.rb`/desugar, bukan dari `ty_recv_builtin_result`
+  sama sekali. Perlu sesi investigasi sendiri.
+- Repro: kombinasi dari probe `tools/yield-sweep` sesi 2026-11-04 (lihat
+  K-036 di atas untuk daftar nama persis). Belum ditulis sebagai
+  `repro/*.rb` kilau tersendiri.
+- **Status: dicatat, BELUM ditriase lebih jauh, BELUM diperbaiki.**
+  Kandidat sesi mendatang kalau user mau investasi di perbaikan
+  element-kind-widening yang lebih dalam ini.
