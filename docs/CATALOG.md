@@ -1,5 +1,21 @@
 # Katalog batas AOT
 
+**Bump 2026-11-05** (~02:25 WIB): user menjalankan `make install` (tanpa
+`sudo`, setelah `sudo chown -R` atas `/usr/local/lib/spinel`) dari
+`origin/master` `477dd5cbc` (termasuk matz/spinel#10974 -- `push`/`append`/
+`unshift`/`rotate!` 0-arg dan `find_index(2)` pada receiver `yield` -- plus
+#10999, aturan `make gate` di README). Compiler terpasang sekarang
+`2026.10.25+2498 (477dd5cbc)`, naik dari `+2306 (60ab41731)`. `make install`
+berakhir `Error 1` di langkah symlink `/usr/local/bin` (direktori itu milik
+root); itu kosmetik, symlink lama sudah menunjuk ke tujuan yang benar.
+Diverifikasi: `make test` kilau **28/28 lulus** (16/16 framework, 8/8 tool,
+4/4 examples/blog), exit 0, tanpa tes `(cached)`, tanpa regresi. Repro dengan
+compiler terpasang, dibandingkan dengan CRuby: `yield.find_index(2)` (site
+Array dan Hash) cocok, `yield.push`/`yield.rotate!` tanpa argumen cocok
+(K-036 dan bagian K-037 yang diperbaiki), sedangkan `yield.push(2)` pada Array
+literal String masih ditolak dengan diagnostik bernama (`an Array push given a
+Integer ...`) -- bagian argumen K-037 belum diperbaiki.
+
 **Bump 2026-11-04**: user menjalankan `sudo make install` di
 `~/apps/me/gems/spinel` setelah `git pull` + `make all` bersih dari
 `origin/master` `60ab41731` (termasuk matz/spinel#10838 -- nonliteral-Regexp
@@ -26,9 +42,9 @@ kilau diuji ulang dengan compiler terpasang baru ini: **28/28 lulus** (16/16
 framework -- bertambah dari 13 sebelumnya, 8/8 tool, 4/4 examples/blog), tanpa
 regresi.
 
-Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.10.25+2306 (60ab41731)`
-sejak 2026-11-04 (`sudo make install`, lihat bump di atas). Riwayat versi sebelumnya:
-`2026.10.25+917 (1c98820c4)`
+Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.10.25+2498 (477dd5cbc)`
+sejak 2026-11-05 (`make install`, lihat bump di atas). Riwayat versi sebelumnya:
+`2026.10.25+2306 (60ab41731)` (2026-11-04), `2026.10.25+917 (1c98820c4)`
 sejak 2026-10-28 (`sudo make install`, dari tag `2026.09.12+10567 (3e3653a55)`).
 Riwayat versi sebelumnya:
 sejak 2026-10-17 (`sudo make install`, 215 commit di depan `d20573c47` -- termasuk
@@ -1565,11 +1581,17 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     `unshift` butuh arm tulisan-tangan baru (lihat di bawah, bukan ubah row
     tabel bersama -- mengubah row itu langsung ke `BOPR_SELF` meregresi
     `test/array_push_lift_splat.rb`, panggilan langsung non-yield yang
-    tidak berkaitan). **DIPERBAIKI.** Fork PR yosefbennywidyo/spinel#48
-    (2026-11-04) ditutup dan dibuka ulang sebagai **#50** dari branch yang
-    sama, digabung dengan fix `find_index(2)` (K-037 di bawah). Gate sharded
-    gabungan (run 41809906662, commit dcd981372) success 17/17. CI PR #50
-    berjalan saat catatan ini ditulis. Belum ada PR upstream ke matz/spinel. Test baru
+    tidak berkaitan). **DIPERBAIKI dan MERGED upstream** sebagai
+    **matz/spinel#10974** (2026-11-04 13:31Z, merge commit `b0380778877`;
+    Matz: "Merged in cycle 461", tes baru cocok CRuby 4.0.9 juga di
+    `--int-overflow=promote`), digabung dengan fix `find_index(2)` (K-037 di
+    bawah). Riwayat fork: PR #48 ditutup dan dibuka ulang sebagai #50, lalu
+    #50 ditutup sebagai duplikat setelah #10974 merged. Gate sharded gabungan
+    (run 41809906662, commit dcd981372) success 17/17 pada waktu itu; gate
+    21 job yang sekarang (coverage, 8 slice korpus dengan `--plan-check`,
+    plan-check, 7 grup rubyspec, props, bench, optcarrot, rubyboy) success
+    21/21 pada master `47d6bc11d` yang sudah memuat #10974 (run
+    41882237014). Test baru
     `test/yield_receiver_push_append_unshift_rotate_bang_site_kinds.rb`
     (spinel), RED->GREEN dikonfirmasi, 112 test korpus terkait diverifikasi
     tanpa regresi. Detail penuh: memory Claude
@@ -1581,14 +1603,14 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     dipisah jadi K-037 di bawah** -- bukan C compile error, tapi diagnostik
     refusal resmi spinel sendiri.
   - `find_index(2)`: **bug KETIGA, independen**, dipisah jadi K-037 juga
-    (penjelasan dan fix di bawah). **DIPERBAIKI** di PR #50.
+    (penjelasan dan fix di bawah). **DIPERBAIKI**, MERGED upstream #10974.
 - **Sisa nama lain** (Enumerator-tanpa-blok, refleksi, artefak lingkungan,
   gejala K-032, butuh-blok, Symbol, `lazy`) kemungkinan besar noise seperti
   sudah dicatat sebelumnya -- tidak ditriase ulang byte-per-byte sesi ini,
   masih berupa hipotesis dari pencocokan nama dengan kategori K-034.
 - **Status: SEBAGIAN diperbaiki** (klaster `push`/`append`/`unshift`/
-  `rotate!` dan `find_index(2)` di PR #50; argumen push-family di K-037
-  belum), sisanya masih hipotesis noise yang belum diverifikasi ulang.
+  `rotate!` dan `find_index(2)` MERGED sebagai matz/spinel#10974; argumen
+  push-family di K-037 belum), sisanya masih hipotesis noise yang belum diverifikasi ulang.
 
 ## K-037: `push`/`append`/`unshift`/`insert`/`prepend`/`fill`/`<<` BERARGUMEN pada receiver `yield` -- ditolak diagnostik resmi (BELUM diperbaiki); `find_index(2)` DIPERBAIKI
 
@@ -1623,7 +1645,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   tabel baris tunggal. Berisiko tinggi (bisa melebar ke SEMUA Array
   literal di program, bukan cuma yang lewat `yield`) dan belum ada test
   RED/GREEN yang mengisolasi scope-nya.
-- `find_index(2)` (**DIPERBAIKI, PR #50**). Gejala: `yield.find_index(2)` dengan
+- `find_index(2)` (**DIPERBAIKI, MERGED upstream #10974**). Gejala: `yield.find_index(2)` dengan
   site Array (`[3, 1, 2]`) dan site Hash (`{a: 1}`) gagal dikompilasi:
   `passing 'sp_int' ... to parameter of incompatible type 'sp_oint'` pada
   pembungkus `sp_box_oint(...)` site Hash. Hanya terjadi ketika site Hash
