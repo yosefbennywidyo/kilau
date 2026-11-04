@@ -1565,9 +1565,11 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     `unshift` butuh arm tulisan-tangan baru (lihat di bawah, bukan ubah row
     tabel bersama -- mengubah row itu langsung ke `BOPR_SELF` meregresi
     `test/array_push_lift_splat.rb`, panggilan langsung non-yield yang
-    tidak berkaitan). **DIPERBAIKI, PR fork
-    yosefbennywidyo/spinel#48 dibuka 2026-11-04**, menunggu CI/gate hijau
-    sebelum PR upstream. Test baru
+    tidak berkaitan). **DIPERBAIKI.** Fork PR yosefbennywidyo/spinel#48
+    (2026-11-04) ditutup dan dibuka ulang sebagai **#50** dari branch yang
+    sama, digabung dengan fix `find_index(2)` (K-037 di bawah). Gate sharded
+    gabungan (run 41809906662, commit dcd981372) success 17/17. CI PR #50
+    berjalan saat catatan ini ditulis. Belum ada PR upstream ke matz/spinel. Test baru
     `test/yield_receiver_push_append_unshift_rotate_bang_site_kinds.rb`
     (spinel), RED->GREEN dikonfirmasi, 112 test korpus terkait diverifikasi
     tanpa regresi. Detail penuh: memory Claude
@@ -1579,17 +1581,16 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     dipisah jadi K-037 di bawah** -- bukan C compile error, tapi diagnostik
     refusal resmi spinel sendiri.
   - `find_index(2)`: **bug KETIGA, independen**, dipisah jadi K-037 juga
-    (penjelasan di bawah) -- root cause-nya salah wrap `sp_oint` di jalur
-    generic Enumerable, tidak berkaitan dengan dua bug di atas.
+    (penjelasan dan fix di bawah). **DIPERBAIKI** di PR #50.
 - **Sisa nama lain** (Enumerator-tanpa-blok, refleksi, artefak lingkungan,
   gejala K-032, butuh-blok, Symbol, `lazy`) kemungkinan besar noise seperti
   sudah dicatat sebelumnya -- tidak ditriase ulang byte-per-byte sesi ini,
   masih berupa hipotesis dari pencocokan nama dengan kategori K-034.
 - **Status: SEBAGIAN diperbaiki** (klaster `push`/`append`/`unshift`/
-  `rotate!`, menunggu merge), sisanya dipecah ke K-037 atau masih hipotesis
-  noise yang belum diverifikasi ulang.
+  `rotate!` dan `find_index(2)` di PR #50; argumen push-family di K-037
+  belum), sisanya masih hipotesis noise yang belum diverifikasi ulang.
 
-## K-037: `push`/`append`/`unshift`/`insert`/`prepend`/`fill`/`<<` BERARGUMEN pada receiver `yield` -- ditolak diagnostik resmi, root cause lebih dalam dari K-036 (BELUM diperbaiki)
+## K-037: `push`/`append`/`unshift`/`insert`/`prepend`/`fill`/`<<` BERARGUMEN pada receiver `yield` -- ditolak diagnostik resmi (BELUM diperbaiki); `find_index(2)` DIPERBAIKI
 
 - Lapisan: compiler, tapi BUKAN mekanisme sama dengan K-036/K-029-035.
   K-036 adalah soal tabel jawaban-tipe (`yield_site_listed`/
@@ -1622,17 +1623,26 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   tabel baris tunggal. Berisiko tinggi (bisa melebar ke SEMUA Array
   literal di program, bukan cuma yang lewat `yield`) dan belum ada test
   RED/GREEN yang mengisolasi scope-nya.
-- `find_index(2)` punya root cause SENDIRI, SAMA SEKALI TIDAK BERKAITAN:
-  generated C-nya salah bungkus `sp_IntArray_index_poly(_t3,
-  sp_oint_arg(sp_oint_of(2LL)))` padahal fungsi runtime itu
-  (`lib/sp_array.c`) menerima `sp_int` polos, bukan `sp_oint` yang
-  dibungkus -- `error: passing 'sp_int' to parameter of incompatible type
-  'sp_oint'`. Berasal dari jalur generic Enumerable `find_index` di
-  `builtins/enumerable.rb`/desugar, bukan dari `ty_recv_builtin_result`
-  sama sekali. Perlu sesi investigasi sendiri.
-- Repro: kombinasi dari probe `tools/yield-sweep` sesi 2026-11-04 (lihat
-  K-036 di atas untuk daftar nama persis). Belum ditulis sebagai
-  `repro/*.rb` kilau tersendiri.
-- **Status: dicatat, BELUM ditriase lebih jauh, BELUM diperbaiki.**
-  Kandidat sesi mendatang kalau user mau investasi di perbaikan
-  element-kind-widening yang lebih dalam ini.
+- `find_index(2)` (**DIPERBAIKI, PR #50**). Gejala: `yield.find_index(2)` dengan
+  site Array (`[3, 1, 2]`) dan site Hash (`{a: 1}`) gagal dikompilasi:
+  `passing 'sp_int' ... to parameter of incompatible type 'sp_oint'` pada
+  pembungkus `sp_box_oint(...)` site Hash. Hanya terjadi ketika site Hash
+  ikut ada (site Array sendiri, dan `index(2)`, aman).
+  - Root cause (diperbaiki dari catatan awal yang keliru: bukan jalur generic
+    Enumerable/desugar): emitter index/find_index untuk poly array di
+    `src/codegen_call_array.c` (`emit_op_array_index_v`, sekitar baris 2101)
+    memakai `oint_open`, yang memutuskan lewat `node_is_oint`. Untuk node
+    ini hasilnya false, sehingga nilai dibungkus `sp_oint_arg(...)` menjadi
+    `sp_int`. Padahal node itu `RK_BOXED` (repr kind 7), dan konsumen
+    per-site membungkusnya dengan `sp_box_oint` (`oint_box`) yang mengharapkan
+    `sp_oint` mentah. Dua pengambil keputusan tidak sepakat.
+  - Fix: untuk node `RK_BOXED`, `sp_oint` dibiarkan mentah; node lain tetap
+    lewat `oint_open` lama. Test: `test/yield_receiver_find_index_hash_site.rb`
+    (+ `.expected` dari CRuby), termasuk site Hash yang mengembalikan Integer
+    (`u { {"a" => 1} }` -> `0`). Verifikasi: repro `tools/yield-sweep`
+    p0098 cocok CRuby; `.nil?` pada hasil yang sama juga cocok.
+  - Repro minimal: `def w; v = yield.find_index(2); p v; end; w { [3,1,2] }; w { {a: 1} }`.
+- Argumen push-family (`push(2)`, `insert`, `<<`, dst): **BELUM diperbaiki**,
+  masih di K-037 bagian atas (diagnostik refusal `codegen_call_array.c`, root
+  cause elemen-array whole-program). Kandidat sesi mendatang kalau user mau
+  investasi di perbaikan element-kind-widening yang lebih dalam ini.
