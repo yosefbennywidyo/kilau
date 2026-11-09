@@ -20,7 +20,11 @@ Entri terbaru di atas.
 - **K-039** (`Array#rfind` pada poly array: NoMethodError run-time, atau C error mentah lewat
   `yield`): dicatat, repro ada, BELUM dibedah. Sengaja menunggu #11451 ditinjau dulu.
 - **K-040** (`scale-test: colliding constant work -8.10x`): bukan bug fix kita; tes upstream
-  yang kehilangan kepekaan. Belum diajukan ke upstream.
+  yang kehilangan kepekaan. **Terbukti lewat uji-mutasi** (2026-11-10 ~03:00 WIB): dengan bug
+  lama (`3f28a42c5`) disuntikkan kembali, tes mencetak -4,20x dan LULUS. Prototipe penghitung
+  per-pass (14 baris, `repro/k040_per_pass_work_counter.patch`) memisahkan sehat (2,00x) dari
+  bug (3,65x) pada program colliding saja. Belum diajukan ke upstream; worktree scratch
+  `~/apps/me/gems/spinel-k040` (branch lokal `k040-mutation`, berisi mutasi + build) masih ada.
 - Compiler kilau terpasang tetap `719eae492`; belum ada yang perlu di-install ulang.
 - Semua komit kilau sesi ini lokal (belum di-push).
 
@@ -33,7 +37,8 @@ Entri terbaru di atas.
    `bin/spinel-base`, `bin/spinel-fixed`, ratusan MB).
 2. K-039: bedah akar (arm `rfind` untuk `PolyArray` di `codegen_call_array.c`), test merah
    dulu, lalu PR terpisah setelah #11451 beres.
-3. K-040: putuskan apakah diajukan ke upstream (usulan di entri katalog).
+3. K-040: putuskan apakah diajukan ke upstream sebagai issue (tabel mutasi + patch pengukuran;
+   tes ini wilayah matz), lalu hapus `~/apps/me/gems/spinel-k040` bila tidak jadi.
 4. Dari daftar lama yang tetap berlaku: uji jalur `tools/gate.rb linux --target/--shard`;
    keputusan Fase F (`resources`, nama route, file route tunggal) dan Rencana 7.
 
