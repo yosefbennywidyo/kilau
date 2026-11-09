@@ -1619,6 +1619,27 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   gejala K-032, butuh-blok, Symbol, `lazy`) kemungkinan besar noise seperti
   sudah dicatat sebelumnya -- tidak ditriase ulang byte-per-byte sesi ini,
   masih berupa hipotesis dari pencocokan nama dengan kategori K-034.
+- **Triase CC_FAIL sisa, 2026-11-09 ~21:50 WIB** (compiler `719eae492`, sapuan ulang
+  258 probe: 177 OK / 56 MISMATCH / 25 CC_FAIL / 0 RUBY_ERR; probe dan log dibuka
+  satu per satu, bukan cuma dicocokkan nama). 25 CC_FAIL, semuanya diagnostik
+  resmi bernama, tak ada C compile error mentah dan tak ada nama baru:
+  - 12 push-family berargumen: by design, lihat K-037.
+  - 8 bang/enumerator-method tanpa blok (`map!`, `collect!`, `select!`, `filter!`,
+    `reject!`, `keep_if`, `delete_if`, `sort_by!`, `bsearch_index`): CRuby
+    mengembalikan `Enumerator` (`#<Enumerator: [3, 1, 2]:bsearch_index>`);
+    spinel tak memodelkan Enumerator tanpa blok dan menolak dengan `unsupported
+    Array#<nama> ... a call no route of the compiler took`. Bukan celah tabel,
+    dan kode nyata selalu memberi blok. Tak ada tindakan.
+  - `lazy` dan `singleton_class`: by design (rantai Lazy di ivar/konstanta;
+    `singleton_class` tak didukung AOT), pesan penolakannya sendiri menjelaskan.
+  - `Symbol#end_with?`/`start_with?` TANPA argumen: satu-satunya celah kecil yang
+    nyata. Hanya gagal bila site yield bercampur String dan Symbol (`w { "ab" };
+    w { :ab }` dengan `yield.end_with?`). Dengan argumen (`end_with?("b")`),
+    langsung pada Symbol, atau hanya site Symbol, semuanya kompilasi dan cocok
+    CRuby. Pemanggilan tanpa argumen tak berguna (selalu `false`), jadi prioritas
+    sangat rendah; tidak diperbaiki.
+  - 56 MISMATCH tidak dibuka ulang byte demi byte; tetap hipotesis noise K-034
+    (Enumerator `inspect`, refleksi, K-032).
 - **Status: SEBAGIAN diperbaiki** (klaster `push`/`append`/`unshift`/
   `rotate!` dan `find_index(2)` MERGED sebagai matz/spinel#10974; argumen
   push-family di K-037 ditutup sebagai by design), sisanya masih hipotesis noise yang belum diverifikasi ulang.
