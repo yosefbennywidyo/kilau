@@ -1746,22 +1746,48 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   global sengaja tidak dikerjakan (risiko melebar ke semua Array literal, tanpa
   test RED/GREEN terisolasi). Workaround di sisi kilau tercatat di atas.
 
-## K-038: `yield.to_set` -> `LocalJumpError` ("no block given (yield)") palsu
+## K-038: `yield` sebagai ARGUMEN konstruktor yang `initialize`-nya memakai `block_given?`/`yield` -> LocalJumpError palsu atau nilai salah diam-diam
 
-- Lapisan: compiler (rewrite `to_set` pada receiver `YieldNode`); akar belum dibedah.
-- Ditemukan: 2026-11-09 ~22:10 WIB, triase 56 MISMATCH K-036 (`p0242_to_set`),
-  compiler `2026.10.25+3775 (719eae492)`. Catatan K-036 lama menyebutnya "artefak
-  lingkungan, butuh `require \"set\"`" -- salah.
-- Gejala: `def b; p yield.to_set; end; b { [3, 1, 2] }` kompilasi sukses, jalan
-  menghasilkan `no block given (yield) (LocalJumpError)`. CRuby: `Set[3, 1, 2]`.
-  Tetap gagal dengan `require "set"`. `v = yield; v.to_set` dan `[3, 1, 2].to_set`
-  langsung: cocok CRuby. Jadi hanya bentuk `yield.to_set` berantai.
-- Repro: `repro/k038_yield_receiver_to_set_localjumperror.rb`.
-- Dugaan (BELUM diuji): rewrite `to_set` -> `Set.new(recv.to_a)` menyalin/memindahkan
-  node `yield` ke konteks tanpa blok. Catatan K-0xx tentang "Cacat B" rewrite
-  `to_set` (sekitar baris 800) menyangkut mekanisme sejenis. Uji ablasi dulu
-  (ganti `to_set` dengan `Set.new(yield)`) sebelum membangun teori.
-- Status: belum diperbaiki.
+- Lapisan: compiler, codegen inliner konstruktor untuk method yang punya `yield`
+  (`src/codegen_call.c`, sekitar baris 262-330 dan loop binding argumen sekitar
+  baris 430-500, spinel `9e757e96a`).
+- Ditemukan: 2026-11-09 ~22:10 WIB sebagai `yield.to_set` (triase MISMATCH K-036);
+  akar dibedah ~23:00 WIB. Judul awal ("`yield.to_set` -> LocalJumpError") dan dugaan
+  awal (rewrite `to_set` menyalin node `yield`) KELIRU.
+- Ablasi (satu detail per percobaan, semua lain tetap):
+  - `Set.new(yield)` gagal sama persis -> bukan rewrite `to_set`.
+  - `Foo.new(yield)` dengan `initialize(e); @x = e; end` BENAR; kelas buatan sendiri
+    yang `initialize`-nya `block_given?` GAGAL (`repro/k038_*`) -> bukan khusus
+    Set; pemicunya `initialize` yang memakai `block_given?` atau `yield`.
+  - Method biasa `f(yield)`, class method `Foo.make(yield)`, instance method
+    `Foo.new.go(yield)` dan `x = yield; Foo.new(x)` semuanya BENAR -> hanya jalur
+    inline konstruktor.
+  - Konstruktor bersarang tanpa `yield` di argumen BENAR.
+- Mekanisme (dari C yang dihasilkan, `spinel -S`): `Set.new(yield)` di-inline dari
+  `packages/set/set.rb`; argumen diikat sebagai `lv__y4_enum = (..., sp_raise_cls(
+  "LocalJumpError", ...))`. Di `codegen_call.c` inliner menyetel
+  `g_block_id = fwd_block ? saved_block : block` (baris ~308) SEBELUM argumen
+  di-lower; loop binding hanya memulihkan `g_self`/rename ke konteks pemanggil,
+  bukan konteks blok. `YieldNode` dalam argumen lalu melihat `g_block_id < 0`
+  (tanpa blok literal) -> raise (`codegen_expr.c:~6900`).
+- **Varian diam-diam, lebih parah** (`repro/k038b_*`): bila panggilan `.new` membawa
+  blok literal, `yield` di argumen malah ditautkan ke blok literal itu:
+  `Foo.new(yield) { |x| x * 10 }.r` dengan `b { 5 }` -> spinel `0`, CRuby `50`;
+  tanpa error apa pun. (Varian dengan `initialize` yang hanya `block_given?` plus
+  blok ditolak dengan diagnostik bernama.)
+- Dampak: `Set.new(yield)`, `yield.to_set`, `[yield].to_set`, dan konstruktor
+  stdlib/paket lain berbentuk sama. Yang terjadi di praktik hanya bila `yield`
+  ditulis langsung di argumen; mengikat ke variabel dulu adalah workaround.
+- Perbaikan yang masuk akal (BELUM dikerjakan): di loop binding argumen inliner
+  konstruktor, simpan lalu pulihkan konteks blok pemanggil (`g_block_id`,
+  `g_block_nren`, `g_block_param_name`, fallback yield/self, `g_ytgt_cur`) seperti
+  yang sudah dilakukan untuk `g_self`, lalu kembalikan ke konteks inline setelah
+  argumen. Inliner method biasa (`codegen_iter.c`, `yield_target_push`) mengelola
+  konteks serupa dan dapat jadi acuan. Perubahan di inti codegen: butuh test RED/GREEN
+  (kedua repro) dan gate penuh di fork sebelum PR upstream.
+- Repro: `repro/k038_yield_receiver_to_set_localjumperror.rb`,
+  `repro/k038b_ctor_yield_arg_with_block_wrong_value.rb`.
+- Status: akar ditemukan, belum diperbaiki.
 
 ## K-039: `Array#rfind` pada receiver poly array -> NoMethodError run-time / C compile error mentah
 
