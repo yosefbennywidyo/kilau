@@ -1621,9 +1621,9 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   masih berupa hipotesis dari pencocokan nama dengan kategori K-034.
 - **Status: SEBAGIAN diperbaiki** (klaster `push`/`append`/`unshift`/
   `rotate!` dan `find_index(2)` MERGED sebagai matz/spinel#10974; argumen
-  push-family di K-037 belum), sisanya masih hipotesis noise yang belum diverifikasi ulang.
+  push-family di K-037 ditutup sebagai by design), sisanya masih hipotesis noise yang belum diverifikasi ulang.
 
-## K-037: `push`/`append`/`unshift`/`insert`/`prepend`/`fill`/`<<` BERARGUMEN pada receiver `yield` -- ditolak diagnostik resmi (BELUM diperbaiki); `find_index(2)` DIPERBAIKI
+## K-037: `push`/`append`/`unshift`/`insert`/`prepend`/`fill`/`<<` BERARGUMEN pada receiver `yield` -- ditolak diagnostik resmi (BY DESIGN, DITUTUP 2026-11-09); `find_index(2)` DIPERBAIKI
 
 - Lapisan: compiler, tapi BUKAN mekanisme sama dengan K-036/K-029-035.
   K-036 adalah soal tabel jawaban-tipe (`yield_site_listed`/
@@ -1693,7 +1693,8 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   widening elemen-array global (risiko melebar ke semua Array literal);
   workaround di sisi kilau: Array heterogen eksplisit / hindari push
   lintas-kelas pada receiver `yield`.
-- Argumen push-family (`push(2)`, `insert`, `<<`, dst): **BELUM diperbaiki**,
-  masih di K-037 bagian atas (diagnostik refusal `codegen_call_array.c`, root
-  cause elemen-array whole-program). Kandidat sesi mendatang kalau user mau
-  investasi di perbaikan element-kind-widening yang lebih dalam ini.
+- Argumen push-family (`push(2)`, `insert`, `<<`, dst): **DITUTUP 2026-11-09 sebagai
+  by design**, tanpa perubahan kode. Perilakunya sesuai `docs/limitations.md` ("A
+  typed array holds one kind of element"). Widening tipe elemen Array literal
+  global sengaja tidak dikerjakan (risiko melebar ke semua Array literal, tanpa
+  test RED/GREEN terisolasi). Workaround di sisi kilau tercatat di atas.
