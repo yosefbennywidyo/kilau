@@ -1903,4 +1903,44 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   menyusut": rapuh, celahnya sudah bergeser 7x dalam 4 hari; (D) uji-mutasi: hidupkan kembali
   bug-nya (balikkan `3f28a42c5` di scratch branch) dan pastikan tes merah, sebelum
   mempercayai angka apa pun. D juga menguji aritmetika di atas. Belum ada yang dikerjakan.
+- **Uji-mutasi, 2026-11-10 ~03:00 WIB (worktree scratch `~/apps/me/gems/spinel-k040`, branch
+  lokal `k040-mutation`, tidak di-push; master `73bd5d78f` + dua bagian bug lama dari
+  `3f28a42c5` disuntikkan lewat `K040_MUT`: 1 = jalan pembacaan `qc_rewrite_reads`, 2 =
+  perbandingan semua pasangan, 3 = keduanya).** Pembalikan murni komit itu tak bisa
+  diterapkan (336 komit di belakang; fungsinya kini `qc_value_collisions`), jadi disuntik
+  manual. Rumus tes yang sama, `r = b / max(a, 1 M)`:
+  sehat a = -2.043.729, b = -8.103.369, r = -8,10x; mutasi 1 b = -3.882.448 (-3,88x);
+  mutasi 2 b = -8.421.369 (-8,42x); mutasi 3 (bug lama utuh) a = -1.052.283, b = -4.200.448
+  (-4,20x). **Keempatnya lulus: tes TIDAK mendeteksi bug yang ditulis untuknya.** Prediksi
+  aritmetika (sekitar -4,2 M) terbukti. Bug lama menambah +1,07 M (N = 400) dan +4,22 M
+  (N = 800) pada total, kuadratik (3,9x tiap penggandaan), selaras dengan komit asli.
+- **Prototipe opsi (A), penghitung per-pass, TERBUKTI memisahkan keduanya.** Dua hook
+  (14 baris, `repro/k040_per_pass_work_counter.patch`, bisa diterapkan ke master
+  `73bd5d78f` dan ke `c45adb7de`) mencetak `spinel-work-qvc` (kerja di dalam
+  `qc_value_collisions`) dan `spinel-work-eck` (di dalam `elab_const_keys`) di samping
+  `spinel-work`. Hanya program colliding, rasio N = 800 / N = 400:
+  `qvc` sehat 192.493 -> 384.893 = **2,00x**; bug lama (mutasi 1 dan 3) 1.262.938 ->
+  4.605.814 = **3,65x**; ambang 2,2 memisahkan dengan margin di kedua sisi. `eck` 2,00x di
+  semua kondisi. Tanpa baseline distinct dan tanpa lantai 1 M. Colliding sehat linear
+  tepat: 2,00x di setiap penggandaan N = 100 .. 3200 (`qvc` = sekitar 481*N).
+- Usul tes pengganti (belum ditulis ke Makefile, belum dijalankan lewat `make scale-test`):
+  baca baris `spinel-work-qvc: <n>` di `sw`, hitung `qb / qa` untuk "400 colliding" dan
+  "800 colliding" terhadap `CONST_COLLISIONS_LIMIT` 2,2, buang pengurangan distinct dan
+  lantai 1 M. Perubahan Makefile sekitar 10 baris, ditambah 14 baris di `analyze.c` dan
+  `main.c`.
+- **Pengamatan sampingan (belum diselidiki akarnya):** pass yang sama pada program
+  DISTINCT yang sehat kuadratik: `qvc` 50.889 / 141.722 / 443.395 / 1.526.758 / 5.613.435 /
+  21.466.767 untuk N = 100 .. 3200 (rasio 2,78 -> 3,82x), sekitar `308*N + 2,0*N^2`. Mutasi 2
+  menambahnya sedikit (perbandingan pasangan, +0,08 M di N = 800). Dugaan (BELUM diuji):
+  tiap tulisan nonkolisi diperiksa terhadap semua tulisan kelas (`qc_leaf_elsewhere`).
+  Kecil dalam angka mutlak (1,5 M dari 270 M di N = 800, sekitar 0,6%) dan program nyata
+  jarang punya ribuan kelas dengan konstanta masing-masing, jadi prioritas rendah; tetapi
+  ini keluarga program yang SAMA dengan baseline tes lama.
+- Yang TIDAK dijelaskan: celah total -8,1 M di N = 800 hanya sekitar 1,1 M berasal dari
+  `qvc` (colliding 0,38 M, distinct 1,53 M); sisa sekitar 7 M ada di pass lain yang lebih
+  murah untuk program colliding. Belum diselidiki pass mana.
+- Berikutnya (keputusan user): ajukan ke upstream sebagai issue berisi tabel mutasi di
+  atas dan patch pengukuran (tes ini wilayah matz), atau biarkan sebagai catatan. Worktree
+  `~/apps/me/gems/spinel-k040` menyimpan `build/spinel-work` dan mutasi; hapus bila tidak
+  jadi (`git worktree remove --force ../spinel-k040`).
 

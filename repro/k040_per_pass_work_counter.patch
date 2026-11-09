@@ -1,0 +1,48 @@
+--- a/src/analyze.c	2026-11-10 00:51:33
++++ b/src/analyze.c	2026-11-10 00:51:33
+@@ -6237,6 +6237,9 @@
+   const char *nm = nt_str(nt, node, "name");
+   if (nm && !nt_str(nt, node, "qc_orig_name")) nt_node_set_str((NodeTable *)nt, node, "qc_orig_name", nm);
+ }
++#ifdef SP_WORK_COUNT
++unsigned long long g_pass_qvc, g_pass_eck;   /* work inside the two constant passes (make scale-test) */
++#endif
+ static void qc_rename_read(const NodeTable *nt, int node, int w, const char *qn, int keep) {
+   (void)w;
+   if (keep) qc_keep_orig_name(nt, node);
+@@ -6888,7 +6891,11 @@
+   const NodeTable *nt = c->nt;
+   QCWrite *ws = NULL; int wn = 0, wcap = 0;
+   char path[QC_MAXDEPTH][64];
++#ifdef SP_WORK_COUNT
++  { unsigned long long w0 = g_nt_work; qc_value_collisions(c); g_pass_qvc += g_nt_work - w0; }
++#else
+   qc_value_collisions(c);
++#endif
+   qc_refuse_conditional_builder(c);
+   qc_resolve_headers(c);
+   /* Headers ask only about native_struct declarations: collected once here,
+@@ -49211,7 +49218,11 @@
+   host_end(c, &hs);
+   lower_finish(c, &lc);   /* SPINEL_LOWER_CHECK: the report, and no C */
+   prog_refuse_loads(c);
++#ifdef SP_WORK_COUNT
++  { unsigned long long w0 = g_nt_work; elab_const_keys(c); g_pass_eck += g_nt_work - w0; }
++#else
+   elab_const_keys(c);
++#endif
+   if (g_dump_load_record) { elab_dump(c, stdout); exit(0); }   /* the load phase's points, as the walk leaves them */
+   AN_STEP_V("expand_static_splat_args", expand_static_splat_args(c, 0, c->nt->count));
+   AN_STEP_V("register_singleton_defs", register_singleton_defs(c));   /* def CONST.m / def x.m -> synthesized subclass */
+--- a/src/main.c	2026-11-10 00:51:33
++++ b/src/main.c	2026-11-10 00:51:33
+@@ -628,7 +628,8 @@
+ }
+ 
+ #ifdef SP_WORK_COUNT
+-static void work_report(void) { fprintf(stderr, "spinel-work: %llu\n", g_nt_work); }
++extern unsigned long long g_pass_qvc, g_pass_eck;
++static void work_report(void) { fprintf(stderr, "spinel-work: %llu\nspinel-work-qvc: %llu\nspinel-work-eck: %llu\n", g_nt_work, g_pass_qvc, g_pass_eck); }
+ #endif
+ 
+ /* The runtime archive a program links. Thread/Mutex/Queue/... take the
