@@ -1,5 +1,15 @@
 # Katalog batas AOT
 
+**Bump 2026-11-09**: user menjalankan `make install` (tanpa `sudo`) dari
+`origin/master` `719eae492` (1277 commit di depan `477dd5cbc`, termasuk
+#11016 dan #11419). Compiler terpasang sekarang
+`2026.10.25+3775 (719eae492)`, naik dari `+2498 (477dd5cbc)`. Diverifikasi:
+`find /usr/local/lib/spinel -type f ! -perm -004` kosong; `make test` kilau
+**28/28 lulus** (16/16 framework, 8/8 tool, 4/4 examples/blog), exit 0, tanpa
+tes `(cached)`, tanpa regresi. Sapuan `yield-sweep` pada build yang sama:
+177 OK / 56 MISMATCH / 25 CC_FAIL / 0 RUBY_ERR, tanpa nama baru (lihat K-037:
+push-family berargumen by design).
+
 **Bump 2026-11-05** (~02:25 WIB): user menjalankan `make install` (tanpa
 `sudo`, setelah `sudo chown -R` atas `/usr/local/lib/spinel`) dari
 `origin/master` `477dd5cbc` (termasuk matz/spinel#10974 -- `push`/`append`/
@@ -42,8 +52,9 @@ kilau diuji ulang dengan compiler terpasang baru ini: **28/28 lulus** (16/16
 framework -- bertambah dari 13 sebelumnya, 8/8 tool, 4/4 examples/blog), tanpa
 regresi.
 
-Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.10.25+2498 (477dd5cbc)`
-sejak 2026-11-05 (`make install`, lihat bump di atas). Riwayat versi sebelumnya:
+Compiler: **spinel terpasang** (`/usr/local/bin/spinel`) `2026.10.25+3775 (719eae492)`
+sejak 2026-11-09 (`make install`, lihat bump di atas). Riwayat versi sebelumnya:
+`2026.10.25+2498 (477dd5cbc)` (2026-11-05),
 `2026.10.25+2306 (60ab41731)` (2026-11-04), `2026.10.25+917 (1c98820c4)`
 sejak 2026-10-28 (`sudo make install`, dari tag `2026.09.12+10567 (3e3653a55)`).
 Riwayat versi sebelumnya:
@@ -1664,6 +1675,24 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     (`u { {"a" => 1} }` -> `0`). Verifikasi: repro `tools/yield-sweep`
     p0098 cocok CRuby; `.nil?` pada hasil yang sama juga cocok.
   - Repro minimal: `def w; v = yield.find_index(2); p v; end; w { [3,1,2] }; w { {a: 1} }`.
+- **Re-verifikasi 2026-11-09 (spinel master `719eae492`, build lokal tanpa install):**
+  sapuan penuh 258 probe -> **177 OK, 56 MISMATCH, 25 CC_FAIL, 0 RUBY_ERR**
+  (K-036: 171/56/31), jadi 6 probe CC_FAIL pulih. 25 CC_FAIL sisa seluruhnya
+  kategori yang sudah dicatat: 12 push-family berargumen (`<<`, `append`,
+  `fill`, `insert`, `prepend`, `push`, `unshift`), 9 bang-method tanpa blok,
+  `end_with?`/`start_with?` (Symbol), `lazy`, `singleton_class`. Tidak ada
+  nama baru.
+- **Push-family berargumen = BY DESIGN, bukan bug.** `docs/limitations.md`
+  "A typed array holds one kind of element": Array yang semua elemen
+  terlihatnya String dikompilasi sebagai `StrArray`; push nilai kelas lain
+  yang terlihat saat compile ditolak dengan diagnostik bernama (dan di
+  run-time jadi `TypeError`), bukan dikoersi. Pengecualiannya hanya store
+  yang compiler lihat dua sisinya (`a << "x"` pada `Array.new(0, 0)`).
+  Program `w { [3,1] }; w { ["b"] }` dengan `v.push(2)` di dalam `w`
+  menghasilkan TypeError di run-time, CRuby tidak. Jangan investasi di
+  widening elemen-array global (risiko melebar ke semua Array literal);
+  workaround di sisi kilau: Array heterogen eksplisit / hindari push
+  lintas-kelas pada receiver `yield`.
 - Argumen push-family (`push(2)`, `insert`, `<<`, dst): **BELUM diperbaiki**,
   masih di K-037 bagian atas (diagnostik refusal `codegen_call_array.c`, root
   cause elemen-array whole-program). Kandidat sesi mendatang kalau user mau
