@@ -1,0 +1,61 @@
+--- a/src/node_table.c	2026-11-10 01:29:10
++++ b/src/node_table.c	2026-11-10 01:29:10
+@@ -171,7 +171,32 @@
+ 
+ void nt_track_origins(NodeTable *nt) { nt->orig_lo = nt->count > 0 ? nt->count : 1; }
+ 
++#ifdef SP_WORK_COUNT
++/* Work by pass (SPINEL_WORK_PASSES=1 prints it at exit): the units since the last
++   switch go to the pass being left, so a nested pass takes its own work and the
++   pass around it keeps the rest. */
++static struct { const char *name; unsigned long long w; } g_pw[512];
++static int g_npw;
++static unsigned long long g_pw_mark;
++static const NodeTable *g_pw_nt;
++static void nt_work_attr(const char *cur) {
++  unsigned long long d = g_nt_work - g_pw_mark;
++  g_pw_mark = g_nt_work;
++  if (!d) return;
++  const char *nm = cur ? cur : "(outside)";
++  for (int i = 0; i < g_npw; i++) if (!strcmp(g_pw[i].name, nm)) { g_pw[i].w += d; return; }
++  if (g_npw < 512) { g_pw[g_npw].name = nm; g_pw[g_npw].w = d; g_npw++; }
++}
++void nt_work_passes_print(void) {
++  nt_work_attr(g_pw_nt ? g_pw_nt->pass : NULL);
++  for (int i = 0; i < g_npw; i++) fprintf(stderr, "spinel-work-pass: %llu %s\n", g_pw[i].w, g_pw[i].name);
++}
++#endif
+ const char *nt_set_pass(NodeTable *nt, const char *pass) {
++#ifdef SP_WORK_COUNT
++  g_pw_nt = nt;
++  nt_work_attr(nt->pass);
++#endif
+   const char *was = nt->pass;
+   nt->pass = pass;
+   return was;
+--- a/src/node_table.h	2026-11-10 01:29:10
++++ b/src/node_table.h	2026-11-10 01:29:10
+@@ -312,6 +312,9 @@
+ int nt_clone_source(const NodeTable *nt, int id);
+ void nt_track_origins(NodeTable *nt);   /* from the nodes appended next on */
+ const char *nt_set_pass(NodeTable *nt, const char *pass);   /* the one before */
++#ifdef SP_WORK_COUNT
++void nt_work_passes_print(void);   /* SPINEL_WORK_PASSES=1: work per pass, at exit */
++#endif
+ void nt_subtree_blank(NodeTable *nt, int id);   /* every node of the subtree a NilNode */
+ void nt_swap_nodes(NodeTable *nt, int a, int b);
+ /* Copy the subtree at root of src into dst; the new root's id, or -1. */
+--- a/src/main.c	2026-11-10 01:29:10
++++ b/src/main.c	2026-11-10 01:29:10
+@@ -628,7 +628,10 @@
+ }
+ 
+ #ifdef SP_WORK_COUNT
+-static void work_report(void) { fprintf(stderr, "spinel-work: %llu\n", g_nt_work); }
++static void work_report(void) {
++  fprintf(stderr, "spinel-work: %llu\n", g_nt_work);
++  if (getenv("SPINEL_WORK_PASSES")) nt_work_passes_print();
++}
+ #endif
+ 
+ /* The runtime archive a program links. Thread/Mutex/Queue/... take the

@@ -1,0 +1,141 @@
+diff --git a/Makefile b/Makefile
+index 5b8df19ae..b7480eb7e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5854,13 +5854,20 @@ CLASS_MACROS_ONE_LIMIT ?= 1.2
+ # at each call it reads as K^2.
+ CLASS_MACRO_STATE_LIMIT ?= 2.2
+ # N classes that each write and read a constant SIZE
+-# (test/scale/const_collisions.sh), at N = 400 and 800, less the work of the
+-# same program with a name of its own for each class's constant: what the
+-# collisions cost. The load record keys each write and read after the walk
+-# from its entity (elab_const_keys), so it grows with N. qualify matched each
+-# read against every colliding write and compared every pair of writes:
+-# 0.84 M and 2.78 M units (3.30x); now none (below 1 M units, which the
+-# check takes as 1 M).
++# (test/scale/const_collisions.sh, "N colliding"), at N = 400 and 800: the work
++# inside the two passes that deal with the collisions, qc_value_collisions
++# (finds the colliding writes) and elab_const_keys (keys each write and read
++# after the walk), counted apart from the rest of the compile
++# (spinel-work-qvc and spinel-work-eck, g_pass_qvc in analyze.c). Each must
++# grow linearly, and does: 2.00x. qualify matched each read against every
++# colliding write and compared every pair of writes, which put back makes
++# qc_value_collisions 1.26 M and 4.61 M units (3.65x).
++# This replaces the work of the program less that of the same program with a
++# name of its own for each class's constant (2.78 M over it, 3.30x, when the
++# check was written). The other program's other passes grow faster than the
++# colliding one's, so the difference fell to -1.12 M and then to -8.10 M at
++# N = 800, and with the original code put back it read -4.20 M: under the
++# limit, so the check passed on the bug it was written for.
+ CONST_COLLISIONS_LIMIT ?= 2.2
+ # Module functions (test/scale/module_functions.sh), compiled to C at N=100
+ # and N=200, in both load models: N modules of ten functions after a bare
+@@ -5923,6 +5930,9 @@ scale-test: $(SPINEL_WORK)
+ 	sw () { o=$$($(SPINEL_WORK) "$$@" 2>&1); r=$$?; \
+ 	  if [ $$r -ne 0 ]; then echo "scale-test: FAIL (spinel-work exited $$r: $$*)" >&2; echo "$$o" | tail -3 >&2; return 1; fi; \
+ 	  echo "$$o" | sed -n 's/^spinel-work: //p'; }; \
++	swq () { o=$$($(SPINEL_WORK) "$$@" 2>&1); r=$$?; \
++	  if [ $$r -ne 0 ]; then echo "scale-test: FAIL (spinel-work exited $$r: $$*)" >&2; echo "$$o" | tail -3 >&2; return 1; fi; \
++	  echo "$$o" | sed -n 's/^spinel-work-qvc: //p;s/^spinel-work-eck: //p' | tr '\n' ' '; }; \
+ 	gen gen 100 a.rb; gen gen 400 b.rb; \
+ 	wa=$$(sw --emit-rbs -o "$$tmp/a.rbs" "$$tmp/a.rb") || { rm -rf "$$tmp"; exit 1; }; \
+ 	wb=$$(sw --emit-rbs -o "$$tmp/b.rbs" "$$tmp/b.rb") || { rm -rf "$$tmp"; exit 1; }; \
+@@ -5970,11 +5980,8 @@ scale-test: $(SPINEL_WORK)
+ 	oa=$$(sw --load-model=graph -c -o "$$tmp/o1.c" "$$tmp/o1.rb") || { rm -rf "$$tmp"; exit 1; }; \
+ 	ob=$$(sw --load-model=graph -c -o "$$tmp/o2.c" "$$tmp/o2.rb") || { rm -rf "$$tmp"; exit 1; }; \
+ 	gen const_collisions "400 colliding" cc4.rb; gen const_collisions "800 colliding" cc8.rb; \
+-	gen const_collisions "400 distinct" cd4.rb; gen const_collisions "800 distinct" cd8.rb; \
+-	cca=$$(sw -c -o "$$tmp/cc4.c" "$$tmp/cc4.rb") || { rm -rf "$$tmp"; exit 1; }; \
+-	ccb=$$(sw -c -o "$$tmp/cc8.c" "$$tmp/cc8.rb") || { rm -rf "$$tmp"; exit 1; }; \
+-	cda=$$(sw -c -o "$$tmp/cd4.c" "$$tmp/cd4.rb") || { rm -rf "$$tmp"; exit 1; }; \
+-	cdb=$$(sw -c -o "$$tmp/cd8.c" "$$tmp/cd8.rb") || { rm -rf "$$tmp"; exit 1; }; \
++	cca=$$(swq -c -o "$$tmp/cc4.c" "$$tmp/cc4.rb") || { rm -rf "$$tmp"; exit 1; }; \
++	ccb=$$(swq -c -o "$$tmp/cc8.c" "$$tmp/cc8.rb") || { rm -rf "$$tmp"; exit 1; }; \
+ 	gen class_macro_state 200 cs2.rb; gen class_macro_state 400 cs4.rb; \
+ 	csa=$$(sw --load-model=graph -c -o "$$tmp/cs2.c" "$$tmp/cs2.rb") || { rm -rf "$$tmp"; exit 1; }; \
+ 	csb=$$(sw --load-model=graph -c -o "$$tmp/cs4.c" "$$tmp/cs4.rb") || { rm -rf "$$tmp"; exit 1; }; \
+@@ -6073,9 +6080,15 @@ scale-test: $(SPINEL_WORK)
+ 	awk -v a="$$oa" -v b="$$ob" -v lim="$(CLASS_MACROS_ONE_LIMIT)" 'BEGIN { r = b / a; \
+ 	  printf "scale-test: one class of macro calls against its methods written out is %.2fx (limit %.2f)\n", r, lim; exit (r > lim) }' || \
+ 	  { echo "scale-test: FAIL (a row visited the whole class body per macro call: see lower_later and lower_span)"; exit 1; }; \
+-	awk -v ca="$$cca" -v cb="$$ccb" -v da="$$cda" -v db="$$cdb" -v lim="$(CONST_COLLISIONS_LIMIT)" 'BEGIN { a = ca - da; b = cb - db; \
+-	  r = b / (a < 1000000 ? 1000000 : a); \
+-	  printf "scale-test: colliding constant work at 2x the classes is %.2fx (%d, %d units; limit %.2f)\n", r, a, b, lim; exit (r > lim) }' || \
++	awk -v ca="$$cca" -v cb="$$ccb" -v lim="$(CONST_COLLISIONS_LIMIT)" 'BEGIN { split(ca, x, " "); split(cb, y, " "); \
++	  if (!(x[1] > 0 && y[1] > 0)) { print "scale-test: FAIL (spinel-work printed no spinel-work-qvc count for the colliding constants)"; exit 1 } \
++	  r = y[1] / x[1]; \
++	  printf "scale-test: colliding constant work in qc_value_collisions at 2x the classes is %.2fx (%d, %d units; limit %.2f)\n", r, x[1], y[1], lim; exit (r > lim) }' || \
++	  { echo "scale-test: FAIL (finding the colliding constants grew superlinearly: see qc_value_collisions, qc_collect_writes and qc_write_order)"; exit 1; }; \
++	awk -v ca="$$cca" -v cb="$$ccb" -v lim="$(CONST_COLLISIONS_LIMIT)" 'BEGIN { split(ca, x, " "); split(cb, y, " "); \
++	  if (!(x[2] > 0 && y[2] > 0)) { print "scale-test: FAIL (spinel-work printed no spinel-work-eck count for the colliding constants)"; exit 1 } \
++	  r = y[2] / x[2]; \
++	  printf "scale-test: colliding constant keying work at 2x the classes is %.2fx (%d, %d units; limit %.2f)\n", r, x[2], y[2], lim; exit (r > lim) }' || \
+ 	  { echo "scale-test: FAIL (keying the colliding constants grew superlinearly: see elab_const_keys and lr_const_cand)"; exit 1; }; \
+ 	awk -v a="$$csa" -v b="$$csb" -v lim="$(CLASS_MACRO_STATE_LIMIT)" 'BEGIN { r = b / a; \
+ 	  printf "scale-test: class-body macro state work at 2x the calls is %.2fx (limit %.2f)\n", r, lim; exit (r > lim) }' || \
+diff --git a/src/analyze.c b/src/analyze.c
+index 598f431aa..29708023f 100644
+--- a/src/analyze.c
++++ b/src/analyze.c
+@@ -6237,6 +6237,9 @@ static void qc_keep_orig_name(const NodeTable *nt, int node) {
+   const char *nm = nt_str(nt, node, "name");
+   if (nm && !nt_str(nt, node, "qc_orig_name")) nt_node_set_str((NodeTable *)nt, node, "qc_orig_name", nm);
+ }
++#ifdef SP_WORK_COUNT
++unsigned long long g_pass_qvc, g_pass_eck;   /* work inside the two constant passes (make scale-test) */
++#endif
+ static void qc_rename_read(const NodeTable *nt, int node, int w, const char *qn, int keep) {
+   (void)w;
+   if (keep) qc_keep_orig_name(nt, node);
+@@ -6888,7 +6891,11 @@ void qualify_colliding_classes(Compiler *c) {
+   const NodeTable *nt = c->nt;
+   QCWrite *ws = NULL; int wn = 0, wcap = 0;
+   char path[QC_MAXDEPTH][64];
++#ifdef SP_WORK_COUNT
++  { unsigned long long w0 = g_nt_work; qc_value_collisions(c); g_pass_qvc += g_nt_work - w0; }
++#else
+   qc_value_collisions(c);
++#endif
+   qc_refuse_conditional_builder(c);
+   qc_resolve_headers(c);
+   /* Headers ask only about native_struct declarations: collected once here,
+@@ -49268,7 +49275,11 @@ static void an_phase_desugar_register(Compiler *c) {
+   host_end(c, &hs);
+   lower_finish(c, &lc);   /* SPINEL_LOWER_CHECK: the report, and no C */
+   prog_refuse_loads(c);
++#ifdef SP_WORK_COUNT
++  { unsigned long long w0 = g_nt_work; elab_const_keys(c); g_pass_eck += g_nt_work - w0; }
++#else
+   elab_const_keys(c);
++#endif
+   if (g_dump_load_record) { elab_dump(c, stdout); exit(0); }   /* the load phase's points, as the walk leaves them */
+   AN_STEP_V("expand_static_splat_args", expand_static_splat_args(c, 0, c->nt->count));
+   AN_STEP_V("register_singleton_defs", register_singleton_defs(c));   /* def CONST.m / def x.m -> synthesized subclass */
+diff --git a/src/main.c b/src/main.c
+index 594a69086..18fc2073c 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -628,7 +628,8 @@ static int run_table_mode(const NodeTable *nt, int mode) {
+ }
+ 
+ #ifdef SP_WORK_COUNT
+-static void work_report(void) { fprintf(stderr, "spinel-work: %llu\n", g_nt_work); }
++extern unsigned long long g_pass_qvc, g_pass_eck;
++static void work_report(void) { fprintf(stderr, "spinel-work: %llu\nspinel-work-qvc: %llu\nspinel-work-eck: %llu\n", g_nt_work, g_pass_qvc, g_pass_eck); }
+ #endif
+ 
+ /* The runtime archive a program links. Thread/Mutex/Queue/... take the
+diff --git a/test/scale/const_collisions.sh b/test/scale/const_collisions.sh
+index e68152504..749d12bc6 100644
+--- a/test/scale/const_collisions.sh
++++ b/test/scale/const_collisions.sh
+@@ -6,6 +6,9 @@
+ # collision. The load record keys each write and each read after the walk
+ # (elab_const_keys) from the entity it names, so the difference grows with
+ # N; a read keyed by scanning every write of its name grows as N^2.
++# make scale-test measures the "colliding" program alone, through the work of the
++# two passes that handle the collisions; "distinct" is the same program without
++# them, for a comparison by hand.
+ [ $# -eq 1 ] && set -- $1   # "N mode" as one argument too
+ N=${1:-10}; MODE=${2:-colliding}
+ awk -v N="$N" -v MODE="$MODE" 'BEGIN {

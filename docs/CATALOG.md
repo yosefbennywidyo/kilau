@@ -1919,7 +1919,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   aritmetika (sekitar -4,2 M) terbukti. Bug lama menambah +1,07 M (N = 400) dan +4,22 M
   (N = 800) pada total, kuadratik (3,9x tiap penggandaan), selaras dengan komit asli.
 - **Prototipe opsi (A), penghitung per-pass, TERBUKTI memisahkan keduanya.** Dua hook
-  (14 baris, `repro/k040_per_pass_work_counter.patch`, bisa diterapkan ke master
+  (14 baris, `repro/k040/01_scale_test_per_pass.patch`, bisa diterapkan ke master
   `73bd5d78f` dan ke `c45adb7de`) mencetak `spinel-work-qvc` (kerja di dalam
   `qc_value_collisions`) dan `spinel-work-eck` (di dalam `elab_const_keys`) di samping
   `spinel-work`. Hanya program colliding, rasio N = 800 / N = 400:
@@ -1947,4 +1947,65 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   atas dan patch pengukuran (tes ini wilayah matz), atau biarkan sebagai catatan. Worktree
   `~/apps/me/gems/spinel-k040` menyimpan `build/spinel-work` dan mutasi; hapus bila tidak
   jadi (`git worktree remove --force ../spinel-k040`).
+- **Tes pengganti DITULIS dan DIVERIFIKASI, 2026-11-10 ~03:40 WIB** (belum di-push, belum ada issue/PR
+  upstream): `repro/k040/01_scale_test_per_pass.patch` (4 file, +44/-16: dua penghitung kerja di
+  `analyze.c`/`main.c`, pemeriksaan `scale-test` di `Makefile` atas program colliding SAJA, satu catatan di
+  `test/scale/const_collisions.sh`; pengurangan distinct dan lantai 1 M dibuang). Diverifikasi di pohon bersih
+  dari master `cfc17dbe2`: `spinel-work` terbangun dan seluruh `make scale-test` lulus (rc 0, 324 dtk), dengan
+  baris `colliding constant work in qc_value_collisions ... 2.00x (192493, 384893 units)` dan `colliding
+  constant keying work ... 2.00x (90021, 180192 units)`. Dengan bug lama disuntikkan (`K040_MUT=3`, patch
+  `03_mutation_harness.patch` di atas 01) tes GAGAL: `3.65x (1263738, 4607414 units; limit 2.20)`,
+  `scale-test: FAIL (...)`, `make: *** Error 1` (tes lama lulus di keduanya). Alat lain:
+  `02_work_by_pass.patch` (`SPINEL_WORK_PASSES=1` mencetak kerja per pass lewat hook `nt_set_pass`; jumlahnya
+  sama persis dengan total `spinel-work`). Lihat `repro/k040/README.md`.
+- **Akar celah -8,10 M di N = 800 (total, per pass).** `infer_write_types` -5,200 M (64%); `an_desugar_register`
+  -1,131 M; `compute_reachable` -0,964 M; `an_storage` -0,338 M; kerja di luar pass berlabel -0,251 M; sisanya
+  sekitar -0,22 M. Semua kuadratik di keluarga distinct (celah N = 400 -> 800 sekitar 4x). Dari ablasi bentuk
+  program: tanpa pembacaan `Ci::SIZE_i` di level atas, `infer_write_types` identik dan linear di kedua keluarga;
+  celah `an_desugar_register` ada bahkan tanpa pembacaan (varian `writes`: -0,62 M); `compute_reachable` dan
+  `an_storage` baru muncul bersama pembacaan. **Terbukti** (penghitung di `program_writes_const_in`):
+  `program_writes_const_in_tree` dipanggil 0 kali di colliding dan N kali di distinct, kerja 1.283.200 (N = 400)
+  dan 5.126.400 (N = 800) = tepat `8,0·N^2`; itu 98,6% celah `infer_write_types` dan 63% celah total. Dugaan
+  yang DIBANTAH penghitung: `comp_const_intern` (pencarian linear `lv_find`) identik di kedua keluarga (79.800
+  dan 319.600 = `N^2/2`, karena setelah `qualify` konstanta yang bertabrakan pun bernama unik per kelas), jadi
+  bukan sumber celah. Belum teridentifikasi: `an_desugar_register`, `compute_reachable`, `an_storage` (sampel
+  stack menunjuk `elab_header_entity` 131 vs 35 sampel dan `comp_const_intern` 81 vs 42, tidak dibuktikan).
+- Akar poin "kuadratik pada program distinct di pass tabrakan sendiri": lihat K-041 (a).
+
+## K-041: kerja kompilasi kuadratik untuk banyak konstanta TANPA tabrakan (pengamatan, prioritas rendah)
+
+- Lapisan: compiler (spinel `c45adb7de` .. `cfc17dbe2`). Ditemukan 2026-11-10 ~01:00-03:30 WIB saat menyelidiki K-040.
+  Bukan bug kebenaran; hanya kerja yang tumbuh `O(R·C)` pada program dengan ribuan kelas, tiap kelas
+  menulis/membaca konstanta bernama sendiri (keluarga "distinct" di `test/scale/const_collisions.sh`). Dalam
+  angka mutlak kecil (<= 2% dari seluruh kerja di N = 800). Semua angka: unit kerja `spinel-work`.
+- (a) **`qc_leaf_elsewhere` di `qc_value_collisions`** (`src/analyze.c`): untuk tiap tulisan konstanta
+  `depth > 0` yang TIDAK bertabrakan, memindai semua definisi kelas (`cws`, `cwn` = 2N: `class Ci` dan
+  `class Ci::In`) dengan `sp_streq`. Fase 4 (loop penyaring) = 20.632 / 81.265 / 322.538 / 1.285.101 /
+  5.130.178 untuk N = 100 .. 1600 = `2,0·N^2`. **Terbukti ablasi:** dengan `qc_leaf_elsewhere` dilewati fase 4
+  menjadi 10.178 di N = 1600 dan seluruh pass kembali linear (123 rb -> 247 rb -> 493 rb, 2,00x);
+  `qc_is_class_write` tak berperan (hanya membandingkan bilangan bulat, tak terhitung). Di program colliding
+  fase ini 0 karena `two[i]` benar dan sisa kondisi dilompati.
+- (b) **`program_writes_const_in_tree`** (`src/analyze_util.c`, dipanggil lewat `class_may_have_const` dari
+  `const_path_reaches_leaf_const` saat `infer_constant_path` membaca `Ck::NAME`): memindai semua definisi
+  kelas (`NT_FOREACH_KIND`, `sp_streq` per definisi) untuk tiap pasangan (kelas, konstanta); memo
+  (`g_pwc`) hanya menolong pasangan yang berulang, dan di sini semuanya unik: N panggilan x 8N unit = `8,0·N^2`
+  (5,13 M di N = 800). Sampel stack (`sample`) menunjuk `class_may_have_const` 363 dari ~900 sampel teratas.
+  **Terbukti penghitung** (0 panggilan di colliding karena `qualify` sudah mengganti nama konstanta yang
+  bertabrakan sehingga pembacaannya tak lewat jalur ini).
+- (c) `comp_const_intern` -> `lv_find`: pencarian linear atas tabel konstanta, `N^2/2` (319.600 di N = 800)
+  di KEDUA keluarga. Variabel global sudah punya indeks hash (`gvar_ix`, komentarnya menyebut alasannya);
+  konstanta belum. Kecil, dan bukan sumber celah K-040.
+- (d) Tidak diselidiki: bentuk probe (800 pernyataan `t += ...` berurutan di level atas) membuat pass lain
+  superlinear di KEDUA keluarga: `mark_nullable_int_locals` 3,49x per penggandaan (27,0 M di N = 800),
+  `an_desugar_register` 3,53x (21,4 M), `resolve_parents` 3,90x (5,3 M), `elab_program` 3,30x (5,7 M);
+  ini suku `~154·N^2` dalam model total K-040. Plus celah distinct di `an_desugar_register`,
+  `compute_reachable`, `an_storage` (lihat K-040).
+- Gagasan perbaikan (TIDAK dicoba; tiap satu harus dibuktikan C hasil emisi korpus identik): (a) urutkan `cws`
+  menurut nama sekali (`qc_value_collisions` sudah mengurutkan tulisan menurut nama, tekniknya sama dengan
+  `3f28a42c5`) lalu `bsearch`; (b) indeks definisi kelas menurut nama sekali per versi tree (cache `g_pwc` sudah
+  mengikuti `nt->version`), sehingga satu pertanyaan hanya melihat definisi bernama itu; (c) indeks hash untuk
+  `c->consts` seperti `gvar_ix`.
+- Mengapa tidak ada tes di `scale-test` untuk (a)/(b): tes seperti itu GAGAL di master hari ini (celah
+  `infer_write_types` 3,96x per penggandaan), jadi tidak bisa ditambahkan sebagai gerbang tanpa perbaikannya.
+- Status: dicatat saja; belum diajukan ke upstream; bukan bagian PR mana pun.
 

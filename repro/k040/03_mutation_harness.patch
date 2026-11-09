@@ -1,0 +1,43 @@
+--- a/src/analyze.c
++++ b/src/analyze.c
+@@ -6240,8 +6240,10 @@
+ #ifdef SP_WORK_COUNT
+ unsigned long long g_pass_qvc, g_pass_eck;   /* work inside the two constant passes (make scale-test) */
+ #endif
++static int qc_reads_kept;   /* test-only mutation, restored from before 3f28a42c5 */
+ static void qc_rename_read(const NodeTable *nt, int node, int w, const char *qn, int keep) {
+   (void)w;
++  if (qc_reads_kept) return;
+   if (keep) qc_keep_orig_name(nt, node);
+   nt_set_str((NodeTable *)nt, node, "name", qn);
+ }
+@@ -6540,6 +6542,14 @@
+   int any = 0;
+   for (int i = 0; i < wn; i++) {
+     int collide = two[i];
++    if (getenv("K040_MUT") && (atoi(getenv("K040_MUT")) & 2)) {   /* test-only mutation: the old pair loop */
++      collide = 0;
++      for (int j = 0; j < wn && !collide; j++) {
++        if (i == j || !sp_streq(ws[i].name, ws[j].name)) continue;
++        if (ws[i].depth != ws[j].depth) { collide = 1; break; }
++        for (int k = 0; k < ws[i].depth; k++) if (!sp_streq(ws[i].path[k], ws[j].path[k])) { collide = 1; break; }
++      }
++    }
+     if (!collide && ws[i].depth > 0 && builtin_class_id(ws[i].name) != 0) collide = 1;
+     /* ... and a nested constant named like a class defined elsewhere. A
+        class-defining write (`Point = Struct.new`) is the class pass's to
+@@ -6555,6 +6565,14 @@
+   qc_value_keys = calloc((size_t)qc_nvalue_keys + 1, sizeof *qc_value_keys);
+   if (!qc_value_keys) { fprintf(stderr, "spinel: out of memory\n"); exit(1); }
+   if (any) {
++    if (getenv("K040_MUT") && (atoi(getenv("K040_MUT")) & 1)) {   /* test-only mutation: the old reads walk */
++      char mods[QC_MAXDEPTH][64];
++      qc_build_reverse_flags(c);
++      qc_reads_kept = 1;
++      for (int r = 0; r < nt_nroots(nt); r++) qc_rewrite_reads(c, nt_root(nt, r), mods, 0, ws, wn);
++      qc_reads_kept = 0;
++      qc_free_reverse_flags();
++    } else
+     qc_value_reads(c, ws, wn);
+     for (int i = 0; i < wn; i++) {
+       if (ws[i].depth == 0) continue;
