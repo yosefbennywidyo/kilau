@@ -1642,19 +1642,30 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     sangat rendah; tidak diperbaiki.
   - 56 MISMATCH tidak dibuka ulang byte demi byte; tetap hipotesis noise K-034
     (Enumerator `inspect`, refleksi, K-032).
-- **Triase 56 MISMATCH, 2026-11-09 ~22:10 WIB** (probe dibuka, `ruby.out` vs `spn.out`
-  dibandingkan; sebelumnya hanya dicocokkan nama). Hasil:
-  - ~38: beda `inspect` Enumerator tanpa blok (`:each` vs `:chain`/`:find`/`:group_by`,
-    `[[:a, 1]]` vs `{a: 1}`, Generator). Noise, tak ada tindakan.
-  - 7: K-032 (literal `"abc"` beku): `clear`, `concat`, `prepend`, `reverse!`,
-    `slice!(1)`/`slice!(2)` -> FrozenError; `frozen?` pada String -> `true`.
-  - 4: refleksi di luar scope AOT (`private_methods`, `protected_methods`,
-    `public_methods`, `singleton_methods`).
-  - Celah kecil blokless/berargumen, bukan tindakan: `chain(2)`, `each_entry(2)`,
-    `detect(1,2)`, `find(1,2)`, `rfind(1,2)`, `permutation(1,2)` -> NoMethodError
-    (CRuby: Enumerator); `rfind` tanpa blok -> `nil` (CRuby: Enumerator);
-    `Symbol#to_proc` tanpa `&` -> NoMethodError.
-  - **1 bug NYATA: `yield.to_set` -> K-038** (LocalJumpError palsu).
+- **Triase 56 MISMATCH, 2026-11-09 ~22:10-22:40 WIB, per site** (tiap `w { ... }` dijadikan
+  program sendiri: 198 site; 34 OK, 164 DIFF; lalu 65 Enumerator dikonsumsi lewat
+  `take(3)`). Versi pertama triase ini hanya membandingkan baris awal output dan
+  melewatkan site setelah crash pertama; sebagian klaimnya terbukti keliru dan
+  dikoreksi di sini. 164 DIFF:
+  - 71 Enumerator vs Enumerator: beda `inspect` saja (`:each` vs `:find`/`:group_by`,
+    `[[:a, 1]]` vs `{a: 1}`, Generator). **Perilaku identik**: 62 dari 65 dikonsumsi
+    lewat `take(3)` cocok CRuby; 3 sisanya `find(2)`/`detect(2)`/`rfind(2)` di mana
+    CRuby malah error (`ifnone` bukan callable) dan spinel lebih longgar.
+  - 56 refleksi di luar scope AOT (`private_methods`, `protected_methods`,
+    `public_methods`, `singleton_methods`; NoMethodError di semua site).
+  - 25 Enumerator berargumen: `chain(n)`, `chunk`, `each_entry(n)`, `find`/`detect`
+    (2 arg), `rfind(1,2)`, `permutation(1,2)` -> NoMethodError (CRuby: Enumerator).
+    Tak berguna dalam praktik.
+  - 7 K-032 (literal `"abc"` beku): `clear`, `concat`, `prepend`, `reverse!`,
+    `slice!`, `frozen?`.
+  - 3 K-038 (`yield.to_set`, gagal di SETIAP site, termasuk Array saja) dan 2
+    `to_proc` yang hanya beda alamat/inspect Proc.
+  - **Dikoreksi**: `rfind` tanpa blok -> `nil`, dan `Symbol#to_proc` ->
+    NoMethodError, TIDAK terjadi per site; keduanya hanya di program campuran
+    (site Array Integer + Array String; site Symbol + Hash). Satu pola dengan
+    `Symbol#end_with?` tanpa argumen di atas: poly receiver kekurangan arm.
+  - 34 site OK: probe-nya MISMATCH hanya karena crash site lain atau program campuran.
+  - **Bug nyata: K-038 (`yield.to_set`) dan K-039 (`Array#rfind` pada poly array).**
 - **Status: SEBAGIAN diperbaiki** (klaster `push`/`append`/`unshift`/
   `rotate!` dan `find_index(2)` MERGED sebagai matz/spinel#10974; argumen
   push-family di K-037 ditutup sebagai by design), sisanya masih hipotesis noise yang belum diverifikasi ulang.
@@ -1751,3 +1762,22 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `to_set` (sekitar baris 800) menyangkut mekanisme sejenis. Uji ablasi dulu
   (ganti `to_set` dengan `Set.new(yield)`) sebelum membangun teori.
 - Status: belum diperbaiki.
+
+## K-039: `Array#rfind` pada receiver poly array -> NoMethodError run-time / C compile error mentah
+
+- Lapisan: compiler, `Array#rfind` (baru di Ruby 4.0) tak punya arm untuk `PolyArray`.
+- Ditemukan: 2026-11-09 ~22:35 WIB, triase per site 56 MISMATCH K-036, compiler
+  `2026.10.25+3775 (719eae492)`. Awalnya tampak sebagai "rfind tanpa blok -> nil";
+  dengan blok (pemakaian nyata) gejalanya lebih parah.
+- Gejala, dengan blok, receiver campuran (Array Integer di satu site, Array String
+  di site lain):
+  - lewat parameter biasa: kompilasi sukses, run-time `undefined method 'rfind' for
+    an instance of Array (NoMethodError)` (CRuby `2`, `"a"`);
+  - lewat receiver `yield`: C compile error mentah `initializing 'sp_oint' with an
+    expression of incompatible type 'const char *'`.
+  - Tanpa blok di program campuran: `nil` (CRuby: Enumerator).
+- Tidak terjadi untuk receiver bertipe tunggal, dan `find` pada receiver campuran
+  yang sama benar. Di spinel sudah ada `test/rfind_live_receiver.rb` (kasus bertipe).
+- Repro: `repro/k039_poly_array_rfind_nomethoderror.rb`.
+- Status: belum diperbaiki, akar belum dibedah. Dampak praktis rendah (`rfind` baru
+  di 4.0), tapi bentuk `yield.rfind { }` menghasilkan C error mentah, kategori terburuk.
