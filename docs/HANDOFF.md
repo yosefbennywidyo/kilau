@@ -2,6 +2,50 @@
 
 Entri terbaru di atas.
 
+## 2026-11-10 ~00:40 WIB -- K-036/K-037 ditutup, K-038 diperbaiki (PR matz/spinel#11451 terbuka), K-039 dan K-040 dicatat
+
+**Status**
+- **K-037 ditutup sebagai by design** (`e189314`): argumen push-family pada receiver `yield`
+  mengikuti aturan typed-array di `docs/limitations.md`; tak ada perbaikan compiler.
+- **K-036 ditriase habis** (`f104963`, `0aff834`, `ea24d3e`). 25 CC_FAIL semuanya diagnostik
+  bernama; 56 MISMATCH dibedah PER SITE (198 site), bukan dari baris awal output. Dua bug
+  nyata keluar dari situ: **K-038** dan **K-039**.
+- **K-038** (`yield` sebagai argumen konstruktor yang `initialize`-nya memakai
+  `block_given?`/`yield` -> LocalJumpError palsu, atau nilai salah diam-diam bila `new`
+  membawa blok): akar ditemukan (`b30cbdd`) dan DIPERBAIKI. **PR matz/spinel#11451 terbuka**
+  (2026-11-10 ~00:30 WIB; branch fork `yield-in-yielding-ctor-arg`, commit `46d001886` di atas
+  master `c45adb7de`). Gate fork 22/22 hijau di basis `8739cf73c` (run 42656773133), lalu
+  rebase sekali (keputusan user). Saat entri ini ditulis: CI clang dan CodeRabbit PR masih
+  berjalan.
+- **K-039** (`Array#rfind` pada poly array: NoMethodError run-time, atau C error mentah lewat
+  `yield`): dicatat, repro ada, BELUM dibedah. Sengaja menunggu #11451 ditinjau dulu.
+- **K-040** (`scale-test: colliding constant work -8.10x`): bukan bug fix kita; tes upstream
+  yang kehilangan kepekaan. Belum diajukan ke upstream.
+- Compiler kilau terpasang tetap `719eae492`; belum ada yang perlu di-install ulang.
+- Semua komit kilau sesi ini lokal (belum di-push).
+
+**Lanjut dari sini**
+1. Awasi #11451: temuan CodeRabbit (periksa tiap temuan terhadap kode sebelum diterapkan),
+   `gh pr view 11451 --repo matz/spinel --json mergeStateStatus` (konflik membuat CI tak
+   jalan sama sekali). Setelah merge: user menjalankan `git pull` + `make install` di
+   `~/apps/me/gems/spinel`; simpan branch `gate/yield-in-yielding-ctor-arg` di fork; hapus
+   worktree `~/apps/me/gems/spinel-k038` (isinya `build/spinel-work` dan salinan compiler
+   `bin/spinel-base`, `bin/spinel-fixed`, ratusan MB).
+2. K-039: bedah akar (arm `rfind` untuk `PolyArray` di `codegen_call_array.c`), test merah
+   dulu, lalu PR terpisah setelah #11451 beres.
+3. K-040: putuskan apakah diajukan ke upstream (usulan di entri katalog).
+4. Dari daftar lama yang tetap berlaku: uji jalur `tools/gate.rb linux --target/--shard`;
+   keputusan Fase F (`resources`, nama route, file route tunggal) dan Rencana 7.
+
+**Pelajaran sesi (versi lengkap di skill `spinel-notes`, bagian 2026-11-10)**
+- Triase dari baris awal output menyembunyikan site setelah crash pertama dan membuat
+  dua klaim salah ("`to_set` artefak lingkungan", "`rfind` tanpa blok -> nil"). Pecah
+  per site dan bandingkan tiap site dengan CRuby sebelum menamai sesuatu noise.
+- Uji ablasi satu detail menggugurkan dugaan awal K-038 (rewrite `to_set`) dalam satu
+  percobaan: `Set.new(yield)` gagal sama.
+- Angka yang sama di dua run gate yang KEDUANYA memuat fix tak membuktikan "bukan karena
+  fix"; bandingkan C hasil emisi atau baca riwayat komit tesnya.
+
 ## 2026-10-30 — K-034 dan K-035 tuntas (entri di bawah usang); bug baru `slice!` ditemukan+diperbaiki upstream; bug Regexp non-literal untuk sesi selanjutnya
 
 **Koreksi status entri di bawah (K-034, 2026-10-29/30):** "Belum"-nya sudah
