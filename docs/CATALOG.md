@@ -1800,8 +1800,19 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     infer-test` pass (pertama gagal pada pemeriksaan "seeded table", karena
     `spinel_rbs_extract` belum terbangun; setelah `make all` lulus, dan C kedua compiler
     identik untuk probe itu).
-  - Belum: `make gate` penuh lewat shard fork (`gate-shards-17job.yml`), push
-    ke fork, dan PR upstream. Ketiganya menunggu persetujuan user.
+  - Gate fork, 2026-11-09 15:47-16:30Z (run 42648142423, branch
+    `gate/yield-in-yielding-ctor-arg` = commit fix + commit workflow khusus fork, di atas
+    master `6490d1880`): **22/22 job sukses**. Jumlahnya dibaca, bukan hanya warna:
+    korpus 8 slice 10.539 tes 0 gagal 0 error; `bench` 74 pass; optcarrot checksum
+    59662; rubyboy OK; pkg-ondemand 38 pass; rubyspec language 670+670, string 858,
+    array 819, hash 297, range 210, matchdata 154, symbol 123, true/false 7+7 (tiap
+    suite "all expected-PASS examples still pass"); plan-check 0 refuse-wrong, 0
+    errors; scale-test mixin 2.43x (batas 2.55). Nama test baru tak tercetak di log
+    slice (hanya ringkasan), jadi keikutsertaannya disimpulkan dari glob `test/*.rb`.
+  - Branch di fork: `yield-in-yielding-ctor-arg` dan `gate/yield-in-yielding-ctor-arg`.
+  - Belum: PR upstream. Master maju 10 commit (`8739cf73c`) yang menyentuh
+    `codegen_call.c`, `codegen_iter.c`, `codegen_internal.h`; merge bersih, tetapi aturan
+    CONTRIBUTING (gabung master terbaru, lalu gate) berarti rebase + gate ulang sebelum PR.
 - Repro: `repro/k038_yield_receiver_to_set_localjumperror.rb`,
   `repro/k038b_ctor_yield_arg_with_block_wrong_value.rb`.
 - Status: DIPERBAIKI di branch lokal (lihat atas); belum di-push/PR.
