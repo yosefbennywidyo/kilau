@@ -1841,3 +1841,45 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Repro: `repro/k039_poly_array_rfind_nomethoderror.rb`.
 - Status: belum diperbaiki, akar belum dibedah. Dampak praktis rendah (`rfind` baru
   di 4.0), tapi bentuk `yield.rfind { }` menghasilkan C error mentah, kategori terburuk.
+
+## K-040: `scale-test: colliding constant work ... -8.10x` -- bukan bug; tes upstream itu kehilangan kepekaan
+
+- Lapisan: tes upstream (`Makefile` target `scale-test`, `test/scale/const_collisions.sh`),
+  bukan compiler dan bukan kilau. Tidak diajukan ke upstream; menunggu keputusan user.
+- Ditemukan: 2026-11-10 ~00:00-00:40 WIB, dari dua run gate fork (42648142423 dan
+  42656773133) yang sama-sama mencetak `scale-test: colliding constant work at 2x the
+  classes is -8.10x (-2043728, -8103369 units; limit 2.20)`. Pertanyaan awal: apakah fix
+  K-038 ikut andil. **Tidak**: keempat program probe tidak mendefinisikan `initialize`
+  (inliner konstruktor kembali sebelum berbuat apa pun), dan C hasil emisinya identik
+  antara compiler dasar dan compiler dengan fix.
+- Apa yang diukur: N kelas yang tiap-tiapnya menulis dan membaca konstanta `SIZE`
+  (N = 400 dan 800), "colliding" (semua `SIZE`) dikurangi "distinct" (`SIZE_i`): ongkos
+  tabrakan saja. Rumus: `a = cca - cda; b = ccb - cdb; r = b / max(a, 1_000_000)`;
+  lulus bila `r <= 2.2`. Angka negatif lulus sendirinya.
+- Angka mentah (`build/spinel-work`, spinel `c45adb7de`, unit kerja): colliding 106.394.310
+  (400) dan 262.238.490 (800); distinct 108.438.038 dan 270.341.859; jadi `a = -2.043.728`,
+  `b = -8.103.369`, `r = -8.10`. Cocok persis dengan log gate.
+- **Negatif bukan hal baru:** komit yang menambah tes (`3f28a42c5`, 2026-11-05) sendiri
+  mencatat "-0.15 M and -1.12 M units now". Lantai 1 juta unit memang ada untuk kasus
+  ini. Yang berubah: dalam ~234 komit analisis berikutnya selisihnya melebar sekitar
+  7x (-1,12 M -> -8,10 M di N = 800), karena program "distinct" makin mahal dibanding
+  "colliding".
+- **Akibatnya tes kehilangan kepekaan.** Bug yang dulu ditangkapnya menambah +2,78 M unit
+  di N = 800 atas baseline waktu itu (komit yang sama: 0,84 M dan 2,78 M, 3,30x), yakni
+  sekitar 3,9 M di atas keadaan terperbaiki (-1,12 M). Dengan b sekarang -8,10 M,
+  menghidupkan kembali bug itu memberi b sekitar -4,2 M: **masih lulus** (ambang
+  +2,2 M). Saat tes ditulis, bug yang sama memberi +2,78 M dan gagal. Ini aritmetika dari
+  angka di pesan komit dengan asumsi ongkos bug tak bergantung pada ukuran baseline;
+  BELUM diuji dengan menyuntikkan bug.
+- Pengamatan tak terverifikasi: kedua keluarga program tumbuh ~2,47x tiap kelas digandakan
+  (colliding 106,4 M -> 262,2 M; distinct 108,4 M -> 270,3 M), lebih dari 2,2x yang jadi
+  batas tes lain. Selisihnya menghilangkan ini dari pandangan; tak ada tes lain yang
+  tercatat memeriksa total.
+- Kalau mau diajukan upstream (keputusan user): usul yang paling kecil adalah mengukur
+  `ccb` terhadap `cca` sendiri (rasio kolom colliding saja, tanpa pengurangan) di samping
+  selisihnya, atau menggeser baseline distinct. Cek dulu pesan komit `3f28a42c5` dan
+  Refs #10787 supaya tidak menyalahi maksud aslinya.
+- Cara mengulang pengukuran (tanpa `make scale-test` penuh): `make -j2 build/spinel-work`,
+  lalu `sh test/scale/const_collisions.sh 800 colliding > cc.rb`, dan
+  `build/spinel-work -c -o x.c cc.rb`; angka ada di baris `spinel-work: <unit>`.
+
