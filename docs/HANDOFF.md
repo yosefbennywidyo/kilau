@@ -19,12 +19,16 @@ Entri terbaru di atas.
   apa adanya); CodeRabbit: tanpa temuan.
 - **K-039** (`Array#rfind` pada poly array: NoMethodError run-time, atau C error mentah lewat
   `yield`): dicatat, repro ada, BELUM dibedah. Sengaja menunggu #11451 ditinjau dulu.
-- **K-040** (`scale-test: colliding constant work -8.10x`): bukan bug fix kita; tes upstream
-  yang kehilangan kepekaan. **Terbukti lewat uji-mutasi** (2026-11-10 ~03:00 WIB): dengan bug
-  lama (`3f28a42c5`) disuntikkan kembali, tes mencetak -4,20x dan LULUS. Prototipe penghitung
-  per-pass (14 baris, `repro/k040_per_pass_work_counter.patch`) memisahkan sehat (2,00x) dari
-  bug (3,65x) pada program colliding saja. Belum diajukan ke upstream; worktree scratch
-  `~/apps/me/gems/spinel-k040` (branch lokal `k040-mutation`, berisi mutasi + build) masih ada.
+- **K-040** (`scale-test: colliding constant work -8.10x`): bukan bug fix kita; tes upstream yang buta.
+  Terbukti lewat uji-mutasi (bug lama dikembalikan -> -4,20x, LULUS). **Tes pengganti sudah ditulis dan
+  diverifikasi** di pohon bersih master `cfc17dbe2` (`repro/k040/01_scale_test_per_pass.patch`: penghitung
+  per-pass + pemeriksaan di `Makefile` atas program colliding saja): `make scale-test` penuh lulus (2,00x dan
+  2,00x), dan dengan bug lama (patch 03, `K040_MUT=3`) GAGAL di 3,65x. Akar celah -8,1 M dibedah per pass:
+  63% terbukti (`program_writes_const_in_tree`, `8,0·N^2`), sisanya (`an_desugar_register`,
+  `compute_reachable`, `an_storage`) kuadratik tetapi akarnya belum teridentifikasi.
+- **K-041** (baru): kerja kompilasi kuadratik untuk banyak konstanta tanpa tabrakan: `qc_leaf_elsewhere`
+  (`2,0·N^2`, terbukti ablasi), `program_writes_const_in_tree` (`8,0·N^2`, terbukti penghitung), `lv_find`
+  konstanta (`N^2/2`, kecil). Dicatat saja, prioritas rendah. Belum ada yang diajukan ke upstream.
 - Compiler kilau terpasang tetap `719eae492`; belum ada yang perlu di-install ulang.
 - Semua komit kilau sesi ini lokal (belum di-push).
 
@@ -37,8 +41,11 @@ Entri terbaru di atas.
    `bin/spinel-base`, `bin/spinel-fixed`, ratusan MB).
 2. K-039: bedah akar (arm `rfind` untuk `PolyArray` di `codegen_call_array.c`), test merah
    dulu, lalu PR terpisah setelah #11451 beres.
-3. K-040: putuskan apakah diajukan ke upstream sebagai issue (tabel mutasi + patch pengukuran;
-   tes ini wilayah matz), lalu hapus `~/apps/me/gems/spinel-k040` bila tidak jadi.
+3. K-040/K-041: putuskan apakah diajukan ke upstream. Usul: SATU issue berisi tabel mutasi (tes lama
+   lulus pada bug lama), patch 01 sebagai tes pengganti (siap `git apply`), dan K-041 (a)/(b) sebagai
+   pengamatan terpisah; tes ini wilayah matz. Worktree scratch (lokal, tidak di-push): `~/apps/me/gems/spinel-k040`
+   (instrumentasi + mutasi), `~/apps/me/gems/spinel-k040c` (pohon bersih yang diverifikasi); hapus keduanya bila
+   tidak jadi (`git worktree remove --force ../spinel-k040 ../spinel-k040c`; patch aman di `repro/k040/`).
 4. Dari daftar lama yang tetap berlaku: uji jalur `tools/gate.rb linux --target/--shard`;
    keputusan Fase F (`resources`, nama route, file route tunggal) dan Rencana 7.
 
