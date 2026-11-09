@@ -1882,4 +1882,25 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Cara mengulang pengukuran (tanpa `make scale-test` penuh): `make -j2 build/spinel-work`,
   lalu `sh test/scale/const_collisions.sh 800 colliding > cc.rb`, dan
   `build/spinel-work -c -o x.c cc.rb`; angka ada di baris `spinel-work: <unit>`.
+- **Pengukuran lanjutan 2026-11-10 ~01:10 WIB (`spinel-work`, spinel `c45adb7de`, unit
+  kerja, `-c`):** N = 100/200/400/800/1600, colliding 22,0 M / 47,1 M / 106,4 M / 262,2 M /
+  722,3 M; distinct 22,2 M / 47,6 M / 108,4 M / 270,3 M / 753,7 M. Rasio tiap penggandaan
+  naik terus (colliding 2,14 -> 2,26 -> 2,46 -> 2,75x). Cocok dengan `unit(N) = ~205 rb*N +
+  ~154*N^2` (colliding) dan `~205 rb*N + ~164*N^2` (distinct): prediksi 106,5 M / 262,1 M /
+  720,7 M lawan terukur 106,4 M / 262,2 M / 722,3 M. Jadi KEDUA program punya suku kuadrat
+  sendiri (54% dari unit di N = 1600), bukan hanya selisihnya. `--emit-rbs` (tanpa emisi C)
+  berperilaku sama (2,09 -> 2,58x), jadi suku kuadrat itu ada di analisis, bukan emisi.
+- Selisih colliding - distinct juga kuadratik: -0,15 M / -0,51 M / -2,04 M / -8,10 M /
+  -31,4 M, yaitu sekitar -12,7*N^2 (lantai 1 M unit tak menolong). Sinyal bug asli
+  (+3,9 M di N = 800, sekitar +6,1*N^2) berpangkat sama, tetapi koefisiennya lebih kecil
+  dari celah baseline (12,7). **Karena itu menaikkan N atau menurunkan batas tidak bisa
+  memulihkan kepekaan**: selisihnya tak akan pernah positif.
+- Opsi perbaikan (dari yang paling dianjurkan): (A) penghitung per-pass: baca `g_nt_work`
+  sebelum/sesudah pass konstanta (`elab_const_keys` dan separuh konstanta `qualify`),
+  cetak delta, dan bandingkan colliding saja di N = 400/800 sebagai rasio biasa (<= 2,2)
+  seperti tes lain, tanpa baseline distinct; (B) kecilkan probe (buang kelas `In` dan baca
+  `::SIZE` tingkat atas) supaya suku kuadrat bersama mengecil; (C) tolak "celah tak boleh
+  menyusut": rapuh, celahnya sudah bergeser 7x dalam 4 hari; (D) uji-mutasi: hidupkan kembali
+  bug-nya (balikkan `3f28a42c5` di scratch branch) dan pastikan tes merah, sebelum
+  mempercayai angka apa pun. D juga menguji aritmetika di atas. Belum ada yang dikerjakan.
 
