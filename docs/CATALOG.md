@@ -1553,7 +1553,9 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   - Refleksi (di luar scope AOT-typed receiver): `private_methods`,
     `protected_methods`, `public_methods`, `singleton_methods`,
     `singleton_class`
-  - Artefak lingkungan (butuh `require "set"`): `to_set`, `to_proc`
+  - ~~Artefak lingkungan (butuh `require "set"`): `to_set`, `to_proc`~~ **SALAH untuk
+    `to_set`, dikoreksi 2026-11-09: bug nyata, lihat K-038.** `to_proc` memang celah
+    kecil terpisah (`Symbol#to_proc` tanpa `&` -> NoMethodError).
   - Gejala K-032 (frozen-literal by design, bukan gap tabel baru):
     `frozen?`, `reverse!`, `slice!(2)`
   - Butuh blok, dipanggil tanpa blok (celah terpisah, bukan keluarga ini):
@@ -1640,6 +1642,19 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     sangat rendah; tidak diperbaiki.
   - 56 MISMATCH tidak dibuka ulang byte demi byte; tetap hipotesis noise K-034
     (Enumerator `inspect`, refleksi, K-032).
+- **Triase 56 MISMATCH, 2026-11-09 ~22:10 WIB** (probe dibuka, `ruby.out` vs `spn.out`
+  dibandingkan; sebelumnya hanya dicocokkan nama). Hasil:
+  - ~38: beda `inspect` Enumerator tanpa blok (`:each` vs `:chain`/`:find`/`:group_by`,
+    `[[:a, 1]]` vs `{a: 1}`, Generator). Noise, tak ada tindakan.
+  - 7: K-032 (literal `"abc"` beku): `clear`, `concat`, `prepend`, `reverse!`,
+    `slice!(1)`/`slice!(2)` -> FrozenError; `frozen?` pada String -> `true`.
+  - 4: refleksi di luar scope AOT (`private_methods`, `protected_methods`,
+    `public_methods`, `singleton_methods`).
+  - Celah kecil blokless/berargumen, bukan tindakan: `chain(2)`, `each_entry(2)`,
+    `detect(1,2)`, `find(1,2)`, `rfind(1,2)`, `permutation(1,2)` -> NoMethodError
+    (CRuby: Enumerator); `rfind` tanpa blok -> `nil` (CRuby: Enumerator);
+    `Symbol#to_proc` tanpa `&` -> NoMethodError.
+  - **1 bug NYATA: `yield.to_set` -> K-038** (LocalJumpError palsu).
 - **Status: SEBAGIAN diperbaiki** (klaster `push`/`append`/`unshift`/
   `rotate!` dan `find_index(2)` MERGED sebagai matz/spinel#10974; argumen
   push-family di K-037 ditutup sebagai by design), sisanya masih hipotesis noise yang belum diverifikasi ulang.
@@ -1719,3 +1734,20 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   typed array holds one kind of element"). Widening tipe elemen Array literal
   global sengaja tidak dikerjakan (risiko melebar ke semua Array literal, tanpa
   test RED/GREEN terisolasi). Workaround di sisi kilau tercatat di atas.
+
+## K-038: `yield.to_set` -> `LocalJumpError` ("no block given (yield)") palsu
+
+- Lapisan: compiler (rewrite `to_set` pada receiver `YieldNode`); akar belum dibedah.
+- Ditemukan: 2026-11-09 ~22:10 WIB, triase 56 MISMATCH K-036 (`p0242_to_set`),
+  compiler `2026.10.25+3775 (719eae492)`. Catatan K-036 lama menyebutnya "artefak
+  lingkungan, butuh `require \"set\"`" -- salah.
+- Gejala: `def b; p yield.to_set; end; b { [3, 1, 2] }` kompilasi sukses, jalan
+  menghasilkan `no block given (yield) (LocalJumpError)`. CRuby: `Set[3, 1, 2]`.
+  Tetap gagal dengan `require "set"`. `v = yield; v.to_set` dan `[3, 1, 2].to_set`
+  langsung: cocok CRuby. Jadi hanya bentuk `yield.to_set` berantai.
+- Repro: `repro/k038_yield_receiver_to_set_localjumperror.rb`.
+- Dugaan (BELUM diuji): rewrite `to_set` -> `Set.new(recv.to_a)` menyalin/memindahkan
+  node `yield` ke konteks tanpa blok. Catatan K-0xx tentang "Cacat B" rewrite
+  `to_set` (sekitar baris 800) menyangkut mekanisme sejenis. Uji ablasi dulu
+  (ganti `to_set` dengan `Set.new(yield)`) sebelum membangun teori.
+- Status: belum diperbaiki.
