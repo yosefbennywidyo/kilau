@@ -113,8 +113,12 @@ Status umum (2026-10-20 ~21:50 WIB):
 
 ## Di luar cakupan (belum dijadwalkan)
 
-- Hash tidak punya `cycle`, `each_cons`, `each_slice`, `find_index` di spinel,
-  sedangkan CRuby punya. Periksa apakah ini gap umum atau hanya di jalur yield.
+- ~~Hash tidak punya `cycle`, `each_cons`, `each_slice`, `find_index` di spinel.~~
+  **Tidak berlaku lagi (diverifikasi 2026-11-09, spinel `719eae492`).** Pada
+  Hash langsung dan pada receiver `yield` (site Hash dan site Array campuran),
+  keempatnya (`cycle.first(n)`, `each_cons(2)`, `each_slice(2)`, `find_index`
+  dengan argumen dan dengan blok) identik dengan CRuby 4.0. Celahnya tertutup
+  oleh T4 (#10272, #10283).
 - `public_methods` dan `private_methods` berbeda dari CRuby. Kemungkinan tidak
   relevan untuk program AOT, prioritas rendah.
 
@@ -132,13 +136,17 @@ Sudah selesai:
 - K-032 (`frozen?` pada literal): ditutup sebagai perilaku yang disengaja (`docs/limitations.md`).
 - Pembersihan branch lokal dan fork dari pekerjaan ini. Di fork hanya tersisa branch non-pekerjaan ini.
 
-Belum selesai:
-- T4 (Hash Enumerable tanpa blok pada site yield campuran). Selesai, lihat bagian T4.
-- Catatan K-032 di katalog masih memakai kata "nilai salah diam-diam". Seharusnya "perbedaan yang disengaja dengan default CRuby".
-- Kilau: 17 commit sebelumnya belum dipush ke origin (bukan dari pekerjaan ini). Keputusan push ada di user.
-- Kilau: `sudo make install` perlu dijalankan user agar compiler memuat perbaikan.
+Belum selesai: tidak ada (diperbarui 2026-11-09).
+- T4 (Hash Enumerable tanpa blok pada site yield campuran): selesai dan merged
+  (#10272, #10283), lihat bagian T4.
+- Catatan K-032 di katalog sudah dikoreksi: "perbedaan yang disengaja dengan
+  default CRuby", bukan nilai salah diam-diam.
+- Kilau sudah dipush ke origin (`origin/main` = `6e67280`, 2026-11-09).
+- Compiler terpasang sudah memuat semua perbaikan (`2026.10.25+3775
+  (719eae492)`, `make install` oleh user 2026-11-09; kilau `make test` 28/28).
 
-Langkah berikutnya yang disarankan: T4, mulai dari `cycle` pada Hash. Lihat catatan "Langkah yang disarankan" di T4.
+Rencana ini selesai. Lanjutan keluarga yield ada di katalog K-033 s.d. K-037
+(K-037: push-family berargumen by design, tidak diperbaiki).
 
 ## Log status
 - 2026-10-21 ~01:35 WIB: ringkasan posisi dan HANDOFF ditulis.
@@ -152,3 +160,5 @@ Langkah berikutnya yang disarankan: T4, mulai dari `cycle` pada Hash. Lihat cata
 - 2026-10-20 ~20:40 WIB: T1 selesai, bukan bug (perilaku sengaja, lihat docs/limitations.md). Catalog K-032 diperbarui. Catatan status K-030 yang sebelumnya salah masuk ke K-032 dipindah ke K-030.
 - 2026-10-26: T4 selesai (3 commit di spinel branch `t4-yield-hash-enum`). Doc diperbarui.
 - 2026-10-26: #10272 dan #10283 merged upstream. Label gate sudah tidak ada upstream (e9f552b9b).
+- 2026-11-09: seluruh rencana ditutup; bagian "Belum selesai" dikosongkan (T4 merged, kilau dipush, compiler terpasang `719eae492`).
+- 2026-11-09: "Di luar cakupan" diverifikasi ulang: Hash `cycle`/`each_cons`/`each_slice`/`find_index` sudah cocok CRuby.
