@@ -1810,12 +1810,18 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     errors; scale-test mixin 2.43x (batas 2.55). Nama test baru tak tercetak di log
     slice (hanya ringkasan), jadi keikutsertaannya disimpulkan dari glob `test/*.rb`.
   - Branch di fork: `yield-in-yielding-ctor-arg` dan `gate/yield-in-yielding-ctor-arg`.
-  - Belum: PR upstream. Master maju 10 commit (`8739cf73c`) yang menyentuh
-    `codegen_call.c`, `codegen_iter.c`, `codegen_internal.h`; merge bersih, tetapi aturan
-    CONTRIBUTING (gabung master terbaru, lalu gate) berarti rebase + gate ulang sebelum PR.
+  - Gate kedua (run 42656773133, 16:38-17:19Z, basis `8739cf73c`): 22/22 hijau, korpus
+    10.540 tes. Lalu rebase SEKALI ke master `c45adb7de` (keputusan user: tanpa gate
+    ulang penuh; satu-satunya commit master yang menyentuh `codegen_call.c` ada di
+    `emit_bivar_copy_wrap`, jauh dari inliner konstruktor). Di `c45adb7de`: merah di
+    master, hijau dengan fix (raise, promote, GC stress), C 701/702 + optcarrot identik.
+  - **PR upstream dibuka 2026-11-10: matz/spinel#11451** (branch fork
+    `yield-in-yielding-ctor-arg`, commit `46d001886`). Menunggu review/merge; setelah
+    merge: `git pull` + `make install` di spinel oleh user, lalu hapus workaround di kilau
+    bila ada, dan simpan branch `gate/yield-in-yielding-ctor-arg` di fork.
 - Repro: `repro/k038_yield_receiver_to_set_localjumperror.rb`,
   `repro/k038b_ctor_yield_arg_with_block_wrong_value.rb`.
-- Status: DIPERBAIKI di branch lokal (lihat atas); belum di-push/PR.
+- Status: DIPERBAIKI; PR matz/spinel#11451 terbuka (lihat atas).
 
 ## K-039: `Array#rfind` pada receiver poly array -> NoMethodError run-time / C compile error mentah
 
