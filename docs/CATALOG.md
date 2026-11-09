@@ -1778,16 +1778,33 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Dampak: `Set.new(yield)`, `yield.to_set`, `[yield].to_set`, dan konstruktor
   stdlib/paket lain berbentuk sama. Yang terjadi di praktik hanya bila `yield`
   ditulis langsung di argumen; mengikat ke variabel dulu adalah workaround.
-- Perbaikan yang masuk akal (BELUM dikerjakan): di loop binding argumen inliner
-  konstruktor, simpan lalu pulihkan konteks blok pemanggil (`g_block_id`,
-  `g_block_nren`, `g_block_param_name`, fallback yield/self, `g_ytgt_cur`) seperti
-  yang sudah dilakukan untuk `g_self`, lalu kembalikan ke konteks inline setelah
-  argumen. Inliner method biasa (`codegen_iter.c`, `yield_target_push`) mengelola
-  konteks serupa dan dapat jadi acuan. Perubahan di inti codegen: butuh test RED/GREEN
-  (kedua repro) dan gate penuh di fork sebelum PR upstream.
+- **Perbaikan, 2026-11-09 ~23:45 WIB (lokal, BELUM di-push, belum ada PR):** worktree
+  `~/apps/me/gems/spinel-k038`, branch `yield-in-yielding-ctor-arg` dari `origin/master`
+  `6490d1880`, commit `1f55ad25c`. Inliner konstruktor (`emit_ctor_yield_inline`)
+  memakai snapshot `InlineBlockCtx` yang sudah dipakai inliner method biasa: konteks
+  blok pemanggil dipulihkan selama argumen di-lower, konteks callee dikembalikan
+  sebelum body. Default parameter tetap di konteks callee (`def initialize(a, b =
+  yield(a))` tak berubah). `InlineBlockCtx` + save/restore pindah ke
+  `codegen_internal.h`. Test: `test/yield_in_yielding_initialize_argument.rb`
+  (+ `.expected` dari CRuby 4.0.6, `--enable-frozen-string-literal`).
+  - Bukti: merah di master (`LocalJumpError` pada panggilan pertama), hijau dengan
+    fix; hijau di mode raise dan promote lewat `make build/test-results/<n>.ok`, dan
+    di bawah `SPINEL_GC_STRESS=1`. Dua varian lain dari probe ikut benar: `Bar.new(yield,
+    k: 9) { }` (master diam-diam `[0, 9, 0]`, fix `[4, 9, 0]` = CRuby) dan
+    `Foo.new(yield) { |x| x }` dengan `initialize` yang hanya `block_given?` (master
+    `TypeError` palsu, fix `true`).
+  - Tanpa efek samping: C hasil emisi (`-S --no-line-map`) 627/628 tes korpus yang
+    punya `initialize` + `yield`/`block_given?` dan 74/74 benchmark IDENTIK dengan
+    master; hanya test baru yang berbeda.
+  - Lokal: `make reject-test` pass, `tools/refusals.sh` pass (820 records), `make
+    infer-test` pass (pertama gagal pada pemeriksaan "seeded table", karena
+    `spinel_rbs_extract` belum terbangun; setelah `make all` lulus, dan C kedua compiler
+    identik untuk probe itu).
+  - Belum: `make gate` penuh lewat shard fork (`gate-shards-17job.yml`), push
+    ke fork, dan PR upstream. Ketiganya menunggu persetujuan user.
 - Repro: `repro/k038_yield_receiver_to_set_localjumperror.rb`,
   `repro/k038b_ctor_yield_arg_with_block_wrong_value.rb`.
-- Status: akar ditemukan, belum diperbaiki.
+- Status: DIPERBAIKI di branch lokal (lihat atas); belum di-push/PR.
 
 ## K-039: `Array#rfind` pada receiver poly array -> NoMethodError run-time / C compile error mentah
 
