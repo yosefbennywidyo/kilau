@@ -1821,7 +1821,11 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     bila ada, dan simpan branch `gate/yield-in-yielding-ctor-arg` di fork.
 - Repro: `repro/k038_yield_receiver_to_set_localjumperror.rb`,
   `repro/k038b_ctor_yield_arg_with_block_wrong_value.rb`.
-- Status: DIPERBAIKI; PR matz/spinel#11451 terbuka (lihat atas).
+- Status: **TUNTAS, MERGED upstream** sebagai matz/spinel#11451 (2026-11-09 17:54Z, merge `036c65df9`,
+  "Merged into master in cycle 664 ... with its commit as written"; commit `46d001886` jadi leluhur
+  master tanpa diubah). Kedua repro kilau (`k038_*`, `k038b_*`) cocok CRuby dengan compiler ber-fix.
+  Compiler kilau terpasang (`719eae492`) BELUM memuatnya; setelah user `git pull` + `make install`,
+  jalankan ulang `repro/k038*.rb`.
 
 ## K-039: `Array#rfind` pada receiver poly array -> NoMethodError run-time / C compile error mentah
 

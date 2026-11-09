@@ -15,8 +15,8 @@ Entri terbaru di atas.
   membawa blok): akar ditemukan (`b30cbdd`) dan DIPERBAIKI. **PR matz/spinel#11451 terbuka**
   (2026-11-10 ~00:30 WIB; branch fork `yield-in-yielding-ctor-arg`, commit `46d001886` di atas
   master `c45adb7de`). Gate fork 22/22 hijau di basis `8739cf73c` (run 42656773133), lalu
-  rebase sekali (keputusan user). Saat entri ini ditulis: CI clang dan CodeRabbit PR masih
-  berjalan.
+  rebase sekali (keputusan user). **MERGED 2026-11-09 17:54Z** (`036c65df9`, cycle 664, commit
+  apa adanya); CodeRabbit: tanpa temuan.
 - **K-039** (`Array#rfind` pada poly array: NoMethodError run-time, atau C error mentah lewat
   `yield`): dicatat, repro ada, BELUM dibedah. Sengaja menunggu #11451 ditinjau dulu.
 - **K-040** (`scale-test: colliding constant work -8.10x`): bukan bug fix kita; tes upstream
