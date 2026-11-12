@@ -1848,7 +1848,13 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - **Status 2026-11-12 (diperbarui setelah merge): DIPERBAIKI UPSTREAM** di matz/spinel#11670 (merge `8335ea4e2`,
   2026-11-12 03:30Z), branch `rfind-poly-receiver` (`4b30ab489`). Gate sharded di fork 22/22 hijau (run 43133500712).
   Satu commit itu menutup KEDUA bentuk; `930d73bb9` yang disebut di catatan sebelumnya hanyalah amend perantara.
-  Belum diverifikasi ulang dengan compiler Kilau yang di-bump (lihat butir "Setelah merge" di bawah).
+  **Diverifikasi 2026-11-12 dengan compiler `d1878a068`**: repro (bentuk parameter), bentuk `yield`, dan kelas
+  sendiri beserta Array keluaran identik dengan CRuby. Rantai tindak lanjut yang juga MERGED: #11675 (kelas
+  program yang mendefinisikan `rfind` di samping Array), #11680 (regresi `rfind.each`), #11684 (`a&.rfind` dan
+  subkelas Array), #11685 (jalan hidup saat blok mengubah array), #11686 (slot blok nilable pada loop find
+  bertipe), #11688 + #11691 (`find(ifnone)` pada receiver poly, termasuk `false` dan fallback yang menjawab
+  `nil?`). **Batas yang tersisa:** `rfind(ifnone)` pada receiver poly, dan `rfind` tanpa blok pada receiver poly
+  (nil, CRuby: Enumerator).
   - **Akar (kedua bentuk masih terjadi di `494deaacb`), tiga lapis, semuanya perlu diperbaiki:**
     1. `desugar_enum_named_call` (`src/analyze.c`) menurunkan `rfind` hanya untuk receiver bertipe array dan
        keputusannya terpasang permanen. Receiver poly tak pernah diturunkan (NoMethodError). Untuk receiver
@@ -1869,8 +1875,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     branch `rfind-own-class-poly`, lihat di bawah); (b) `rfind` tanpa blok pada receiver poly masih `nil`
     (CRuby: Enumerator); (c) `find(ifnone)`/`rfind(ifnone)` pada receiver poly tidak didukung (keterbatasan
     keluarga `find` yang sudah ada, temuan CodeRabbit di #11670).
-  - **Setelah merge:** `git pull` + `make install` di repo spinel, lalu jalankan ulang
-    `repro/k039_poly_array_rfind_nomethoderror.rb` dan bentuk `yield`-nya.
+  - **Setelah merge:** selesai 2026-11-12 (lihat verifikasi di atas).
 
 ## K-040: `scale-test: colliding constant work ... -8.10x` -- bukan bug; tes upstream itu kehilangan kepekaan
 
