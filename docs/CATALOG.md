@@ -1824,8 +1824,8 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Status: **TUNTAS, MERGED upstream** sebagai matz/spinel#11451 (2026-11-09 17:54Z, merge `036c65df9`,
   "Merged into master in cycle 664 ... with its commit as written"; commit `46d001886` jadi leluhur
   master tanpa diubah). Kedua repro kilau (`k038_*`, `k038b_*`) cocok CRuby dengan compiler ber-fix.
-  Compiler kilau terpasang (`719eae492`) BELUM memuatnya; setelah user `git pull` + `make install`,
-  jalankan ulang `repro/k038*.rb`.
+  **Diverifikasi 2026-11-12 ~22:20 WIB dengan compiler terpasang `2026.10.25+4639 (d1878a068)`**: `k038_*` dan
+  `k038b_*` kompilasi sukses dan keluarannya identik dengan CRuby 4.0.6.
 
 ## K-039: `Array#rfind` pada receiver poly array -> NoMethodError run-time / C compile error mentah
 
@@ -1878,6 +1878,13 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   - **Setelah merge:** selesai 2026-11-12 (lihat verifikasi di atas).
 
 ## K-040: `scale-test: colliding constant work ... -8.10x` -- bukan bug; tes upstream itu kehilangan kepekaan
+
+- **Status 2026-11-12 (diukur ulang di master `d1878a068`): celah diperbaiki upstream oleh pihak lain.** matz/spinel#11481
+  (indeks pasangan konstanta `program_writes_const_in`), #11482 (`qualify` menjawab pertanyaan same-leaf dari tulisan yang
+  diurut sekali) dan #11483 (hash bacaan `compute_reachable`), ketiganya MERGED 2026-11-10 02:15Z oleh FrancescoK, tepat
+  saat investigasi ini berjalan; tak satu pun dari kita. Selisih colliding - distinct (`spinel-work -c`, unit kerja):
+  N=400 -128 rb, N=800 -629 rb, N=1600 -844 rb (sebelumnya -2,04 M / -8,10 M / -31,4 M). Celah kuadratik hilang; tes
+  `scale-test` kembali peka. Tak ada yang perlu diajukan. Entri di bawah adalah catatan sejarah.
 
 - Lapisan: tes upstream (`Makefile` target `scale-test`, `test/scale/const_collisions.sh`),
   bukan compiler dan bukan kilau. Tidak diajukan ke upstream; menunggu keputusan user.
@@ -2004,6 +2011,13 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Akar poin "kuadratik pada program distinct di pass tabrakan sendiri": lihat K-041 (a).
 
 ## K-041: kerja kompilasi kuadratik untuk banyak konstanta TANPA tabrakan (pengamatan, prioritas rendah)
+
+- **Status 2026-11-12 (diukur ulang di master `d1878a068`): (a), (b) dan celah `compute_reachable` DIPERBAIKI UPSTREAM** lewat
+  #11482, #11481 dan #11483 (lihat K-040; keduanya jalan dalam hitungan jam setelah catatan ini). Total kerja distinct:
+  N=400 125,3 M, N=800 272,6 M, N=1600 630,6 M (rasio 2,17x lalu 2,31x per penggandaan; dulu 2,5x-2,75x), selisih ke
+  colliding kini sub-1 M. **Tersisa:** (c) `comp_const_intern`/`lv_find` dan (d) pass superlinear pada 800 pernyataan
+  `t +=` berurutan di level atas di KEDUA keluarga; total masih sedikit di atas linear. Belum diselidiki ulang per pass.
+  Prioritas tetap rendah, bukan bug kebenaran, tidak diajukan.
 
 - Lapisan: compiler (spinel `c45adb7de` .. `cfc17dbe2`). Ditemukan 2026-11-10 ~01:00-03:30 WIB saat menyelidiki K-040.
   Bukan bug kebenaran; hanya kerja yang tumbuh `O(R·C)` pada program dengan ribuan kelas, tiap kelas
