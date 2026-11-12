@@ -1843,8 +1843,20 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Tidak terjadi untuk receiver bertipe tunggal, dan `find` pada receiver campuran
   yang sama benar. Di spinel sudah ada `test/rfind_live_receiver.rb` (kasus bertipe).
 - Repro: `repro/k039_poly_array_rfind_nomethoderror.rb`.
-- Status: belum diperbaiki, akar belum dibedah. Dampak praktis rendah (`rfind` baru
+- Status awal (2026-11-09): belum diperbaiki, akar belum dibedah. Dampak praktis rendah (`rfind` baru
   di 4.0), tapi bentuk `yield.rfind { }` menghasilkan C error mentah, kategori terburuk.
+- **Status 2026-11-12 ~08:10 WIB: SEDANG DIKERJAKAN**, branch lokal spinel `rfind-poly-receiver`
+  (di atas master `494deaacb`), belum di-push, belum ada PR.
+  - Akar bentuk parameter biasa: `desugar_enum_named_call` (`src/analyze.c`) menurunkan `rfind`
+    ke find mundur hanya bila receiver bertipe array; receiver `TY_POLY` mempertahankan nama
+    `rfind`, tak punya arm, lalu mati di run-time.
+  - Diperbaiki di commit lokal `930d73bb9` (bentuk dengan blok): receiver poly memakai
+    `reverse.find` lewat klon find generik, kecuali ada kelas program yang mendefinisikan `rfind`.
+    Tes: `test/rfind_poly_receiver.rb`.
+  - `yield.rfind { }` belum tertutup oleh commit itu (lowering diputuskan sebelum tipe yang
+    di-yield melebar). Ada satu baris belum di-commit (`NK_YieldNode` pada syarat `rrc_poly`)
+    yang mencobanya; belum diverifikasi.
+  - Bentuk tanpa blok (`nil`, CRuby: Enumerator) belum disentuh.
 
 ## K-040: `scale-test: colliding constant work ... -8.10x` -- bukan bug; tes upstream itu kehilangan kepekaan
 

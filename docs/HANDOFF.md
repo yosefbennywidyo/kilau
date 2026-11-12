@@ -2,6 +2,44 @@
 
 Entri terbaru di atas.
 
+## 2026-11-12 ~08:10 WIB -- K-039 sedang dikerjakan (branch lokal spinel `rfind-poly-receiver`); koreksi entri 2026-11-10
+
+**Status**
+- **K-039 SEDANG DIKERJAKAN di sesi lain**, di `~/apps/me/gems/spinel`, branch lokal
+  `rfind-poly-receiver` (1 commit di atas master `494deaacb`). Keadaan yang terbaca pada
+  2026-11-12 08:08 WIB:
+  - Commit `930d73bb9` (2026-11-12 08:05 WIB): bentuk **parameter biasa + blok** diperbaiki di
+    `desugar_enum_named_call` (`src/analyze.c`). Receiver `TY_POLY` dengan blok kini memakai
+    lowering `reverse.find` lewat klon find generik, asalkan tak ada kelas program yang
+    mendefinisikan `rfind` sendiri (`an_user_recv_defines_method`). Array bertipe tetap memakai
+    loop mundur in-place. Tes baru: `test/rfind_poly_receiver.rb` (+ `.expected`).
+  - Pesan commit itu sendiri menyatakan bentuk **`yield.rfind { }` BELUM tertutup**: lowering
+    diputuskan saat tipe yang di-yield masih satu jenis array, pelebaran sesudahnya meninggalkan
+    call berbentuk tipe sempit.
+  - Ada **1 baris belum di-commit** di `src/analyze.c` yang mencoba menutup bentuk itu
+    (`|| nt_kind(nt, rrc) == NK_YieldNode` pada syarat `rrc_poly`). Dari sesi pencatat ini baris
+    tersebut **belum diverifikasi**: tidak ada tes yang dijalankan terhadapnya.
+  - Branch belum di-push ke fork, belum ada PR, belum ada gate.
+  - Bentuk **tanpa blok** pada receiver campuran (`nil`, CRuby: Enumerator) tidak disentuh commit ini.
+- **Koreksi entri 2026-11-10 di bawah:**
+  - Compiler terpasang sekarang `2026.10.25+4410 (494deaacb)`, bukan `719eae492`.
+  - Worktree scratch `spinel-k038`, `spinel-k040`, `spinel-k040c` sudah tidak ada; patch K-040
+    tetap aman di `repro/k040/`.
+  - #11451 sudah MERGED (judul entri masih menulis "terbuka"); tak ada lagi yang diawasi.
+- K-040/K-041 tidak berubah: belum diajukan ke upstream, menunggu keputusan user.
+- Komit kilau masih lokal (16 di depan `origin/main` sebelum entri ini), belum di-push.
+
+**Lanjut dari sini**
+1. K-039 (milik sesi yang mengerjakannya; sesi lain jangan menyentuh `src/analyze.c` di branch itu):
+   tes merah dulu untuk `yield.rfind { }` (bentuk C error mentah), lalu putuskan apakah baris
+   `NK_YieldNode` cukup; jalankan `repro/k039_poly_array_rfind_nomethoderror.rb` dan `make test`;
+   commit; gate di fork; PR terpisah ke matz/spinel. Putuskan juga bentuk tanpa blok: diperbaiki
+   atau dicatat sebagai batasan.
+2. Setelah PR K-039 merged: user `git pull` + `make install`, perbarui status K-039 di `CATALOG.md`.
+3. K-040/K-041: keputusan ajukan ke upstream atau tidak (usul tetap: satu issue, patch 01 terlampir).
+4. Push komit kilau bila user setuju.
+5. Daftar lama: `tools/gate.rb linux --target/--shard`; keputusan Fase F; Rencana 7.
+
 ## 2026-11-10 ~00:40 WIB -- K-036/K-037 ditutup, K-038 diperbaiki (PR matz/spinel#11451 terbuka), K-039 dan K-040 dicatat
 
 **Status**
