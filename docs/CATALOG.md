@@ -1,5 +1,13 @@
 # Katalog batas AOT
 
+**Bump 2026-11-12** (~22:20 WIB): compiler terpasang sekarang
+`2026.10.25+4639 (d1878a068)`, naik dari `+4410 (494deaacb)` (termasuk delapan
+PR `find`/`rfind` K-039, #11670 s.d. #11691, dan #11481-#11483 untuk K-040/K-041).
+Diverifikasi: `make test` kilau **28/28 lulus** (16/16 framework, 8/8 tool,
+4/4 examples/blog), exit 0, tanpa tes `(cached)`, tanpa regresi. Repro
+`k038_*`, `k038b_*`, `k039_*` identik dengan CRuby 4.0.6. `make e2e` dan sapuan
+`yield-sweep` belum dijalankan ulang pada build ini.
+
 **Bump 2026-11-09**: user menjalankan `make install` (tanpa `sudo`) dari
 `origin/master` `719eae492` (1277 commit di depan `477dd5cbc`, termasuk
 #11016 dan #11419). Compiler terpasang sekarang

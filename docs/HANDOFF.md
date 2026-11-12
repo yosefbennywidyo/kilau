@@ -2,6 +2,51 @@
 
 Entri terbaru di atas.
 
+## 2026-11-12 ~22:25 WIB -- K-039 tuntas (8 PR merged), compiler naik ke `d1878a068`, K-040/K-041 diperbaiki upstream oleh pihak lain
+
+Entri 08:10 WIB di bawah usang: semua yang disebutnya "sedang dikerjakan" sudah selesai.
+
+**Status**
+- **K-039 TUNTAS.** Fix inti matz/spinel#11670 (merge `8335ea4e2`, 03:30Z) menutup bentuk parameter DAN bentuk
+  `yield`. Rantai tindak lanjut, semuanya MERGED 2026-11-12:
+  #11675 (kelas program ber-`rfind` sendiri di samping Array), #11680 (regresi `rfind.each`),
+  #11684 (`a&.rfind` dan subkelas Array), #11685 (jalan hidup saat blok mengubah array),
+  #11686 (slot blok nilable pada loop find bertipe), #11688 + #11691 (`find(ifnone)` pada receiver poly).
+  Akar tiga lapis dan batas sisa ada di `docs/CATALOG.md`, entri K-039.
+- **Batas K-039 yang tersisa (sengaja, tercatat di katalog):** `rfind(ifnone)` pada receiver poly, dan `rfind`
+  tanpa blok pada receiver poly (`nil`, CRuby: Enumerator).
+- **Compiler terpasang: `2026.10.25+4639 (d1878a068)`**, naik dari `+4410 (494deaacb)`. Diverifikasi 2026-11-12
+  ~22:20 WIB dengan compiler terpasang itu:
+  - `make test` kilau **28/28 lulus** (16/16 framework, 8/8 tool, 4/4 examples/blog), exit 0, tanpa tes `(cached)`.
+  - `repro/k038_*`, `repro/k038b_*`, `repro/k039_*`: kompilasi sukses, keluaran identik dengan CRuby 4.0.6.
+  - `make e2e` blog dan sapuan `yield-sweep` TIDAK dijalankan ulang pada compiler ini.
+- **K-040 dan K-041: diperbaiki upstream oleh pihak lain** (#11481, #11482, #11483, MERGED 2026-11-10 02:15Z, bukan
+  PR kita). Diukur ulang di `d1878a068`: celah kuadratik colliding vs distinct hilang, `scale-test` kembali peka.
+  **Tidak ada yang perlu diajukan**; keputusan "ajukan issue atau tidak" gugur. Sisa K-041 (c)/(d) (`lv_find`,
+  pass superlinear pada pernyataan `t +=` berurutan) prioritas rendah, belum diselidiki ulang. Patch
+  `repro/k040/` tinggal catatan sejarah.
+- **Repo spinel lokal:** `master` = `origin/master` = `d1878a068`, bersih, tanpa worktree tambahan. Branch fitur
+  lokal sudah dihapus; branch `gate/*` disimpan (tautan PR <-> run gate). Tidak ada PR terbuka atas nama user.
+- Komit kilau lokal, belum di-push (21 di depan `origin/main` sebelum entri ini).
+
+**Lanjut dari sini**
+1. Push komit kilau bila user setuju.
+2. Keputusan user: arah Kilau berikutnya. Irisan vertikal pertama (Rencana 1-5, 7) selesai dan belum ada rencana
+   tertulis sesudahnya. Pilihan yang dibahas: (a) tutup sebagai riset dan perbarui `FINDINGS.md` dengan K-018 s.d.
+   K-041; (b) irisan vertikal kedua dari non-goal spec §6.5 (kandidat: session/cookie + CSRF + autentikasi);
+   (c) perdalam yang ada (selisih S3 vs Rails, benchmark k6 dari mesin terpisah).
+3. Opsional setelah bump: jalankan ulang `make e2e` blog dan `yield-sweep` di `d1878a068` (angka terakhir sapuan:
+   177 OK / 56 MISMATCH / 25 CC_FAIL di `719eae492`; delapan fix `find`/`rfind` seharusnya menggesernya).
+4. Daftar lama yang tetap berlaku: `tools/gate.rb linux --target/--shard` (jalur Docker belum pernah dijalankan);
+   keputusan Fase F (`resources`, nama route, file route tunggal); `spin publish` untuk `spinel-sqlite` (Rencana 7).
+
+**Pelajaran sesi**
+- Dua sesi yang menulis ke repo yang sama saling menyapu perubahan: suntingan satu baris K-038 di `CATALOG.md` dari
+  sesi pencatat ikut masuk ke commit `7d55a63` milik sesi lain (`git add` atas berkas yang sama). Tidak ada yang
+  hilang, tetapi sebelum commit di repo yang dipakai bersama, periksa `git diff --cached --stat`.
+- Sebelum mengajukan temuan performa ke upstream, ukur ulang di master terbaru: celah K-040/K-041 ditutup pihak lain
+  dalam hitungan jam setelah dicatat.
+
 ## 2026-11-12 ~08:10 WIB -- K-039 sedang dikerjakan (branch lokal spinel `rfind-poly-receiver`); koreksi entri 2026-11-10
 
 **Status**
