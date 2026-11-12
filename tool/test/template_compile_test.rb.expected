@@ -21,3 +21,6 @@ ok buf is reserved
 ok a loop variable may not shadow an argument
 ok the else branch of a ternary is checked
 ok a symbol is not read as a variable
+ok a bitwise or read as a filter says how to write it
+ok a parenthesized | is Ruby's operator, not a filter
+ok a CRLF args line is read like an LF one

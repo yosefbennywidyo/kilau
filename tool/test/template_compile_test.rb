@@ -57,3 +57,8 @@ T.check("a loop variable may not shadow an argument") do
 end
 T.check("the else branch of a ternary is checked") { compile_error({ "a.html" => "{#- args: c, ok -#}\n{{ c ? ok : typo }}\n" }).include?("a.html:2: typo is not an argument") }
 T.check("a symbol is not read as a variable") { compile_error({ "a.html" => "{#- args: s -#}\n{{ s == :draft }}\n" }) == "" }
+T.check("a bitwise or read as a filter says how to write it") do
+  compile_error({ "a.html" => "{#- args: a, b -#}\n{{ a | b }}\n" }).include?("a.html:2: unknown filter b; the only filter is safe (for Ruby's | operator write {{ (a | b) }})")
+end
+T.check("a parenthesized | is Ruby's operator, not a filter") { compile_error({ "a.html" => "{#- args: a, b -#}\n{{ (a | b) }}\n" }) == "" }
+T.check("a CRLF args line is read like an LF one") { parse("a.html", "{#- args: post, flash -#}\r\n<p>x</p>\r\n").args == ["post", "flash"] }

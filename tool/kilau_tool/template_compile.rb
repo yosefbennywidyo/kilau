@@ -279,8 +279,10 @@ module KilauTool
 
       def output(token)
         filter = TemplateCompile.filter_of(token.text)
-        error_at(token.line, "unknown filter #{filter}; the only filter is safe") unless filter.empty? || FILTERS.include?(filter)
         code = TemplateCompile.code_of(token.text)
+        unless filter.empty? || FILTERS.include?(filter)
+          error_at(token.line, "unknown filter #{filter}; the only filter is safe (for Ruby's | operator write {{ (#{code} | #{filter}) }})")
+        end
         check_expr(code, token.line)
         mark(token.line)
         if filter == "safe"

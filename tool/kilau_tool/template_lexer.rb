@@ -49,6 +49,11 @@ module KilauTool
         else
           pieces << Token.new("text", line[pos, start - pos], number) if start > pos
           opener = line[start, 2]
+          # {{{ x }}} would lex as the expression "{ x" plus a stray "}" and
+          # compile to Ruby that does not parse.
+          if opener == "{{" && line[start + 2] == "{"
+            raise ArgumentError, "#{path}:#{number}: {{{ is not a delimiter; write {{ x | safe }} for unescaped output, or {{ {...} }} with a space for a Hash literal"
+          end
           closer = CLOSERS.fetch(opener)
           kind = KINDS.fetch(opener)
           stop = kind == "comment" ? line.index(closer, start + 2) : closer_index(line, closer, start + 2)

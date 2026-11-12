@@ -22,3 +22,10 @@ ok an empty tag is refused
 ok an empty body has no tokens
 ok }} inside a string literal does not close an expression
 ok %} inside a string literal does not close a tag
+2 text "a\r\n"
+3 tag "if x"
+4 text "b\r\n"
+5 tag "endif"
+--
+ok {{{ is refused, with the two things it can mean
+ok a Hash literal after a space is still an expression
