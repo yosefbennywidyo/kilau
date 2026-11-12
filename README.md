@@ -39,6 +39,16 @@ host, and the two stacks use different concurrency models: Kilau is one process
 with Spinel's M:N threads and no GVL, and Rails is eight Puma processes.
 `docs/FINDINGS.md` §7 lists all the caveats.
 
+The table is the September 2026 session (Spinel `38dc57dd`). Only the 100-row list
+was measured again, four times on 2026-11-12/13 with Spinel `d1878a068` and the same
+Rails. Absolute figures moved by 25-35% with the laptop's power state (AC against
+battery in Low Power Mode), so compare within a session only. In every one of the
+four sessions the two Kilau binaries were level, Kilau led Rails by 1.2× at 1
+connection, and trailed it at 16 and 64 connections (0.50-0.64× at 16). Against
+Rails, that page is slower than it was in September (1.6× at 1 connection then);
+whether the compiler or Kilau's own later changes caused it has not been separated.
+The other three scenarios have not been re-measured. See `docs/FINDINGS.md` §6.
+
 ## What is in the box
 
 | Path | What it is |
@@ -48,7 +58,7 @@ with Spinel's M:N threads and no GVL, and Rails is eight Puma processes.
 | `examples/blog/` | The example app: migrations, controllers, models, Tera-style templates in `assets/views/`, and two entry points: `blog_routes` (generated dispatcher, the one to deploy; decision D-023) and `blog` (route table, kept for development and as a fallback) |
 | `bench/` | The Rails comparison app, the benchmark harness, raw results and `RESULTS.md` |
 | `repro/` | Minimal reproductions of the Spinel limits and bugs catalogued in `docs/CATALOG.md` |
-| `docs/` | `CATALOG.md` (AOT limits, K-001 to K-017), `DECISIONS.md`, `FINDINGS.md`, `HANDOFF.md` |
+| `docs/` | `CATALOG.md` (AOT limits, K-001 to K-042), `DECISIONS.md`, `FINDINGS.md`, `HANDOFF.md` |
 
 Spinel supports no `eval`, `method_missing`, runtime `define_method` or
 reflection. Everything Rails does with runtime metaprogramming, Kilau does either
@@ -58,14 +68,16 @@ generators are themselves compiled by Spinel.
 ## Requirements
 
 - **Spinel**, built from [matz/spinel](https://github.com/matz/spinel). Kilau was
-  developed against `38dc57dd` and now runs on `ea9feecfe` (`2026.09.12+2826`).
+  developed against `38dc57dd` and was last verified on `d1878a068`
+  (`2026.10.25+4639`, 2026-11-12: tests, e2e and every `repro/` file).
   It needs at least `c6cff7c76` (matz/spinel#6151): Kilau's own tests call a
   yielding helper bare after `include Kilau::Testing`, which older compilers
   reject. Newer commits may change behaviour; see `docs/CATALOG.md` and
   `docs/HANDOFF.md`.
-  If sccache is installed, Spinel's build writes package objects as `0640`;
-  after `sudo make install`, run `sudo chmod a+r /usr/local/lib/spinel/packages/*/*.o`
-  (see K-009 in `docs/CATALOG.md`).
+  Spinel's `make install` now makes the installed packages readable itself; with a
+  compiler from before that fix and sccache installed, package objects land as
+  `0640` and need `sudo chmod a+r /usr/local/lib/spinel/packages/*/*.o`
+  (K-009 in `docs/CATALOG.md`).
   Install it so that `spinel` and `spin` are on `PATH`
   (`make deps && make && sudo make install` in the Spinel checkout).
 - A C toolchain and SQLite 3 (the system library on macOS).
@@ -109,15 +121,22 @@ ruby bench/summarize.rb bench/results/<stamp> > bench/RESULTS.md
 ```
 
 Close other heavy applications first. On a fanless laptop, heat changes the
-numbers, so the harness interleaves the apps and rests between cells.
+numbers, so the harness interleaves the apps and rests between cells. Keep the
+laptop on AC with Low Power Mode off for the whole session (`pmset -g batt`,
+`pmset -g | grep lowpowermode`): on battery in Low Power Mode every app measured
+25-35% slower. `SCENARIOS=s3 bench/run.sh` runs one scenario (about 19 minutes).
+A blog binary takes about 16 s to build on `d1878a068`.
 
 ## Status
 
 Research code. It is not production-ready: there is no TLS, CSRF protection,
 sessions or authentication, and several Spinel limits are worked around rather
-than fixed (see `docs/CATALOG.md`). The next steps are in `docs/HANDOFF.md`: re-test
-on the latest Spinel, route-quality work (plan 5), compiler fixes (plan 6), and a
-k6-based benchmark stage.
+than fixed (see `docs/CATALOG.md`). The first vertical slice is finished: the
+route-quality work (plan 5) is done except for optional sugar, and nearly every
+compiler limit the catalog records has been fixed upstream. The next steps are in
+`docs/HANDOFF.md` and `docs/FINDINGS.md` §8: finding why the list page lost ground
+to Rails, why builds became slower, and whether to start a second slice (sessions,
+CSRF, authentication).
 
 ## License
 

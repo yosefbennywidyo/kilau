@@ -10,6 +10,12 @@ Entri terbaru di atas.
 - Waktu build: `spin build blog` 16,30 / 16,36 / 16,31 dtk setelah mesin beristirahat. Bukan efek panas.
 - Tiga sesi S3 ulang (`bench/results/20261112-2331`, `-2349`, `20261113-0008`, akhiran `-ulang1..3`).
 
+**Dokumen yang ikut diperbarui (~00:45 WIB):** `README.md` (catatan pengukuran ulang S3, versi compiler
+terverifikasi, rentang katalog K-001..K-042, syarat AC untuk benchmark, status proyek), `docs/DECISIONS.md` (D-031:
+alasan performa D-023 tidak lagi terukur; keputusan tidak dibalik), skill `spinel-notes` dan `~/.claude/CLAUDE.md`
+(pelajaran lintas proyek). `bench/RESULTS.md` sengaja TIDAK diubah: itu keluaran `summarize.rb` untuk sesi penuh
+September; angka S3 baru ada di `FINDINGS.md` §6 dan direktori hasil mentahnya.
+
 **Koreksi atas entri 23:05 WIB di bawah**
 - Sesi 22:36 berjalan dengan AC; tiga sesi ulang di baterai dengan Low Power Mode (profil baterai mesin ini
   menyalakannya; pindah daya 22:52:59 menurut `pmset -g log`). Semua app turun 25-35%. Jadi "Rails lebih cepat
