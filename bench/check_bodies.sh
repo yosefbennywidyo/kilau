@@ -26,6 +26,13 @@ for app in kilau kilau-routes rails; do
 done
 for s in s1 s2 s3 s4 s5; do
   for app in kilau-routes rails; do
+    # S5 is Kilau's own HEAD contract (content-length of the GET body), not
+    # a benchmark scenario. Rails 8.1 on Puma answers HEAD with
+    # content-length: 0, so comparing it would stop every session.
+    if [ "$s" = s5 ] && [ "$app" = rails ]; then
+      echo "note s5 rails answers: $(tr '\n' ' ' < "$DIR/rails.s5")(not compared)"
+      continue
+    fi
     if cmp -s "$DIR/kilau.$s" "$DIR/$app.$s"; then
       echo "ok   $s kilau == $app ($(wc -c < "$DIR/kilau.$s" | tr -d ' ') bytes)"
     else
