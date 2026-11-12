@@ -2,6 +2,55 @@
 
 Entri terbaru di atas.
 
+## 2026-11-12 ~23:05 WIB -- verifikasi pasca-bump lengkap, minor lama dibereskan, FINDINGS diperbarui, S3 diukur ulang, K-042 dicatat
+
+Entri 22:25 WIB di bawah menyebut komit "belum di-push": itu sudah tidak berlaku, `main` sudah di-push sampai
+`62c506b`. Komit sesi ini (`abded71`, `cb4df20` dan sesudahnya) lokal, belum di-push.
+
+**Status** (semua pada compiler terpasang `2026.10.25+4639 (d1878a068)`)
+- **Verifikasi pasca-bump selesai.** `make test` 28/28, `make test-cruby` 28/28, `make e2e` blog 35/35 pada kedua
+  binary. Sapuan `yield-sweep`: 178 OK / 66 MISMATCH / 14 CC_FAIL, tidak ada bug baru (triase di `CATALOG.md` K-036;
+  66 MISMATCH dikelompokkan dari pola keluaran, tidak dibedah per site). Semua 35 `repro/*.rb` dijalankan ulang:
+  27 identik dengan CRuby, sisanya dijelaskan di `FINDINGS.md` §4.
+- **K-042 (baru, kecil):** `[1, 2].respond_to?(:to_set)` menjawab `false` bila program tidak me-`require "set"` dan
+  tidak memakai Set di tempat lain. Repro `repro/k042_*`. Belum dibisect, belum diajukan.
+- **Minor lama (Rencana 1-3) dibereskan:**
+  - `ROLLBACK` yang gagal tidak lagi menutupi error migrasi (`abded71`, tes merah lalu hijau di kedua engine).
+  - `{{{ x }}}` di template kini ditolak di barisnya (dulu menghasilkan Ruby yang tidak bisa di-parse); pesan
+    `{{ a | b }}` kini menunjukkan bentuk `{{ (a | b) }}` (`cb4df20`).
+  - CRLF di template: sudah benar tanpa perubahan, sekarang dikunci tes.
+  - TIDAK dikerjakan, dengan alasan: `Migrator#migrate` `.to_s` (semua `version` sudah String, tak ada kegagalan
+    yang terukur); cabang `Binds::NULL` di `connection_cruby.rb` (berkas itu sekarang di repo `spinel-sqlite`,
+    perilakunya benar karena `case` jatuh ke `nil`; mengubahnya butuh tag dan lock baru).
+- **`bench/check_bodies.sh` diperbaiki:** pemeriksaan S5 (HEAD) membandingkan Kilau dengan Rails, padahal Rails 8.1
+  + Puma menjawab HEAD dengan `content-length: 0`. Sejak ditambahkan di Rencana 5 Fase B pemeriksaan itu akan
+  menghentikan setiap sesi benchmark; sekarang S5 hanya dibandingkan antar-varian Kilau dan jawaban Rails dicetak.
+- **S3 diukur ulang** (`bench/results/20261112-2236-s3-d1878a068`, hanya S3): kilau 3.059 / kilau-routes 2.795 /
+  rails 5.228 req/s di c16. Dua varian Kilau kini setara (biaya K-012 di S3 hilang), plafon Kilau tetap ~3.000,
+  dan Rails terukur jauh lebih cepat daripada September tanpa perubahan versi (dugaan: mesin lebih dingin, belum
+  dibuktikan). Rincian dan batasannya di `FINDINGS.md` §6.
+- **Waktu build naik:** satu binary blog ~16,8 dtk (September: ~2,3 dtk) dan 1,9 MB (dulu 0,8 MB). Diukur tepat
+  setelah sesi benchmark; penyebab belum diselidiki.
+- **`docs/FINDINGS.md` diperbarui:** tabel §4 sampai K-042, keadaan 2026-11-12, §5/§6 dengan angka baru, §8 ditulis
+  ulang. `Time.parse` (K-001) dan YAML (K-002) kini identik dengan CRuby di repro (tanpa `--require-gate`).
+
+**Lanjut dari sini**
+1. Push komit sesi ini bila user setuju.
+2. Profil S3 (`sample` pada binary di bawah beban c16) sebelum menebak penyebab plafon ~3.000 req/s.
+3. Waktu build: ukur ulang di mesin dingin; bila tetap ~17 dtk, bisect kasar antar-versi compiler.
+4. Keputusan user: arah Kilau berikutnya (irisan vertikal kedua: session/cookie + CSRF + autentikasi), sisa Fase F,
+   `spin publish` `spinel-sqlite`, dan apakah K-042 diajukan ke upstream.
+5. Bila YAML dan `Time.parse` juga lolos di bawah `--require-gate`: pertimbangkan mencabut parser config buatan
+   sendiri dan waktu epoch (D-008 dan kawan-kawan). Uji dulu, jangan asumsi.
+
+**Pelajaran sesi**
+- Gerbang yang tidak pernah dijalankan pada jalur lengkapnya bisa salah sejak lahir: pemeriksaan S5 lolos review
+  Fase B karena saat itu hanya dijalankan terhadap binary Kilau.
+- Angka benchmark lintas-sesi di laptop tanpa kipas tidak bisa dibandingkan: Rails naik 36% tanpa perubahan apa pun.
+  Bandingkan hanya di dalam satu sesi, atau jalankan pembanding lama dan baru berselang-seling.
+- Menjalankan ulang SEMUA repro setelah bump menemukan K-042; tes upstream untuk kasus yang sama lolos karena
+  memuat `require "set"`. Ablasi satu baris menemukan syaratnya dalam dua percobaan.
+
 ## 2026-11-12 ~22:25 WIB -- K-039 tuntas (8 PR merged), compiler naik ke `d1878a068`, K-040/K-041 diperbaiki upstream oleh pihak lain
 
 Entri 08:10 WIB di bawah usang: semua yang disebutnya "sedang dikerjakan" sudah selesai.

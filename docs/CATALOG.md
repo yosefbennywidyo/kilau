@@ -5,8 +5,12 @@
 PR `find`/`rfind` K-039, #11670 s.d. #11691, dan #11481-#11483 untuk K-040/K-041).
 Diverifikasi: `make test` kilau **28/28 lulus** (16/16 framework, 8/8 tool,
 4/4 examples/blog), exit 0, tanpa tes `(cached)`, tanpa regresi. Repro
-`k038_*`, `k038b_*`, `k039_*` identik dengan CRuby 4.0.6. `make e2e` dan sapuan
-`yield-sweep` belum dijalankan ulang pada build ini.
+`k038_*`, `k038b_*`, `k039_*` identik dengan CRuby 4.0.6.
+**Tambahan ~22:30-23:00 WIB pada build yang sama:** `make e2e` blog 35/35 pada
+kedua binary; sapuan `yield-sweep` 178 OK / 66 MISMATCH / 14 CC_FAIL / 0 RUBY_ERR
+(triase di K-036); semua 35 `repro/*.rb` dijalankan ulang (27 identik, sisanya
+dijelaskan di `docs/FINDINGS.md` §4); satu temuan baru kecil, K-042; S3 diukur
+ulang (`bench/results/20261112-2236-s3-d1878a068`, `docs/FINDINGS.md` §6).
 
 **Bump 2026-11-09**: user menjalankan `make install` (tanpa `sudo`) dari
 `origin/master` `719eae492` (1277 commit di depan `477dd5cbc`, termasuk
@@ -1674,6 +1678,26 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     `Symbol#end_with?` tanpa argumen di atas: poly receiver kekurangan arm.
   - 34 site OK: probe-nya MISMATCH hanya karena crash site lain atau program campuran.
   - **Bug nyata: K-038 (`yield.to_set`) dan K-039 (`Array#rfind` pada poly array).**
+- **Sapuan ulang 2026-11-12 ~22:25 WIB** (compiler terpasang `d1878a068`, 258 probe):
+  **178 OK / 66 MISMATCH / 14 CC_FAIL / 0 RUBY_ERR** (sebelumnya 177 / 56 / 25).
+  - 14 CC_FAIL = 12 push-family berargumen (K-037, by design) + `lazy` +
+    `singleton_class`; ke-14 log-nya penolakan bernama, bukan C error.
+  - 11 probe pindah dari CC_FAIL ke MISMATCH: `map!`, `collect!`, `select!`, `filter!`,
+    `reject!`, `keep_if`, `delete_if`, `sort_by!`, `bsearch_index` tanpa blok, dan
+    `Symbol#end_with?`/`start_with?` tanpa argumen. Dulu ditolak saat compile; sekarang
+    lolos compile dan gagal saat jalan dengan `spinel: Array#<nama> is not supported
+    (NotImplementedError)`. Perubahan upstream, bukan dari PR kita: kesalahan pindah
+    dari waktu build ke waktu jalan.
+  - 1 probe pindah MISMATCH ke OK: `to_set` (K-038).
+  - 66 MISMATCH dikelompokkan dari pola keluaran spinel, TIDAK dibedah per site seperti
+    2026-11-09: 26 beda `inspect` Enumerator, 22 `NotImplementedError` (11 di atas +
+    refleksi + bentuk Enumerator berargumen), 10 NoMethodError (`chain`, `chunk`,
+    `each_entry`, `slice_after`/`slice_before`, `rfind(2)`, `Symbol#to_proc`), 6
+    FrozenError + `frozen?` (K-032), `public_methods` (kini menjawab, isi dan urutan
+    beda). Semua nama sudah ada di triase 2026-11-09; tidak ada nama baru.
+  - `rfind` tanpa blok pada site campuran kini menjawab Enumerator (dulu `nil`);
+    `inspect`-nya `[2, 1, 3]:each`, CRuby `[3, 1, 2]:rfind`.
+  - Kesimpulan: tidak ada bug baru dari sapuan ini.
 - **Status: SEBAGIAN diperbaiki** (klaster `push`/`append`/`unshift`/
   `rotate!` dan `find_index(2)` MERGED sebagai matz/spinel#10974; argumen
   push-family di K-037 ditutup sebagai by design), sisanya masih hipotesis noise yang belum diverifikasi ulang.
@@ -2062,3 +2086,22 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `infer_write_types` 3,96x per penggandaan), jadi tidak bisa ditambahkan sebagai gerbang tanpa perbaikannya.
 - Status: dicatat saja; belum diajukan ke upstream; bukan bagian PR mana pun.
 
+## K-042: `respond_to?(:to_set)` pada Array/Hash konkret menjawab `false` bila program tidak memakai Set di tempat lain
+
+- Lapisan: compiler, probe `respond_to?` statis untuk receiver konkret (keluarga K-026).
+- Ditemukan: 2026-11-12 ~22:50 WIB, saat menjalankan ulang semua `repro/*.rb` pada compiler
+  terpasang `2026.10.25+4639 (d1878a068)`: `repro/k026_*` tidak lagi identik dengan CRuby.
+- Yang terjadi: `p [1, 2].respond_to?(:to_set)` dan bentuk Hash mencetak `false` (CRuby 4.0.6:
+  `true`; Set adalah core di 4.0). Range menjawab `true`.
+- Syarat, ditemukan lewat ablasi satu detail: program TIDAK me-`require "set"` dan tidak
+  memakai Set di mana pun. Menambah salah satu dari `require "set"`, `Set.new([1])`, atau
+  `[3].to_set` di baris lain membuat jawabannya `true`. Tes upstream
+  `test/respond_to_static_to_set.rb` (dari #8821) memuat `require "set"`, jadi tidak
+  menangkap bentuk ini.
+- Tidak diketahui: apakah ini regresi sejak #8821 atau memang tidak pernah tertutup untuk
+  program tanpa `require`; belum dibisect dan akar di compiler belum dibaca.
+- Repro: `repro/k042_respond_to_to_set_without_set_use.rb` (CRuby `true true true`, spinel
+  `false false true`).
+- Klasifikasi: nilai salah diam-diam, dampak praktis sangat rendah (program yang bertanya
+  `respond_to?(:to_set)` tanpa pernah memakai Set).
+- Status: dicatat; belum diperbaiki; belum diajukan ke upstream.
