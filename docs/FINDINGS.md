@@ -134,9 +134,10 @@ jalan.
   lalu `spin build`. Kilau build dalam ~2,3 dtk per binary. Rails tidak punya langkah
   build. **Diukur ulang 2026-11-12 di `d1878a068`: ~16,8 dtk per binary** (dua kali
   berturut 16,77 dan 16,76 dtk; ~7,9 dtk di antaranya menghasilkan C), dan binary
-  1,9 MB (dulu 0,8 MB). Diukur tepat setelah sesi benchmark di mesin yang sama, jadi
-  angka absolutnya bisa terpengaruh panas; arah dan besarnya (sekitar 7×) tidak.
-  Penyebabnya belum diselidiki.
+  1,9 MB (dulu 0,8 MB). Diulang setelah mesin beristirahat 15 menit: `spin build blog`
+  16,30 / 16,36 / 16,31 dtk, jadi bukan efek panas. Pengukuran itu di baterai dengan
+  Low Power Mode, yang di benchmark memperlambat semuanya 25–35%; dengan AC belum
+  diukur. Kenaikannya tetap beberapa kali lipat. Penyebabnya belum diselidiki.
 - **Grammar sempit.** Template: delimiter wajib satu baris, dan cek variabel hanya
   identifier akar. `gen routes`: route satu baris dengan blok `{ }`. Pelanggaran
   menjadi error `file:baris`, bukan tebakan.
@@ -169,36 +170,54 @@ jalan.
   menunjukkan ekor latensi yang jauh lebih panjang (p99 ≈ 7× p50 di S1 c64; Kilau
   ≈ 1,2×).
 
-### Pengukuran ulang S3, 2026-11-12 (spinel `d1878a068`)
+### Pengukuran ulang S3, 2026-11-12/13 (spinel `d1878a068`)
 
-Sesi `bench/results/20261112-2236-s3-d1878a068`: hanya S3, prosedur sama (pemanasan
-10 dtk, 3 × 30 dtk, median), commit Kilau `cb4df20`. Rails, Puma, dan CRuby tidak
-berubah versinya.
+Empat sesi, hanya S3, prosedur sama (pemanasan 10 dtk, 3 × 30 dtk, median), Rails,
+Puma, dan CRuby tidak berubah versinya. Angka = req/s.
 
-| App | c1 req/s (p99) | c16 req/s (p99) | c64 req/s (p99) |
+| Sesi | Daya | kilau c1 / c16 / c64 | kilau-routes c1 / c16 / c64 | rails c1 / c16 / c64 |
+|---|---|---|---|---|
+| `20261112-2236` | AC | 1.970 / 3.059 / 2.966 | 1.962 / 2.795 / 2.959 | 1.615 / 5.228 / 3.660 |
+| `20261112-2331` (ulang 1) | baterai, Low Power Mode | 1.451 / 1.998 / 2.016 | 1.444 / 1.924 / 1.920 | 1.209 / 3.831 / 3.730 |
+| `20261112-2349` (ulang 2) | baterai, Low Power Mode | 1.466 / 1.999 / 1.743 | 1.445 / 1.976 / 2.045 | 1.192 / 3.102 / 4.066 |
+| `20261113-0008` (ulang 3) | baterai, Low Power Mode | 1.449 / 1.680 / 1.978 | 1.446 / 1.975 / 1.973 | 1.204 / 3.830 / 3.609 |
+
+Sesi pertama berjalan dengan charger terpasang; `pmset -g log` mencatat pindah ke
+baterai pada 22:52:59, saat sel terakhirnya (rails c64) masih berjalan. Profil baterai
+mesin ini menyalakan Low Power Mode, dan tiga sesi ulang berjalan di situ. Itu yang
+menurunkan semua app sekitar 25–35%, bukan panas seperti dugaan pertama. Keadaan daya
+sesi September tidak tercatat.
+
+Rasio `kilau-routes` / `rails` di dalam tiap sesi:
+
+| Sesi | c1 | c16 | c64 |
 |---|---|---|---|
-| kilau | 1.970 (0,83 ms) | 3.059 (11,82 ms) | 2.966 (53,52 ms) |
-| kilau-routes | 1.962 (0,80 ms) | 2.795 (12,65 ms) | 2.959 (53,66 ms) |
-| rails | 1.615 (1,28 ms) | 5.228 (12,08 ms) | 3.660 (64,33 ms) |
+| September (`20260929-1108`, spinel `38dc57dd`) | 1,62 | 0,83 | 1,01 |
+| `20261112-2236` | 1,21 | 0,53 | 0,81 |
+| ulang 1 | 1,19 | 0,50 | 0,51 |
+| ulang 2 | 1,21 | 0,64 | 0,50 |
+| ulang 3 | 1,20 | 0,52 | 0,55 |
 
-- **Dua varian Kilau sekarang setara di S3.** Route table naik dari 2.367 ke 3.059
-  req/s di c16 dan p99-nya turun dari 57 ms ke 12 ms. Biaya penghalang proc (K-012)
-  tidak lagi terlihat di skenario ini, jadi alasan performa untuk `gen routes`
-  (D-023) hilang; alasan tipenya tetap.
-- **Plafon Kilau tetap sekitar 3.000 req/s** di c16 dan c64, sama seperti September
-  (`kilau-routes` 3.180 dan 3.304). Ribuan commit compiler tidak menggesernya.
-  `--warn-widen` blog juga nyaris sama: 465 baris, dulu 463.
-- **Rails terukur jauh lebih cepat di sesi ini**: 5.228 di c16, dulu 3.848, tanpa
-  perubahan versi. Penjelasan yang paling mungkin adalah panas: di sesi September S3
-  dijalankan setelah sekitar satu jam S1/S2, sedangkan sesi ini hanya S3. Itu belum
-  dibuktikan. Akibatnya rasio lintas-sesi tidak bisa dibandingkan.
-- **Di dalam sesi ini** Kilau unggul di c1 (1,2×) dan kalah di c16 (0,59×) dan c64
-  (0,81×). Kesimpulan September ("varian generate menyamai Rails di S3") tidak
-  bertahan: di mesin yang dingin Rails lebih cepat di halaman berat template begitu
-  ada konkurensi.
-- Karena plafon Kilau tidak ikut naik saat mesin dingin, plafon itu bukan dibatasi
-  panas. Dugaan lama (boxing K-008 plus heap lock global runtime M:N) tetap dugaan;
-  belum ada profil yang membuktikannya.
+Yang bisa disimpulkan:
+
+- **Angka absolut bergantung pada keadaan daya; rasio di c1 tidak.** Rasio c1 berada
+  di 1,19–1,21 pada keempat sesi, dengan AC maupun baterai. Rasio c16 dan c64 lebih
+  berisik (0,50–0,64 dan 0,50–0,81).
+- **Kilau unggul di c1 (1,2×) dan kalah di c16 dan c64** pada keempat sesi. Kesimpulan
+  September ("varian generate menyamai Rails di S3") tidak bertahan.
+- **Relatif terhadap Rails, S3 Kilau turun sejak September**: c1 dari 1,62 ke 1,20, c16
+  dari 0,83 ke sekitar 0,5. Rails tidak berubah, jadi yang berubah ada di sisi Kilau:
+  compiler dan runtime spinel (`38dc57dd` ke `d1878a068`), atau kode Kilau sendiri
+  (Rencana 5 mengubah router dan jalur HEAD). Mana yang menyebabkannya **belum
+  dipisahkan**. Cara memisahkannya: bangun commit Kilau September dengan compiler
+  sekarang dan ukur berselang-seling dalam satu sesi.
+- **Dua varian Kilau setara** di c1 pada keempat sesi (rasio 1,00–1,01). Di c16 dan
+  c64 selisihnya berbalik arah antar-sesi (0,85–1,09), jadi tidak ada yang konsisten
+  lebih cepat. Biaya penghalang proc (K-012) tidak lagi terlihat di S3; di September
+  route table 25% lebih lambat di c16.
+- `--warn-widen` blog nyaris sama dengan September: 465 baris, dulu 463.
+- Penyebab Kilau kalah di bawah konkurensi tetap dugaan (boxing K-008, heap lock
+  global runtime M:N); belum ada profil.
 
 ## 7. Batasan pengukuran
 
@@ -224,10 +243,10 @@ berubah versinya.
 Ditulis ulang 2026-11-12. Daftar September (Rencana 5, Rencana 6, laporan upstream)
 sudah selesai; riwayatnya ada di `docs/HANDOFF.md`.
 
-1. **Profil S3.** Plafon ~3.000 req/s adalah satu-satunya tempat Kilau kalah dari
-   Rails, dan penyebabnya belum diukur. Langkah pertama adalah profil (`sample` pada
-   binary di bawah beban c16), baru memutuskan apakah yang dikejar K-008, alokasi
-   template, atau kunci runtime.
+1. **Pisahkan penurunan S3 sejak September.** Bangun commit Kilau September dengan
+   compiler sekarang, ukur lama dan baru berselang-seling dalam satu sesi (AC,
+   tanpa Low Power Mode). Itu memisahkan compiler dari kode Kilau. Sesudahnya profil
+   (`sample` pada binary di bawah beban c16) untuk jalur yang kalah dari Rails.
 2. **Waktu build.** Cari tahu mengapa satu binary blog sekarang butuh ~17 dtk dan
    1,9 MB; ukur di mesin dingin, lalu bisect kasar antar-versi compiler bila
    angkanya bertahan.
@@ -236,6 +255,7 @@ sudah selesai; riwayatnya ada di `docs/HANDOFF.md`.
    tersentuh blog CRUD. Butuh spec baru dan keputusan pengguna.
 4. **Benchmark k6 dari mesin terpisah** (alur multi-langkah, model terbuka dengan
    laju tetap, `thresholds` sebagai gerbang regresi). Tetap berlaku dari versi
-   September; sesi ini menunjukkan lagi bahwa satu laptop tanpa kipas membuat angka
-   lintas-sesi tidak bisa dibandingkan.
+   September; sesi ini menunjukkan lagi bahwa angka lintas-sesi di satu laptop tidak
+   bisa dibandingkan. `bench/run.sh` sebaiknya mencatat sumber daya dan Low Power
+   Mode ke `meta.txt`.
 5. **K-042** ke upstream bila dianggap layak (prioritas rendah).

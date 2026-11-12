@@ -2,6 +2,38 @@
 
 Entri terbaru di atas.
 
+## 2026-11-13 ~00:35 WIB -- cek ulang tiga kali: semua terkonfirmasi kecuali tafsir benchmark S3, yang dikoreksi
+
+**Hasil cek ulang** (compiler `d1878a068`, masing-masing tiga kali)
+- `make test` dari `spin clean`: 28/28, 0 `(cached)`, tiga putaran (147-153 dtk). `make test-cruby` 28/28 tiga kali.
+  `make e2e` 35/35 tiga kali. Repro K-042 `false false true` tiga kali (CRuby `true true true`).
+- Waktu build: `spin build blog` 16,30 / 16,36 / 16,31 dtk setelah mesin beristirahat. Bukan efek panas.
+- Tiga sesi S3 ulang (`bench/results/20261112-2331`, `-2349`, `20261113-0008`, akhiran `-ulang1..3`).
+
+**Koreksi atas entri 23:05 WIB di bawah**
+- Sesi 22:36 berjalan dengan AC; tiga sesi ulang di baterai dengan Low Power Mode (profil baterai mesin ini
+  menyalakannya; pindah daya 22:52:59 menurut `pmset -g log`). Semua app turun 25-35%. Jadi "Rails lebih cepat
+  karena mesin dingin" dan "plafon Kilau ~3.000 tidak dibatasi panas" KEDUANYA salah: yang berbeda adalah daya.
+- Yang stabil adalah rasio dalam sesi. `kilau-routes`/`rails` di c1: 1,19-1,21 pada keempat sesi; c16 0,50-0,64.
+- **Temuan yang lebih penting:** rasio itu di September 1,62 (c1) dan 0,83 (c16). Rails tidak berubah, jadi S3 Kilau
+  turun relatif sekitar 25-37% sejak September. Penyebab belum dipisahkan: compiler/runtime, atau kode Kilau
+  (Rencana 5). Keadaan daya sesi September tidak tercatat.
+- Catatan "waktu build bisa terpengaruh panas" dicabut di `FINDINGS.md`; diganti catatan daya.
+
+**Lanjut dari sini**
+1. Push komit sesi ini bila user setuju.
+2. Pisahkan penurunan S3: bangun commit Kilau September (`efb629c`) dengan compiler sekarang, ukur lama/baru
+   berselang-seling dalam satu sesi, AC, Low Power Mode mati. Baru sesudah itu profil.
+3. Tambah sumber daya dan Low Power Mode ke `meta.txt` di `bench/run.sh` (`pmset -g batt`, `pmset -g | grep lowpowermode`).
+4. Waktu build: ukur dengan AC, lalu bisect kasar antar-versi compiler.
+5. Sisanya seperti entri 23:05 WIB.
+
+**Pelajaran sesi**
+- `spin test` yang dijalankan ulang tanpa `spin clean` hanya mencetak `(cached)`; tiga putaran pertama cek ulang
+  ini tidak membuktikan apa-apa sampai diulang dari build bersih. Hitung `cached` sebelum memercayai "lulus lagi".
+- Sebelum menafsirkan beda angka antar-sesi benchmark, periksa `pmset -g batt` dan `pmset -g | grep lowpowermode`.
+  Satu sesi tunggal sempat menghasilkan dua kesimpulan salah yang baru gugur setelah diulang tiga kali.
+
 ## 2026-11-12 ~23:05 WIB -- verifikasi pasca-bump lengkap, minor lama dibereskan, FINDINGS diperbarui, S3 diukur ulang, K-042 dicatat
 
 Entri 22:25 WIB di bawah menyebut komit "belum di-push": itu sudah tidak berlaku, `main` sudah di-push sampai
