@@ -1845,10 +1845,10 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Repro: `repro/k039_poly_array_rfind_nomethoderror.rb`.
 - Status awal (2026-11-09): belum diperbaiki, akar belum dibedah. Dampak praktis rendah (`rfind` baru
   di 4.0), tapi bentuk `yield.rfind { }` menghasilkan C error mentah, kategori terburuk.
-- **Status 2026-11-12 ~09:50 WIB (diperbarui setelah PR dibuka; menggantikan catatan "sedang dikerjakan" ~08:10 WIB): perbaikan
-  DIAJUKAN, belum merge.** matz/spinel#11670, branch `rfind-poly-receiver` (`4b30ab489`, satu commit di atas
-  master `494deaacb`). Gate sharded di fork 22/22 hijau (run 43133500712, sekitar 45 menit). Satu commit itu
-  menutup KEDUA bentuk; `930d73bb9` yang disebut di catatan sebelumnya hanyalah amend perantara dari commit yang sama.
+- **Status 2026-11-12 (diperbarui setelah merge): DIPERBAIKI UPSTREAM** di matz/spinel#11670 (merge `8335ea4e2`,
+  2026-11-12 03:30Z), branch `rfind-poly-receiver` (`4b30ab489`). Gate sharded di fork 22/22 hijau (run 43133500712).
+  Satu commit itu menutup KEDUA bentuk; `930d73bb9` yang disebut di catatan sebelumnya hanyalah amend perantara.
+  Belum diverifikasi ulang dengan compiler Kilau yang di-bump (lihat butir "Setelah merge" di bawah).
   - **Akar (kedua bentuk masih terjadi di `494deaacb`), tiga lapis, semuanya perlu diperbaiki:**
     1. `desugar_enum_named_call` (`src/analyze.c`) menurunkan `rfind` hanya untuk receiver bertipe array dan
        keputusannya terpasang permanen. Receiver poly tak pernah diturunkan (NoMethodError). Untuk receiver
@@ -1864,12 +1864,13 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     kelas program yang mendefinisikan `rfind`); site `rfind` diberi salinan `find` di pre-pass seperti `index`
     diberi `find_index`; `rfind` ikut memicu pemuatan `builtins/enumerable.rb`; node ber-flag dilewati. Array
     bertipe tetap memakai loop mundur di tempat. Tes: `test/rfind_poly_receiver.rb` (bentuk parameter dan `yield`).
-  - **Batas yang sengaja tidak ditutup di PR itu:** (a) kelas program yang mendefinisikan `rfind` sendiri dan ikut
-    jadi receiver poly di samping Array masih NoMethodError untuk Array-nya (dispatch poly tak punya arm Array untuk
-    `rfind`; sudah begitu sebelum perubahan, dan lowering sengaja mati di situ); (b) `rfind` tanpa blok pada
-    receiver poly masih `nil` (CRuby: Enumerator).
-  - **Setelah #11670 merge:** bump compiler Kilau dan jalankan ulang `repro/k039_poly_array_rfind_nomethoderror.rb`
-    serta bentuk `yield`-nya; lalu tulis ulang status ini menjadi "diperbaiki upstream" (dengan nomor merge).
+  - **Batas yang sengaja tidak ditutup di #11670:** (a) kelas program yang mendefinisikan `rfind` sendiri dan ikut
+    jadi receiver poly di samping Array masih NoMethodError untuk Array-nya (ditutup di follow-up bertumpuk,
+    branch `rfind-own-class-poly`, lihat di bawah); (b) `rfind` tanpa blok pada receiver poly masih `nil`
+    (CRuby: Enumerator); (c) `find(ifnone)`/`rfind(ifnone)` pada receiver poly tidak didukung (keterbatasan
+    keluarga `find` yang sudah ada, temuan CodeRabbit di #11670).
+  - **Setelah merge:** `git pull` + `make install` di repo spinel, lalu jalankan ulang
+    `repro/k039_poly_array_rfind_nomethoderror.rb` dan bentuk `yield`-nya.
 
 ## K-040: `scale-test: colliding constant work ... -8.10x` -- bukan bug; tes upstream itu kehilangan kepekaan
 
