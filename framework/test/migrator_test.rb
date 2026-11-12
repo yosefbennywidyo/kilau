@@ -80,3 +80,32 @@ T.check("a failing migration raises") { T.raises_db_error? { broken.migrate } }
 T.check("a failing migration is not recorded") { !broken.applied_versions.include?("20260101000003") }
 T.check("a failing migration's earlier steps roll back") { !table_exists?(conn, "halfway") }
 conn.close
+
+# A migration that ends the transaction itself leaves ROLLBACK nothing to
+# undo, so ROLLBACK fails too. The caller must still see the first error.
+class M4EndsTransaction < Kilau::Migration
+  def initialize(conn)
+    @conn = conn
+  end
+
+  def version = "20260101000004"
+
+  def up(schema)
+    @conn.exec_script("COMMIT")
+    raise ArgumentError, "the migration's own error"
+  end
+
+  def down(schema) = nil
+end
+
+fresh = Sqlite::Connection.open(":memory:")
+ending = Kilau::Migrator.new(fresh, [M4EndsTransaction.new(fresh)])
+seen = begin
+  ending.migrate
+  "no error"
+rescue ArgumentError => e
+  e.message
+rescue Sqlite::Error => e
+  "masked by: #{e.message}"
+end
+T.check("a failed ROLLBACK does not hide the migration's error") { seen == "the migration's own error" }

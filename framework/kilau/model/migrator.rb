@@ -63,10 +63,19 @@ module Kilau
       begin
         yield
         @conn.exec_script("COMMIT")
-      rescue StandardError
-        @conn.exec_script("ROLLBACK")
-        raise
+      rescue StandardError => e
+        rollback_quietly
+        raise e
       end
+    end
+
+    # A ROLLBACK can fail too (the block ended the transaction itself, or
+    # the connection is gone). The block's error is the one worth
+    # reporting, so this one is dropped.
+    def rollback_quietly
+      @conn.exec_script("ROLLBACK")
+    rescue Sqlite::Error
+      nil
     end
   end
 end
