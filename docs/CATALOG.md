@@ -2111,7 +2111,10 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `respond-to-to-set-no-set` (`c7b15e0bc`), tes `test/to_set_named_by_symbol_only.rb`; gate fork run 43341670445.
   Gap terpisah yang ditemukan di jalan dan TIDAK ikut: `method(:to_set).call` (NameError) = K-043, dan
   `size` pada Set hasil `to_set` di dalam blok (NoMethodError, juga dengan `.to_set` tertulis) = K-044.
-- Status: perbaikan siap di fork; PR belum dibuka (menunggu konfirmasi user).
+- **Status 2026-11-13: DIPERBAIKI UPSTREAM** di matz/spinel#11723 (merge `4d4a23cee`, 2026-11-13 03:37Z, commit
+  `04c9ca973` apa adanya, gate fork 22/22 run 43347782606 pada `459ac4f11`). Diverifikasi dengan compiler terpasang
+  `2026.10.25+4731 (01ef5b4b2)`: repro K-042 `true true true` = CRuby, dan `test/to_set_named_by_symbol_only.rb`
+  identik dengan snapshot. K-043 dan K-044 tetap gagal seperti dicatat (tidak tersentuh).
 
 ## K-043: `method(:to_set)` sobre builtin -> NameError run-time (Array) / C compile error (Range)
 
