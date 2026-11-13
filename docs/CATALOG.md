@@ -2109,8 +2109,8 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   tak dimuat. Dampaknya lebih luas: `send(:to_set)`, `public_send(:to_set)` dan `map(&:to_set)` juga gagal
   (NoMethodError run-time). Perbaikan: `:to_set` sebagai simbol ikut memicu splice. Branch spinel
   `respond-to-to-set-no-set` (`c7b15e0bc`), tes `test/to_set_named_by_symbol_only.rb`; gate fork run 43341670445.
-  Gap terpisah yang ditemukan di jalan dan TIDAK ikut: `method(:to_set).call` (NameError) dan
-  `map(&:to_set).map(&:size)` (NoMethodError `size` untuk Set, juga dengan `.to_set` tertulis).
+  Gap terpisah yang ditemukan di jalan dan TIDAK ikut: `method(:to_set).call` (NameError) = K-043, dan
+  `size` pada Set hasil `to_set` di dalam blok (NoMethodError, juga dengan `.to_set` tertulis) = K-044.
 - Status: perbaikan siap di fork; PR belum dibuka (menunggu konfirmasi user).
 
 ## K-043: `method(:to_set)` sobre builtin -> NameError run-time (Array) / C compile error (Range)
