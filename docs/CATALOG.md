@@ -2141,9 +2141,11 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Repro: `repro/k043_method_object_to_set.rb` (bentuk Array; bentuk Range ada di gejala di atas).
 - Klasifikasi: Array = gagal keras run-time; Range = C error mentah. Dampak praktis rendah (`method(:to_set)`
   jarang), tetapi C error mentah melanggar aturan "penolakan harus bernama" di CLAUDE.md spinel.
-- Status: dicatat; akar belum dibaca; belum diperbaiki; belum diajukan ke upstream. `to_set` ditulis sebagai
-  panggilan lewat `.to_set` di analisis (rewrite ke `Set.new`, `src/analyze.c`), sedangkan `method(:x)` melihat
-  tabel metode; dugaan ini BELUM diverifikasi.
+- **Akar sebagian (2026-11-13):** `emit_call_method_obj_arms` memakai `CallPlan` (`cplan_method_call`) yang menyatakan
+  `to_set` "absent" untuk Array: `to_set` bukan baris builtin-op, melainkan lowering `LR_TO_SET` (`recv.to_set` ->
+  `Set.new(recv.to_a)`, `src/analyze.c`), sehingga objek Method tak punya target untuk dipanggil. Memperbaikinya berarti
+  mengajari objek Method memanggil metode hasil lowering, wilayah kerja Method yang besar dan berisiko; belum dicoba.
+- Status: dicatat; akar sebagian dibaca; belum diperbaiki; belum diajukan ke upstream.
 
 ## K-044: Set hasil `.to_set` di dalam blok tidak menjawab `size`/`length`
 
@@ -2156,7 +2158,17 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   yang hilang; belum dicoba di luar blok dan belum diketahui apakah elemen array bersarang (IntArray) berperan.
 - Repro: `repro/k044_to_set_in_block_size_missing.rb`.
 - Klasifikasi: gagal keras run-time (NoMethodError), bukan nilai salah diam-diam.
-- Status: dicatat; akar belum dibaca; belum diperbaiki; belum diajukan ke upstream.
+- **Akar (2026-11-13):** lebih luas dari `size`: pada Set hasil `to_set` di blok, `size`, `length`, `empty?` dan `add`
+  gagal, sedangkan `count`, `include?`, `to_a`, `first`, `min`, `sum` benar (dijawab salinan Enumerable tanpa arm milik
+  Set). Array yang dibangun blok bernilai poly, jadi `s[0].size` lewat dispatch poly yang armnya diambil dari kelas yang
+  boleh dipegang receiver (`cls_fact_excludes`). Fakta kelas (`src/analyze_cls.c`) dihitung SEBELUM rewrite `to_set` ->
+  `Set.new`, jadi `a.to_set` terbaca "builtin[any]" dan Set (kelas paket) tereksklusi; arm-nya tak pernah di-emit. Dump
+  `SPINEL_CLS_FACTS=1`: `size receiver: none +builtin[any]` untuk `to_set`, `Set` untuk `Set.new`. Ablasi `Set.new` literal
+  tambahan di program TIDAK membantu (bukan soal `instantiated`).
+- **Perbaikan:** `to_set` tanpa argumen menambah keturunan Set ke fakta panggilannya bila program punya Set
+  (`cf_builtin_rule`). Branch spinel `to-set-in-block-size` (`5eb08c280`), tes `test/to_set_in_block_poly_receiver.rb`
+  (merah tanpa perbaikan), 29 tes `to_set` PASS, gate fork run 43437988230.
+- Status: perbaikan siap di fork; PR belum dibuka (menunggu gate dan konfirmasi user).
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
