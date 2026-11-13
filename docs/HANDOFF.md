@@ -2,6 +2,35 @@
 
 Entri terbaru di atas.
 
+## 2026-11-13 ~09:25 WIB -- server Kilau dibandingkan dengan Puma, Pitchfork, Falcon (blog yang sama di CRuby lewat Rack)
+
+**Status**
+- Baru: `bench/servers/` (front Rack `kilau_rack.rb`, `config.ru`, `puma.rb`, `pitchfork.rb`, `run.sh`, `summarize.rb`,
+  `Gemfile`, README). Blog Kilau jalan di CRuby + YJIT di belakang Puma 8.0.2, Pitchfork 0.18.2, Falcon 0.57.0; body
+  identik dengan binary di semua varian. Gem terpasang di `bench/servers/vendor/bundle` (gitignored).
+- Sesi `bench/results/20261113-0834-servers` (48 sel, baterai + Low Power Mode, satu sesi, belum diulang). Tabel dan
+  tafsir di `FINDINGS.md` §6 "Server Kilau diganti"; ringkasan mentah di `RESULTS.md` dalam direktori hasil.
+- Temuan utama:
+  - Halaman list (S3) tidak menskala di satu proses: `kilau-spinel` 1.449 (c1) -> 1.599 (c16), `kilau-cruby` 1.330 ->
+    1.974, sedangkan kode yang sama di Puma 8 proses 3.831 (Rails di Puma 3.043). Kekalahan S3 dari Rails berasal dari
+    model satu proses untuk beban ini, bukan dari framework. Kunci yang menahannya belum diprofil.
+  - Di server yang sama Kilau mengalahkan Rails di semua skenario (1,26x-2,5x) dengan sekitar separuh memori.
+  - Binary Spinel dan Kilau-di-CRuby+YJIT setara per request di c1; keunggulan binary adalah start (~50 ms vs ~450 ms)
+    dan memori (15-28 MB vs 32-60 MB).
+  - Pitchfork tidak terukur dengan sah di sini: tanpa keep-alive dan tanpa proxy, `oha` kehabisan port lokal.
+- Koreksi atas jawaban lisan sebelumnya di sesi ini ("Puma dkk. tidak bisa menjalankan Kilau"): yang tidak bisa adalah
+  binary Spinel; kode Kilau-nya bisa, lewat Rack di CRuby.
+
+**Lanjut dari sini**
+1. Push bila user setuju.
+2. Ulang sesi server dengan AC dan Low Power Mode mati bila angkanya akan dikutip; rasio dalam sesi sudah cukup untuk
+   kesimpulan di atas.
+3. Profil `kilau-spinel` di S3 c16 (`sample` selama beban) untuk menunjukkan kunci yang menahan skala; laporkan
+   bersama K-045 bila ternyata satu akar.
+4. Pitchfork yang adil: nginx di depan (keep-alive ke klien), idealnya di Linux dengan reforking.
+5. Keputusan user: apakah "Kilau di CRuby di belakang Puma" dijadikan mode deploy resmi kedua (butuh `kilau_rack.rb`
+   pindah dari `bench/` ke framework, dan tes), atau tetap alat ukur saja.
+
 ## 2026-11-13 ~08:20 WIB -- penurunan S3 terisolasi ke compiler (K-045); dokumen terkait diperbarui
 
 **Status**

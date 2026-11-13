@@ -228,6 +228,51 @@ Yang bisa disimpulkan:
 - Penyebab Kilau kalah di bawah konkurensi tetap dugaan (boxing K-008, heap lock
   global runtime M:N); belum ada profil.
 
+### Server Kilau diganti: Puma, Pitchfork, Falcon (2026-11-13)
+
+Sesi `bench/results/20261113-0834-servers` (baterai, Low Power Mode; 5 dtk pemanasan,
+3 × 15 dtk, median). Kode Kilau adalah Ruby biasa, jadi blog yang sama dijalankan di
+CRuby + YJIT lewat front Rack tipis (`bench/servers/`). Tiap pasangan hanya mengubah
+satu hal: runtime (`kilau-spinel` vs `kilau-cruby`), server (`kilau-cruby` vs tiga
+server Rack), atau framework (`kilau-puma` vs `rails-puma`). Semua varian menjawab
+dengan body yang identik. Angka = req/s.
+
+| App | S1 c1 | S1 c16 | S1 c64 | S2 c16 | S3 c1 | S3 c16 | S3 c64 | S4 c16 | RSS puncak |
+|---|---|---|---|---|---|---|---|---|---|
+| kilau-spinel (binary, server Kilau) | 6.737 | 16.149 | 11.868 | 12.053 | 1.449 | 1.599 | 1.656 | 8.958 | 15-28 MB |
+| kilau-cruby (CRuby, server Kilau) | 7.473 | 15.898 | 14.086 | 10.440 | 1.330 | 1.974 | 1.862 | 8.363 | 32-60 MB |
+| kilau-puma (8 × 5) | 5.561 | 14.682 | 12.709 | 10.640 | 1.260 | 3.831 | 3.750 | 6.628 | 263-344 MB |
+| kilau-falcon (8 instance) | 4.437 | 12.076 | 13.254 | 9.476 | 1.082 | 3.356 | 3.436 | 6.002 | 308-426 MB |
+| rails-puma (8 × 5) | 2.910 | 8.163 | 8.861 | 4.377 | 1.209 | 3.043 | 3.086 | 2.696 | 546-780 MB |
+
+- **Halaman list tidak menskala di satu proses.** `kilau-spinel` naik hanya dari
+  1.449 (c1) ke 1.599 (c16), padahal punya 8 worker tanpa GVL. `kilau-cruby`, yang
+  terikat GVL, berperilaku sama (1.330 ke 1.974). Kode yang sama di 8 proses Puma
+  mencapai 3.831. Jadi kekalahan Kilau dari Rails di S3 berasal dari satu proses
+  yang tidak memakai core lain untuk beban ini, bukan dari framework-nya. Ini cocok
+  dengan dugaan kunci global di runtime Spinel (alokasi), tetapi kuncinya sendiri
+  belum ditunjukkan dengan profil.
+- **Framework Kilau lebih cepat dari Rails di server yang sama.** `kilau-puma` /
+  `rails-puma`: 1,8× (S1 c16), 2,4× (S2), 1,26× (S3 c16), 2,5× (S4), dengan sekitar
+  separuh memori.
+- **AOT tidak memberi keunggulan throughput atas CRuby + YJIT** pada compiler sekarang:
+  `kilau-spinel` dan `kilau-cruby` setara di c1 (S1 6.737 vs 7.473; S3 1.449 vs
+  1.330). Yang diberikan binary Spinel adalah start ~50 ms (CRuby ~450 ms) dan memori
+  separuh `kilau-cruby` atau sepersepuluh server multi-proses. Dengan compiler
+  September halaman list 26-37% lebih cepat (K-045), jadi di sana selisihnya dulu ada.
+- **Server Kilau cukup untuk beban ringan.** Di S1, S2, dan S4 satu proses Kilau
+  (binary maupun CRuby) setara atau di atas Puma dan Falcon 8 proses. Mengganti server
+  hanya menolong S3.
+- **Puma sedikit di atas Falcon** di hampir semua sel; Falcon punya p99 lebih rendah
+  di c64 (S3: 40 ms vs 78 ms). Bebannya CPU dan SQLite, bukan I/O lambat, jadi
+  keunggulan fiber tidak terpakai.
+- **Pitchfork tidak terukur dengan sah.** Ia menutup koneksi setelah tiap request,
+  dan tanpa reverse proxy `oha` kehabisan port lokal (`Can't assign requested
+  address`, sampai 60% request gagal) dengan throughput ~2.000 req/s di semua
+  skenario. Angkanya tidak dimuat di tabel; ada di data mentah. Pengukuran yang
+  adil butuh nginx di depannya, dan Linux untuk reforking.
+- S2 dan S4 hanya diukur di c16. Satu sesi, belum diulang.
+
 ## 7. Batasan pengukuran
 
 - **Satu laptop:** MacBook Air M1, 8 core, 8 GB. oha berjalan di mesin yang sama dan
@@ -258,12 +303,16 @@ sudah selesai; riwayatnya ada di `docs/HANDOFF.md`.
    Petunjuk dari `sample`: jalur String/byte dan alokator.
 2. **K-045: waktu build dan ukuran binary** (4× dan 2,3× untuk sumber yang sama).
    Bisect yang sama bisa mengukur keduanya sekaligus.
-3. **Irisan vertikal kedua**, bila proyek dilanjutkan: fitur dari non-goal spec §6.5
+3. **Skala halaman list di satu proses.** Profil `kilau-spinel` di bawah c16 untuk
+   menunjukkan kunci mana yang menahan 8 worker (lihat §6, bagian server). Sementara
+   itu, pilihan yang sudah terukur untuk beban semacam ini adalah beberapa proses:
+   kode Kilau di CRuby di belakang Puma mengalahkan Rails di semua skenario.
+4. **Irisan vertikal kedua**, bila proyek dilanjutkan: fitur dari non-goal spec §6.5
    (kandidat: session/cookie, CSRF, autentikasi) untuk menguji batas AOT yang belum
    tersentuh blog CRUD. Butuh spec baru dan keputusan pengguna.
-4. **Benchmark k6 dari mesin terpisah** (alur multi-langkah, model terbuka dengan
+5. **Benchmark k6 dari mesin terpisah** (alur multi-langkah, model terbuka dengan
    laju tetap, `thresholds` sebagai gerbang regresi). Tetap berlaku dari versi
    September; sesi ini menunjukkan lagi bahwa angka lintas-sesi di satu laptop tidak
    bisa dibandingkan. `bench/run.sh` sebaiknya mencatat sumber daya dan Low Power
    Mode ke `meta.txt`.
-5. **K-042** ke upstream bila dianggap layak (prioritas rendah).
+6. **K-042** ke upstream bila dianggap layak (prioritas rendah).

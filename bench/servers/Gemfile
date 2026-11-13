@@ -1,0 +1,9 @@
+# Rack servers for running the Kilau blog under CRuby (bench/servers/README.md).
+# sqlite3 and puma match bench/rails_blog, so the two share versions.
+source "https://rubygems.org"
+
+gem "rack"
+gem "puma", "8.0.2"
+gem "pitchfork"
+gem "falcon"
+gem "sqlite3", "2.9.6"

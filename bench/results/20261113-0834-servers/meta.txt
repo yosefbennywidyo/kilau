@@ -1,0 +1,8 @@
+date=2026-11-13 08:34 WIB
+kilau_sha=ae36e39
+machine=MacBookAir10,1 Apple M1 cores=8
+power=Battery Power lowpowermode=1
+spinel=spinel 2026.10.25+4639 (d1878a068) [apple clang 21.0.0 (cc)]
+ruby=ruby 4.0.6 (2026-07-14 revision 03b6d3f889) +PRISM [arm64-darwin23] (CRuby apps run with --yjit)
+ * falcon (0.57.0); * pitchfork (0.18.2); * puma (8.0.2); * rack (3.2.8); * sqlite3 (2.9.6);
+reps=3 warmup=5 duration=15 cooldown=5 pool=5 workers=8

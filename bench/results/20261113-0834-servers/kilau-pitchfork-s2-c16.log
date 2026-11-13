@@ -1,0 +1,55 @@
+SEQPACKET (SCTP) isn't supported, falling back to STREAM
+I, [2026-11-13T09:11:40.052379 #79408]  INFO -- [Pitchfork]: listening on addr=127.0.0.1:5194 fd=9
+I, [2026-11-13T09:11:40.052471 #79408]  INFO -- [Pitchfork]: mold gen=0 pid=79408 spawned
+I, [2026-11-13T09:11:40.052491 #79408]  INFO -- [Pitchfork]: monitor pid=79408 ready
+I, [2026-11-13T09:11:40.052512 #79408]  INFO -- [Pitchfork]: monitor process ready
+I, [2026-11-13T09:11:40.052563 #79408]  INFO -- [Pitchfork]: worker=0 gen=0 spawning...
+I, [2026-11-13T09:11:40.054625 #79408]  INFO -- [Pitchfork]: worker=1 gen=0 spawning...
+I, [2026-11-13T09:11:40.055483 #79408]  INFO -- [Pitchfork]: worker=2 gen=0 spawning...
+I, [2026-11-13T09:11:40.056495 #79408]  INFO -- [Pitchfork]: worker=3 gen=0 spawning...
+I, [2026-11-13T09:11:40.056451 #79462]  INFO -- [Pitchfork]: worker=0 gen=0 pid=79462 spawned
+I, [2026-11-13T09:11:40.056776 #79462]  INFO -- [Pitchfork]: worker=0 gen=0 pid=79462 ready
+I, [2026-11-13T09:11:40.056749 #79463]  INFO -- [Pitchfork]: worker=1 gen=0 pid=79463 spawned
+I, [2026-11-13T09:11:40.057023 #79463]  INFO -- [Pitchfork]: worker=1 gen=0 pid=79463 ready
+I, [2026-11-13T09:11:40.057377 #79408]  INFO -- [Pitchfork]: worker=4 gen=0 spawning...
+I, [2026-11-13T09:11:40.057683 #79464]  INFO -- [Pitchfork]: worker=2 gen=0 pid=79464 spawned
+I, [2026-11-13T09:11:40.057921 #79464]  INFO -- [Pitchfork]: worker=2 gen=0 pid=79464 ready
+I, [2026-11-13T09:11:40.058265 #79408]  INFO -- [Pitchfork]: worker=5 gen=0 spawning...
+I, [2026-11-13T09:11:40.058665 #79465]  INFO -- [Pitchfork]: worker=3 gen=0 pid=79465 spawned
+I, [2026-11-13T09:11:40.058919 #79465]  INFO -- [Pitchfork]: worker=3 gen=0 pid=79465 ready
+I, [2026-11-13T09:11:40.059270 #79408]  INFO -- [Pitchfork]: worker=6 gen=0 spawning...
+I, [2026-11-13T09:11:40.059504 #79466]  INFO -- [Pitchfork]: worker=4 gen=0 pid=79466 spawned
+I, [2026-11-13T09:11:40.059811 #79466]  INFO -- [Pitchfork]: worker=4 gen=0 pid=79466 ready
+I, [2026-11-13T09:11:40.060163 #79408]  INFO -- [Pitchfork]: worker=7 gen=0 spawning...
+I, [2026-11-13T09:11:40.060557 #79467]  INFO -- [Pitchfork]: worker=5 gen=0 pid=79467 spawned
+I, [2026-11-13T09:11:40.060804 #79467]  INFO -- [Pitchfork]: worker=5 gen=0 pid=79467 ready
+I, [2026-11-13T09:11:40.061486 #79468]  INFO -- [Pitchfork]: worker=6 gen=0 pid=79468 spawned
+I, [2026-11-13T09:11:40.061662 #79408]  INFO -- [Pitchfork]: worker=0 gen=0 pid=79462 registered
+I, [2026-11-13T09:11:40.061806 #79408]  INFO -- [Pitchfork]: worker=1 gen=0 pid=79463 registered
+I, [2026-11-13T09:11:40.061750 #79468]  INFO -- [Pitchfork]: worker=6 gen=0 pid=79468 ready
+I, [2026-11-13T09:11:40.061855 #79408]  INFO -- [Pitchfork]: worker=2 gen=0 pid=79464 registered
+I, [2026-11-13T09:11:40.062214 #79469]  INFO -- [Pitchfork]: worker=7 gen=0 pid=79469 spawned
+I, [2026-11-13T09:11:40.062452 #79469]  INFO -- [Pitchfork]: worker=7 gen=0 pid=79469 ready
+I, [2026-11-13T09:11:40.062459 #79408]  INFO -- [Pitchfork]: worker=3 gen=0 pid=79465 registered
+I, [2026-11-13T09:11:40.062813 #79408]  INFO -- [Pitchfork]: worker=4 gen=0 pid=79466 registered
+I, [2026-11-13T09:11:40.062851 #79408]  INFO -- [Pitchfork]: worker=5 gen=0 pid=79467 registered
+I, [2026-11-13T09:11:40.062906 #79408]  INFO -- [Pitchfork]: worker=6 gen=0 pid=79468 registered
+I, [2026-11-13T09:11:40.064577 #79408]  INFO -- [Pitchfork]: worker=7 gen=0 pid=79469 registered
+I, [2026-11-13T09:12:31.509806 #79408]  INFO -- [Pitchfork]: TERM received, starting graceful shutdown
+I, [2026-11-13T09:12:31.513777 #79465]  INFO -- [Pitchfork]: worker=3 gen=0 pid=79465 exiting
+I, [2026-11-13T09:12:31.513987 #79466]  INFO -- [Pitchfork]: worker=4 gen=0 pid=79466 exiting
+I, [2026-11-13T09:12:31.512912 #79463]  INFO -- [Pitchfork]: worker=1 gen=0 pid=79463 exiting
+I, [2026-11-13T09:12:31.513849 #79467]  INFO -- [Pitchfork]: worker=5 gen=0 pid=79467 exiting
+I, [2026-11-13T09:12:31.512890 #79462]  INFO -- [Pitchfork]: worker=0 gen=0 pid=79462 exiting
+I, [2026-11-13T09:12:31.513985 #79464]  INFO -- [Pitchfork]: worker=2 gen=0 pid=79464 exiting
+I, [2026-11-13T09:12:31.515122 #79469]  INFO -- [Pitchfork]: worker=7 gen=0 pid=79469 exiting
+I, [2026-11-13T09:12:31.515482 #79468]  INFO -- [Pitchfork]: worker=6 gen=0 pid=79468 exiting
+I, [2026-11-13T09:12:31.529177 #79408]  INFO -- [Pitchfork]: worker=4 gen=0 pid=79466 reaped (#<Process::Status: pid 79466 exit 0>)
+I, [2026-11-13T09:12:31.530022 #79408]  INFO -- [Pitchfork]: worker=6 gen=0 pid=79468 reaped (#<Process::Status: pid 79468 exit 0>)
+I, [2026-11-13T09:12:31.533927 #79408]  INFO -- [Pitchfork]: worker=7 gen=0 pid=79469 reaped (#<Process::Status: pid 79469 exit 0>)
+I, [2026-11-13T09:12:31.533960 #79408]  INFO -- [Pitchfork]: worker=5 gen=0 pid=79467 reaped (#<Process::Status: pid 79467 exit 0>)
+I, [2026-11-13T09:12:31.534043 #79408]  INFO -- [Pitchfork]: worker=3 gen=0 pid=79465 reaped (#<Process::Status: pid 79465 exit 0>)
+I, [2026-11-13T09:12:31.534066 #79408]  INFO -- [Pitchfork]: worker=2 gen=0 pid=79464 reaped (#<Process::Status: pid 79464 exit 0>)
+I, [2026-11-13T09:12:31.534090 #79408]  INFO -- [Pitchfork]: worker=1 gen=0 pid=79463 reaped (#<Process::Status: pid 79463 exit 0>)
+I, [2026-11-13T09:12:31.534110 #79408]  INFO -- [Pitchfork]: worker=0 gen=0 pid=79462 reaped (#<Process::Status: pid 79462 exit 0>)
+I, [2026-11-13T09:12:31.536612 #79408]  INFO -- [Pitchfork]: monitor complete status=0
