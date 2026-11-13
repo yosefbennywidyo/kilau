@@ -1,0 +1,13 @@
+old c1 r1 rps=2001 p99=0.69ms codes={"200" => 40028} bytes=6773
+new c1 r1 rps=1456 p99=1.06ms codes={"200" => 29138} bytes=6773
+old c1 r2 rps=1914 p99=0.73ms codes={"200" => 38302} bytes=6773
+new c1 r2 rps=1461 p99=1.06ms codes={"200" => 29230} bytes=6773
+old c1 r3 rps=1843 p99=1.52ms codes={"200" => 36876} bytes=6773
+new c1 r3 rps=1474 p99=1.15ms codes={"200" => 29501} bytes=6773
+old c16 r1 rps=2777 p99=14.17ms codes={"200" => 55550} bytes=6773
+new c16 r1 rps=1850 p99=17.60ms codes={"200" => 37006} bytes=6773
+old c16 r2 rps=2999 p99=12.48ms codes={"200" => 59983} bytes=6773
+new c16 r2 rps=1601 p99=31.67ms codes={"200" => 32031} bytes=6773
+old c16 r3 rps=2715 p99=13.61ms codes={"200" => 54310} bytes=6773
+new c16 r3 rps=1682 p99=19.54ms codes={"200" => 33650} bytes=6773
+AB_DONE

@@ -1,0 +1,18 @@
+== /_ping
+new-c1-r1 rps=6766 p99=0.18ms
+new-c1-r2 rps=6754 p99=0.17ms
+new-c16-r1 rps=13913 p99=1.59ms
+new-c16-r2 rps=14102 p99=1.53ms
+old-c1-r1 rps=6339 p99=0.18ms
+old-c1-r2 rps=6330 p99=0.18ms
+old-c16-r1 rps=13578 p99=1.60ms
+old-c16-r2 rps=13528 p99=1.61ms
+== /posts/42
+new-c1-r1 rps=5555 p99=0.34ms
+new-c1-r2 rps=5541 p99=0.33ms
+new-c16-r1 rps=12799 p99=1.89ms
+new-c16-r2 rps=12787 p99=1.88ms
+old-c1-r1 rps=5377 p99=0.31ms
+old-c1-r2 rps=5390 p99=0.30ms
+old-c16-r1 rps=12673 p99=1.81ms
+old-c16-r2 rps=12439 p99=2.05ms

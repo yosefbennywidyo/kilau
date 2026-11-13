@@ -2143,3 +2143,32 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Repro: `repro/k044_to_set_in_block_size_missing.rb`.
 - Klasifikasi: gagal keras run-time (NoMethodError), bukan nilai salah diam-diam.
 - Status: dicatat; akar belum dibaca; belum diperbaiki; belum diajukan ke upstream.
+
+## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
+
+- Lapisan: compiler/runtime spinel. BUKAN kode Kilau (dibuktikan di bawah). Bukan bug kebenaran.
+- Ditemukan: 2026-11-13 ~08:05 WIB, setelah tiga sesi ulang S3 menunjukkan rasio Kilau/Rails turun dari
+  1,62x (September) ke 1,20x di c1 dengan Rails yang tidak berubah.
+- Bukti (`bench/results/20261113-0805-ab-compiler/`, run berselang-seling lama/baru dalam satu sesi,
+  baterai + Low Power Mode, jadi hanya pasangan di dalam satu log yang sebanding):
+  - **Kode Kilau September (`2ee4980`) vs sekarang (`27ba1a6`), keduanya dibangun `d1878a068`**: setara.
+    S3 c1 1.425 / 1.449 / 1.441 (lama) vs 1.445 / 1.456 / 1.452 req/s (baru). Kode Kilau gugur sebagai penyebab.
+  - **Sumber yang SAMA (`2ee4980`), compiler `38dc57dde` vs `d1878a068`**: S3 c1 2.001 / 1.914 / 1.843 vs
+    1.456 / 1.461 / 1.474 req/s (compiler lama 26-37% lebih cepat); c16 2.777 / 2.999 / 2.715 vs
+    1.850 / 1.601 / 1.682 (50-87% lebih cepat).
+  - **Hanya halaman list yang kena.** `GET /_ping`: 6.339 / 6.330 (lama) vs 6.766 / 6.754 (baru) di c1;
+    `GET /posts/42`: 5.377 / 5.390 vs 5.555 / 5.541. Di dua skenario itu compiler baru 3-7% lebih CEPAT.
+  - **Build dan ukuran, sumber sama:** `spin build blog` 3,95 dtk dan binary 0,82 MB dengan `38dc57dde`;
+    ~16,3 dtk dan 1,80 MB dengan `d1878a068` (keduanya di baterai).
+- Petunjuk, belum bukti: `sample` 5 dtk di bawah beban c1 pada `/posts`. Di puncak stack binary baru ada yang
+  hampir tak muncul di binary lama: `_tlv_get_addr` 327 vs 91 sampel, `madvise` 164 vs 0,
+  `__psynch_mutexwait` 147 vs 0, `sp_bytestr` 130 vs 0, `sp_str_byte_len` 61 vs 0. Arah yang ditunjuk:
+  jalur String/byte dan alokator (pelepasan memori ke OS, kunci). Halaman list menyusun ~6,8 KB HTML dari
+  100 baris lewat `buf <<` dan `Html.escape`; itu yang membedakannya dari dua skenario lain.
+- Tidak diketahui: commit mana di antara ~3.260 commit itu; apakah satu perubahan atau akumulasi; apakah
+  `-O`/flag build default berubah. Belum dibisect, belum ada repro mikro di luar Kilau.
+- Dampak: satu-satunya skenario tempat Kilau kalah dari Rails di bawah konkurensi, dan waktu build yang
+  dulu ~2-4 dtk sekarang ~16 dtk.
+- Status: dicatat; belum diajukan ke upstream. Langkah berikut: repro mikro (loop `buf << escape(str)`
+  tanpa HTTP/SQLite), lalu bisect compiler dengan repro itu.
+

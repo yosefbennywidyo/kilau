@@ -2,6 +2,39 @@
 
 Entri terbaru di atas.
 
+## 2026-11-13 ~08:20 WIB -- penurunan S3 terisolasi ke compiler (K-045); dokumen terkait diperbarui
+
+**Status**
+- **K-045 (baru):** penurunan S3 sejak September berasal dari compiler/runtime spinel, bukan kode Kilau. Bukti A/B
+  berselang-seling di `bench/results/20261113-0805-ab-compiler/` (baterai + Low Power Mode; hanya pasangan dalam
+  satu log yang sebanding):
+  - kode Kilau `2ee4980` (September) vs `27ba1a6`, compiler sama: setara (S3 c1 ~1.440 vs ~1.450 req/s);
+  - sumber sama, compiler `38dc57dde` vs `d1878a068`: 1.843-2.001 vs 1.456-1.474 di c1; 2.715-2.999 vs
+    1.601-1.850 di c16;
+  - hanya halaman list: `_ping` dan `/posts/42` 3-7% lebih cepat di compiler baru;
+  - build 3,95 dtk / 0,82 MB (lama) vs ~16,3 dtk / 1,80 MB (baru), sumber sama.
+  Petunjuk `sample` (belum bukti): jalur String/byte dan alokator (`madvise`, `sp_bytestr`, `_tlv_get_addr`).
+- `bench/run.sh` kini mencatat `power=` dan `lowpowermode=` di `meta.txt` (`27ba1a6`).
+- Dokumen: README, `DECISIONS.md` D-031, `FINDINGS.md` §4/§5/§6/§8, `CATALOG.md` K-045.
+- Sesi lain (bukan sesi ini) sedang mengerjakan K-042 di spinel (branch `respond-to-to-set-no-set`, `c7b15e0bc`) dan
+  mencatat K-043/K-044 di katalog. Sesi ini tidak menyentuhnya.
+- Worktree sementara (`kilau-sept`, `kilau-sept-oldc`, `spinel-sept`) sudah dihapus; compiler `38dc57dde` dibangun
+  ulang dalam ~4 menit bila perlu (`git worktree add --detach <dir> 38dc57dd`, symlink `vendor`, `make -j2 all`).
+- Komit lokal, belum di-push.
+
+**Lanjut dari sini**
+1. Push bila user setuju.
+2. K-045: repro mikro tanpa HTTP/SQLite (100 baris `buf << Kilau::Html.escape(str)`), ukur di dua compiler, lalu
+   bisect. Ukur dengan AC dan Low Power Mode mati bila memungkinkan; A/B berselang-seling tetap sah di baterai.
+3. Keputusan user: apakah K-045 dilaporkan ke upstream (issue dengan angka A/B) sebelum atau sesudah bisect.
+4. Sisanya seperti entri 00:35 WIB di bawah.
+
+**Pelajaran sesi**
+- A/B berselang-seling dalam satu sesi memisahkan "kode kita atau compiler" dalam ~15 menit tanpa perlu kondisi
+  mesin yang ideal: dua worktree commit lama (satu per compiler), binary yang sama diukur lama/baru bergantian.
+- Ukur skenario pembanding (`_ping`, halaman tunggal) dengan A/B yang sama: itu yang menunjukkan regresinya
+  khusus jalur list, bukan menyeluruh.
+
 ## 2026-11-13 ~00:35 WIB -- cek ulang tiga kali: semua terkonfirmasi kecuali tafsir benchmark S3, yang dikoreksi
 
 **Hasil cek ulang** (compiler `d1878a068`, masing-masing tiga kali)

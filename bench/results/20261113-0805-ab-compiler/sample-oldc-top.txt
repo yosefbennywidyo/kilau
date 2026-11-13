@@ -1,0 +1,40 @@
+Sort by top of stack, same collapsed (when >= 5):
+        __psynch_cvwait  (in libsystem_kernel.dylib)        40986
+        kevent  (in libsystem_kernel.dylib)        5458
+        poll  (in libsystem_kernel.dylib)        582
+        __psynch_cvsignal  (in libsystem_kernel.dylib)        112
+        _tlv_get_addr  (in libdyld.dylib)        91
+        sp_ev_worker_wait  (in blog_routes)        60
+        __read_nocancel  (in libsystem_kernel.dylib)        49
+        sp_worker_main  (in blog_routes)        48
+        __sendto  (in libsystem_kernel.dylib)        38
+        pthread_mutex_lock  (in libsystem_pthread.dylib)        32
+        DYLD-STUB$$pthread_mutex_lock  (in blog_routes)        29
+        clock_gettime  (in libsystem_c.dylib)        25
+        pthread_cond_signal  (in libsystem_pthread.dylib)        21
+        sp_str_gsub  (in blog_routes)        20
+        _mach_boottime_usec  (in libsystem_c.dylib)        16
+        _platform_memmove  (in libsystem_platform.dylib)        16
+        run_thread_once  (in blog_routes)        16
+        sp_exc_ctx_save  (in blog_routes)        16
+        _xzm_free  (in libsystem_malloc.dylib)        14
+        DYLD-STUB$$__psynch_cvsignal  (in libsystem_pthread.dylib)        13
+        gettimeofday  (in libsystem_c.dylib)        13
+        mach_absolute_time  (in libsystem_kernel.dylib)        13
+        mach_boottime_usec  (in libsystem_kernel.dylib)        13
+        sched_pick  (in blog_routes)        13
+        __psynch_mutexdrop  (in libsystem_kernel.dylib)        10
+        DYLD-STUB$$mach_boottime_usec  (in libsystem_c.dylib)        9
+        madvise  (in libsystem_kernel.dylib)        9
+        sp_exc_ctx_load  (in blog_routes)        9
+        sp_slab_release_worker  (in blog_routes)        9
+        __commpage_gettimeofday  (in libsystem_kernel.dylib)        8
+        _free  (in libsystem_malloc.dylib)        8
+        write  (in libsystem_kernel.dylib)        8
+        sp_slab_runs_release  (in blog_routes)        6
+        _platform_strchr  (in libsystem_platform.dylib)        5
+
+Binary Images:
+       0x104bb0000 -        0x104c48327 +blog_routes (0) <7D001A60-E8E8-3C23-A542-BD89A5357C85> /tmp/*/blog_routes
+       0x181de8000 -        0x181e3ab4b  libobjc.A.dylib (951.7) <03BD9E32-CF0A-37B0-898A-3CE8DE06D842> /usr/lib/libobjc.A.dylib
+       0x181e3b000 -        0x181e6fd58  libdyld.dylib (1387) <957F93B3-8805-39C7-9C51-EDD1715F550E> /usr/lib/system/libdyld.dylib

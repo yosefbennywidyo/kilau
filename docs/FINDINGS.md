@@ -89,6 +89,8 @@ di kedua engine.
 | K-038 | `yield` sebagai argumen konstruktor yang `initialize`-nya memakai `yield`/`block_given?` | **nilai salah diam-diam** / `LocalJumpError` palsu | **diperbaiki upstream** (#11451) |
 | K-039 | `Array#rfind` pada receiver yang tipenya baru diketahui saat run | `NoMethodError` / C tidak valid | **diperbaiki upstream** (#11670 + 7 PR tindak lanjut s.d. #11691) |
 | K-040, K-041 | tes `scale-test` upstream buta; kerja kompilasi kuadratik untuk banyak konstanta | bukan bug kebenaran | **diperbaiki upstream oleh pihak lain** (#11481 s.d. #11483) |
+| K-042 s.d. K-044 | `respond_to?(:to_set)`, `method(:to_set)`, dan `size` pada Set dari `to_set` di dalam blok | nilai salah / error | terbuka; perbaikan K-042 sedang disiapkan (lihat katalog) |
+| K-045 | halaman list 26-37% lebih lambat, build 4× lebih lama, binary 2,3× lebih besar dibanding compiler September | **performa dan DX** | terbuka; terbukti di compiler, belum dibisect |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa
@@ -137,7 +139,9 @@ jalan.
   1,9 MB (dulu 0,8 MB). Diulang setelah mesin beristirahat 15 menit: `spin build blog`
   16,30 / 16,36 / 16,31 dtk, jadi bukan efek panas. Pengukuran itu di baterai dengan
   Low Power Mode, yang di benchmark memperlambat semuanya 25–35%; dengan AC belum
-  diukur. Kenaikannya tetap beberapa kali lipat. Penyebabnya belum diselidiki.
+  diukur. Sumber Kilau yang sama dibangun compiler September dalam 3,95 dtk dan
+  0,82 MB pada kondisi daya yang sama, jadi kenaikan 4× waktu dan 2,3× ukuran berasal
+  dari compiler (K-045). Commit penyebabnya belum dicari.
 - **Grammar sempit.** Template: delimiter wajib satu baris, dan cek variabel hanya
   identifier akar. `gen routes`: route satu baris dengan blok `{ }`. Pelanggaran
   menjadi error `file:baris`, bukan tebakan.
@@ -209,8 +213,13 @@ Yang bisa disimpulkan:
   dari 0,83 ke sekitar 0,5. Rails tidak berubah, jadi yang berubah ada di sisi Kilau:
   compiler dan runtime spinel (`38dc57dd` ke `d1878a068`), atau kode Kilau sendiri
   (Rencana 5 mengubah router dan jalur HEAD). Mana yang menyebabkannya **belum
-  dipisahkan**. Cara memisahkannya: bangun commit Kilau September dengan compiler
-  sekarang dan ukur berselang-seling dalam satu sesi.
+  dipisahkan** saat bagian ini ditulis. **Dipisahkan 2026-11-13 ~08:05 WIB (K-045):**
+  penyebabnya compiler/runtime, bukan kode Kilau. Kode September dan kode sekarang
+  setara bila dibangun compiler yang sama (S3 c1 ~1.440 vs ~1.450 req/s). Sumber yang
+  sama dibangun `38dc57dde` 26-37% lebih cepat di c1 dan 50-87% di c16 daripada yang
+  dibangun `d1878a068`. Hanya halaman list yang kena: di `_ping` dan `/posts/42`
+  compiler baru justru 3-7% lebih cepat. Bukti di
+  `bench/results/20261113-0805-ab-compiler/`.
 - **Dua varian Kilau setara** di c1 pada keempat sesi (rasio 1,00–1,01). Di c16 dan
   c64 selisihnya berbalik arah antar-sesi (0,85–1,09), jadi tidak ada yang konsisten
   lebih cepat. Biaya penghalang proc (K-012) tidak lagi terlihat di S3; di September
@@ -243,13 +252,12 @@ Yang bisa disimpulkan:
 Ditulis ulang 2026-11-12. Daftar September (Rencana 5, Rencana 6, laporan upstream)
 sudah selesai; riwayatnya ada di `docs/HANDOFF.md`.
 
-1. **Pisahkan penurunan S3 sejak September.** Bangun commit Kilau September dengan
-   compiler sekarang, ukur lama dan baru berselang-seling dalam satu sesi (AC,
-   tanpa Low Power Mode). Itu memisahkan compiler dari kode Kilau. Sesudahnya profil
-   (`sample` pada binary di bawah beban c16) untuk jalur yang kalah dari Rails.
-2. **Waktu build.** Cari tahu mengapa satu binary blog sekarang butuh ~17 dtk dan
-   1,9 MB; ukur di mesin dingin, lalu bisect kasar antar-versi compiler bila
-   angkanya bertahan.
+1. **K-045: persempit regresi S3 di compiler.** Sudah terbukti compiler, bukan kode
+   Kilau. Berikutnya: repro mikro tanpa HTTP dan SQLite (loop `buf << escape(str)`
+   untuk 100 baris), lalu bisect antara `38dc57dde` dan `d1878a068` dengan repro itu.
+   Petunjuk dari `sample`: jalur String/byte dan alokator.
+2. **K-045: waktu build dan ukuran binary** (4× dan 2,3× untuk sumber yang sama).
+   Bisect yang sama bisa mengukur keduanya sekaligus.
 3. **Irisan vertikal kedua**, bila proyek dilanjutkan: fitur dari non-goal spec §6.5
    (kandidat: session/cookie, CSRF, autentikasi) untuk menguji batas AOT yang belum
    tersentuh blog CRUD. Butuh spec baru dan keputusan pengguna.
