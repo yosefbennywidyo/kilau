@@ -21,12 +21,11 @@ steps:
 
 ## Files
 
-- `kilau_rack.rb`: the Rack front. It builds a `Kilau::Request` from the
-  Rack env, calls the blog's generated dispatcher and returns its status,
-  headers and body. The dispatcher and its SQLite pool are created on first
-  use in each process, because all three servers fork.
-- `config.ru`, `puma.rb`, `pitchfork.rb`: server configuration. Falcon takes
-  its settings on the command line (`run.sh`).
+- `config.ru`: loads the blog's own `examples/blog/config.ru`, which runs
+  `Kilau::RackApp` (`framework/kilau/rack_app.rb`, the framework's Rack
+  front; decision D-032).
+- `puma.rb`, `pitchfork.rb`: server configuration. Falcon takes its
+  settings on the command line (`run.sh`).
 - `run.sh`: one session over every app; `summarize.rb` turns its results
   directory into tables.
 - `Gemfile`: Puma and sqlite3 at the versions `bench/rails_blog` uses.

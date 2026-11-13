@@ -1,0 +1,12 @@
+ok nothing is built before the first request
+ok a GET answers the handler's status and body
+ok the headers are lower-case and carry the body's byte length
+ok a POST body reaches the form decoder
+ok a redirect keeps its location header
+ok HEAD sends no body but the GET's content-length
+ok an unknown path is the dispatcher's 404
+ok a verb the path does not route is 405 with Allow
+ok a request without rack.input is served
+ok one process builds the dispatcher once
+ok a forked child builds its own dispatcher
+ok the parent keeps the one it had

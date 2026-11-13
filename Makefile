@@ -4,7 +4,8 @@
 # as spin test merges them (spinel #3405), and each test runs from its
 # package directory, as spin test runs it. Both first generate the blog's
 # templates and routes, which its views and blog_routes require (spec §4,
-# §2.2).
+# §2.2). Tests under a package's test/cruby/ are for code only CRuby runs
+# (Kilau::RackApp); spin test does not see them, test-cruby does.
 # spin resolves its compiler as <dir of $0>/spinel. Invoked by bare name
 # through PATH, $0 carries no directory, so spin falls back to the name
 # "spinel", finds no such file to stat, and never counts the compiler's mtime:
@@ -29,7 +30,7 @@ test: gen
 test-cruby: gen
 	@mkdir -p build; fail=0; \
 	for pkg in $(PACKAGES); do \
-	  for t in $$(cd $$pkg && ls test/*_test.rb); do \
+	  for t in $$(cd $$pkg && ls test/*_test.rb test/cruby/*_test.rb 2>/dev/null); do \
 	    if (cd $$pkg && $(RUBY) $(RUBY_INCLUDES) $$t) > build/cruby.out 2>&1 && diff -u $$pkg/$$t.expected build/cruby.out > build/cruby.diff; then \
 	      echo "ok   $$pkg/$$t"; \
 	    else \

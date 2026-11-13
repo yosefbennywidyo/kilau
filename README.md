@@ -56,7 +56,7 @@ The other three scenarios have not been re-measured. See `docs/FINDINGS.md` §6.
 | `framework/` | The `kilau` package: HTTP server, parser, `Request`/`Response`, Loco-style `Routes`/`AppRoutes`/`Dispatcher`, a YAML-subset `Config`, SQLite over FFI with a connection pool, models and migrations, and `Kilau::Testing` |
 | `tool/` | The `kilau` build tool: `kilau gen entities`, `kilau gen templates`, `kilau gen routes` |
 | `examples/blog/` | The example app: migrations, controllers, models, Tera-style templates in `assets/views/`, and two entry points: `blog_routes` (generated dispatcher, the one to deploy; decision D-023) and `blog` (route table, kept for development and as a fallback) |
-| `bench/` | The Rails comparison app, the benchmark harness, raw results and `RESULTS.md` |
+| `bench/` | The Rails comparison app, the benchmark harness, raw results and `RESULTS.md`; `bench/servers/` runs the blog behind Puma, Pitchfork and Falcon |
 | `repro/` | Minimal reproductions of the Spinel limits and bugs catalogued in `docs/CATALOG.md` |
 | `docs/` | `CATALOG.md` (AOT limits, K-001 to K-042), `DECISIONS.md`, `FINDINGS.md`, `HANDOFF.md` |
 
@@ -110,6 +110,33 @@ make e2e           # drive both binaries with curl
 `make entities` regenerates `src/models/_entities/` after a migration changes.
 Configuration lives in `config/<KILAU_ENV>.yaml`, and any key can be overridden
 with a `KILAU_*` environment variable (for example `KILAU_SERVER_PORT=8080`).
+
+## Running under a Rack server
+
+A Kilau app has two ways to run. The Spinel binary serves itself: one process,
+about 20 MB, ready in 50 ms. The same source also runs under CRuby behind any
+Rack server, through `Kilau::RackApp` (`framework/kilau/rack_app.rb`), which
+needs no gem of its own:
+
+```ruby
+# config.ru
+require "kilau/rack_app"
+require_relative "src/app"
+run Kilau::RackApp.new(App.new)
+```
+
+```sh
+cd examples/blog && make gen
+KILAU_ENV=production bundle exec puma -w 8 -t 5:5 -e production config.ru
+```
+
+with the framework directory and the sqlite package on the load path (`-I`, or
+`RUBYLIB`) and the `sqlite3` gem installed. Choose this for CPU-heavy pages under
+concurrency: the 100-row list does not scale inside one process, and on eight Puma
+workers the same code served about twice as many requests as the binary and more
+than Rails on the same server (`docs/FINDINGS.md` §6). The config file is read the
+same way; `server.host`, `server.port` and `logger.requests` belong to the Rack
+server in this mode. Each worker process opens its own SQLite pool.
 
 ## Benchmark
 
