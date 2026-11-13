@@ -2104,4 +2104,11 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `false false true`).
 - Klasifikasi: nilai salah diam-diam, dampak praktis sangat rendah (program yang bertanya
   `respond_to?(:to_set)` tanpa pernah memakai Set).
-- Status: dicatat; belum diperbaiki; belum diajukan ke upstream.
+- **Akar (2026-11-13):** pemindai sumber `sp_set_hit` (`src/spinel_parse.c`), yang memutuskan splice implisit
+  `require "set"`, hanya mengenali konstanta `Set` dan `.to_set`; simbol `:to_set` tidak dihitung, jadi paket Set
+  tak dimuat. Dampaknya lebih luas: `send(:to_set)`, `public_send(:to_set)` dan `map(&:to_set)` juga gagal
+  (NoMethodError run-time). Perbaikan: `:to_set` sebagai simbol ikut memicu splice. Branch spinel
+  `respond-to-to-set-no-set` (`c7b15e0bc`), tes `test/to_set_named_by_symbol_only.rb`; gate fork run 43341670445.
+  Gap terpisah yang ditemukan di jalan dan TIDAK ikut: `method(:to_set).call` (NameError) dan
+  `map(&:to_set).map(&:size)` (NoMethodError `size` untuk Set, juga dengan `.to_set` tertulis).
+- Status: perbaikan siap di fork; PR belum dibuka (menunggu konfirmasi user).
