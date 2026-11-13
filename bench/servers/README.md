@@ -42,9 +42,24 @@ ruby bench/servers/summarize.rb bench/results/<stamp>-servers
 Keep the laptop on AC with Low Power Mode off, and compare only within one
 session (`docs/FINDINGS.md` §6 says why).
 
+## Behind nginx
+
+`PROXY=nginx bench/servers/run.sh` starts nginx (Homebrew, `nginx` on PATH or
+`NGINX=`) for every cell: keep-alive to the client and to the app over TCP.
+Pitchfork closes every connection, so it gets a Unix socket and no upstream
+keep-alive; without a proxy the load generator runs out of local ports and its
+numbers mean nothing. Two extra app names exist for controls in the same
+session: a `-direct` suffix skips the proxy (`kilau-puma-direct`), and
+`kilau-puma-unix` puts Puma on the same kind of socket as Pitchfork.
+
+Check a session before trusting it: the `-direct` rows should repeat an earlier
+session on the same power state. One session here ran 2-3× slow because the
+laptop was busy with something else.
+
 ## What this does not show
 
 - Pitchfork's reforking, its main memory feature, is Linux-only and is off.
 - The Rack front adds its own small cost that Kilau's server does not pay.
-- No reverse proxy sits in front of any server.
+- nginx runs on the same laptop as the app and `oha`, so its cost here is a cost
+  of sharing eight cores, not what a proxy costs on its own machine.
 - `oha` runs on the same machine.

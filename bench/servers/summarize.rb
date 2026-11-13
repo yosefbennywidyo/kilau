@@ -5,7 +5,7 @@
 require "json"
 
 dir = ARGV.fetch(0)
-APPS = %w[kilau-spinel kilau-spinel-direct kilau-cruby kilau-puma kilau-puma-direct kilau-pitchfork kilau-falcon rails-puma].freeze
+APPS = %w[kilau-spinel kilau-spinel-direct kilau-cruby kilau-puma kilau-puma-unix kilau-puma-direct kilau-pitchfork kilau-falcon rails-puma].freeze
 NAMES = { "s1" => "S1 `GET /_ping`", "s2" => "S2 `GET /posts/:id`", "s3" => "S3 `GET /posts` (100 rows)", "s4" => "S4 `POST /posts`" }.freeze
 
 def median(values)

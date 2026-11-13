@@ -1,0 +1,55 @@
+SEQPACKET (SCTP) isn't supported, falling back to STREAM
+I, [2026-11-13T13:10:51.290883 #77340]  INFO -- [Pitchfork]: listening on addr=/tmp/kilau-servers-pitchfork.sock fd=9
+I, [2026-11-13T13:10:51.290987 #77340]  INFO -- [Pitchfork]: mold gen=0 pid=77340 spawned
+I, [2026-11-13T13:10:51.291008 #77340]  INFO -- [Pitchfork]: monitor pid=77340 ready
+I, [2026-11-13T13:10:51.291029 #77340]  INFO -- [Pitchfork]: monitor process ready
+I, [2026-11-13T13:10:51.291092 #77340]  INFO -- [Pitchfork]: worker=0 gen=0 spawning...
+I, [2026-11-13T13:10:51.294303 #77340]  INFO -- [Pitchfork]: worker=1 gen=0 spawning...
+I, [2026-11-13T13:10:51.296190 #77340]  INFO -- [Pitchfork]: worker=2 gen=0 spawning...
+I, [2026-11-13T13:10:51.298331 #77340]  INFO -- [Pitchfork]: worker=3 gen=0 spawning...
+I, [2026-11-13T13:10:51.299751 #77340]  INFO -- [Pitchfork]: worker=4 gen=0 spawning...
+I, [2026-11-13T13:10:51.299593 #77389]  INFO -- [Pitchfork]: worker=0 gen=0 pid=77389 spawned
+I, [2026-11-13T13:10:51.300246 #77389]  INFO -- [Pitchfork]: worker=0 gen=0 pid=77389 ready
+I, [2026-11-13T13:10:51.300157 #77390]  INFO -- [Pitchfork]: worker=1 gen=0 pid=77390 spawned
+I, [2026-11-13T13:10:51.300363 #77391]  INFO -- [Pitchfork]: worker=2 gen=0 pid=77391 spawned
+I, [2026-11-13T13:10:51.300744 #77391]  INFO -- [Pitchfork]: worker=2 gen=0 pid=77391 ready
+I, [2026-11-13T13:10:51.300751 #77390]  INFO -- [Pitchfork]: worker=1 gen=0 pid=77390 ready
+I, [2026-11-13T13:10:51.301669 #77340]  INFO -- [Pitchfork]: worker=5 gen=0 spawning...
+I, [2026-11-13T13:10:51.302763 #77392]  INFO -- [Pitchfork]: worker=3 gen=0 pid=77392 spawned
+I, [2026-11-13T13:10:51.303320 #77340]  INFO -- [Pitchfork]: worker=6 gen=0 spawning...
+I, [2026-11-13T13:10:51.303479 #77392]  INFO -- [Pitchfork]: worker=3 gen=0 pid=77392 ready
+I, [2026-11-13T13:10:51.304517 #77393]  INFO -- [Pitchfork]: worker=4 gen=0 pid=77393 spawned
+I, [2026-11-13T13:10:51.305143 #77393]  INFO -- [Pitchfork]: worker=4 gen=0 pid=77393 ready
+I, [2026-11-13T13:10:51.305478 #77340]  INFO -- [Pitchfork]: worker=7 gen=0 spawning...
+I, [2026-11-13T13:10:51.308602 #77395]  INFO -- [Pitchfork]: worker=6 gen=0 pid=77395 spawned
+I, [2026-11-13T13:10:51.308345 #77394]  INFO -- [Pitchfork]: worker=5 gen=0 pid=77394 spawned
+I, [2026-11-13T13:10:51.309258 #77395]  INFO -- [Pitchfork]: worker=6 gen=0 pid=77395 ready
+I, [2026-11-13T13:10:51.309236 #77394]  INFO -- [Pitchfork]: worker=5 gen=0 pid=77394 ready
+I, [2026-11-13T13:10:51.309278 #77340]  INFO -- [Pitchfork]: worker=0 gen=0 pid=77389 registered
+I, [2026-11-13T13:10:51.309996 #77340]  INFO -- [Pitchfork]: worker=1 gen=0 pid=77390 registered
+I, [2026-11-13T13:10:51.310135 #77340]  INFO -- [Pitchfork]: worker=2 gen=0 pid=77391 registered
+I, [2026-11-13T13:10:51.311002 #77396]  INFO -- [Pitchfork]: worker=7 gen=0 pid=77396 spawned
+I, [2026-11-13T13:10:51.311345 #77396]  INFO -- [Pitchfork]: worker=7 gen=0 pid=77396 ready
+I, [2026-11-13T13:10:51.311334 #77340]  INFO -- [Pitchfork]: worker=3 gen=0 pid=77392 registered
+I, [2026-11-13T13:10:51.311693 #77340]  INFO -- [Pitchfork]: worker=4 gen=0 pid=77393 registered
+I, [2026-11-13T13:10:51.311744 #77340]  INFO -- [Pitchfork]: worker=5 gen=0 pid=77394 registered
+I, [2026-11-13T13:10:51.311801 #77340]  INFO -- [Pitchfork]: worker=6 gen=0 pid=77395 registered
+I, [2026-11-13T13:10:51.313668 #77340]  INFO -- [Pitchfork]: worker=7 gen=0 pid=77396 registered
+I, [2026-11-13T13:11:42.631038 #77340]  INFO -- [Pitchfork]: TERM received, starting graceful shutdown
+I, [2026-11-13T13:11:42.633416 #77389]  INFO -- [Pitchfork]: worker=0 gen=0 pid=77389 exiting
+I, [2026-11-13T13:11:42.634242 #77394]  INFO -- [Pitchfork]: worker=5 gen=0 pid=77394 exiting
+I, [2026-11-13T13:11:42.634853 #77393]  INFO -- [Pitchfork]: worker=4 gen=0 pid=77393 exiting
+I, [2026-11-13T13:11:42.634887 #77395]  INFO -- [Pitchfork]: worker=6 gen=0 pid=77395 exiting
+I, [2026-11-13T13:11:42.635166 #77390]  INFO -- [Pitchfork]: worker=1 gen=0 pid=77390 exiting
+I, [2026-11-13T13:11:42.635341 #77391]  INFO -- [Pitchfork]: worker=2 gen=0 pid=77391 exiting
+I, [2026-11-13T13:11:42.635739 #77396]  INFO -- [Pitchfork]: worker=7 gen=0 pid=77396 exiting
+I, [2026-11-13T13:11:42.638762 #77392]  INFO -- [Pitchfork]: worker=3 gen=0 pid=77392 exiting
+I, [2026-11-13T13:11:42.654420 #77340]  INFO -- [Pitchfork]: worker=5 gen=0 pid=77394 reaped (#<Process::Status: pid 77394 exit 0>)
+I, [2026-11-13T13:11:42.655119 #77340]  INFO -- [Pitchfork]: worker=7 gen=0 pid=77396 reaped (#<Process::Status: pid 77396 exit 0>)
+I, [2026-11-13T13:11:42.656979 #77340]  INFO -- [Pitchfork]: worker=6 gen=0 pid=77395 reaped (#<Process::Status: pid 77395 exit 0>)
+I, [2026-11-13T13:11:42.657006 #77340]  INFO -- [Pitchfork]: worker=4 gen=0 pid=77393 reaped (#<Process::Status: pid 77393 exit 0>)
+I, [2026-11-13T13:11:42.657063 #77340]  INFO -- [Pitchfork]: worker=3 gen=0 pid=77392 reaped (#<Process::Status: pid 77392 exit 0>)
+I, [2026-11-13T13:11:42.657083 #77340]  INFO -- [Pitchfork]: worker=2 gen=0 pid=77391 reaped (#<Process::Status: pid 77391 exit 0>)
+I, [2026-11-13T13:11:42.657100 #77340]  INFO -- [Pitchfork]: worker=1 gen=0 pid=77390 reaped (#<Process::Status: pid 77390 exit 0>)
+I, [2026-11-13T13:11:42.657117 #77340]  INFO -- [Pitchfork]: worker=0 gen=0 pid=77389 reaped (#<Process::Status: pid 77389 exit 0>)
+I, [2026-11-13T13:11:42.659072 #77340]  INFO -- [Pitchfork]: monitor complete status=0

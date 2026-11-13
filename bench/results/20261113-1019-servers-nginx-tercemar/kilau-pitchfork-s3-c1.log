@@ -1,0 +1,90 @@
+SEQPACKET (SCTP) isn't supported, falling back to STREAM
+I, [2026-11-13T10:47:38.110020 #63594]  INFO -- [Pitchfork]: listening on addr=/tmp/kilau-servers-pitchfork.sock fd=9
+I, [2026-11-13T10:47:38.110088 #63594]  INFO -- [Pitchfork]: mold gen=0 pid=63594 spawned
+I, [2026-11-13T10:47:38.110101 #63594]  INFO -- [Pitchfork]: monitor pid=63594 ready
+I, [2026-11-13T10:47:38.110116 #63594]  INFO -- [Pitchfork]: monitor process ready
+I, [2026-11-13T10:47:38.110157 #63594]  INFO -- [Pitchfork]: worker=0 gen=0 spawning...
+I, [2026-11-13T10:47:38.111722 #63594]  INFO -- [Pitchfork]: worker=1 gen=0 spawning...
+I, [2026-11-13T10:47:38.113490 #63594]  INFO -- [Pitchfork]: worker=2 gen=0 spawning...
+I, [2026-11-13T10:47:38.113831 #63634]  INFO -- [Pitchfork]: worker=0 gen=0 pid=63634 spawned
+I, [2026-11-13T10:47:38.114124 #63634]  INFO -- [Pitchfork]: worker=0 gen=0 pid=63634 ready
+I, [2026-11-13T10:47:38.114347 #63594]  INFO -- [Pitchfork]: worker=3 gen=0 spawning...
+I, [2026-11-13T10:47:38.114511 #63635]  INFO -- [Pitchfork]: worker=1 gen=0 pid=63635 spawned
+I, [2026-11-13T10:47:38.114702 #63635]  INFO -- [Pitchfork]: worker=1 gen=0 pid=63635 ready
+I, [2026-11-13T10:47:38.114943 #63594]  INFO -- [Pitchfork]: worker=4 gen=0 spawning...
+I, [2026-11-13T10:47:38.115334 #63636]  INFO -- [Pitchfork]: worker=2 gen=0 pid=63636 spawned
+I, [2026-11-13T10:47:38.115518 #63636]  INFO -- [Pitchfork]: worker=2 gen=0 pid=63636 ready
+I, [2026-11-13T10:47:38.115823 #63594]  INFO -- [Pitchfork]: worker=5 gen=0 spawning...
+I, [2026-11-13T10:47:38.116036 #63637]  INFO -- [Pitchfork]: worker=3 gen=0 pid=63637 spawned
+I, [2026-11-13T10:47:38.116326 #63637]  INFO -- [Pitchfork]: worker=3 gen=0 pid=63637 ready
+I, [2026-11-13T10:47:38.116689 #63638]  INFO -- [Pitchfork]: worker=4 gen=0 pid=63638 spawned
+I, [2026-11-13T10:47:38.116849 #63594]  INFO -- [Pitchfork]: worker=6 gen=0 spawning...
+I, [2026-11-13T10:47:38.116912 #63638]  INFO -- [Pitchfork]: worker=4 gen=0 pid=63638 ready
+I, [2026-11-13T10:47:38.117763 #63639]  INFO -- [Pitchfork]: worker=5 gen=0 pid=63639 spawned
+I, [2026-11-13T10:47:38.118062 #63639]  INFO -- [Pitchfork]: worker=5 gen=0 pid=63639 ready
+I, [2026-11-13T10:47:38.118056 #63594]  INFO -- [Pitchfork]: worker=7 gen=0 spawning...
+I, [2026-11-13T10:47:38.119013 #63640]  INFO -- [Pitchfork]: worker=6 gen=0 pid=63640 spawned
+I, [2026-11-13T10:47:38.119275 #63640]  INFO -- [Pitchfork]: worker=6 gen=0 pid=63640 ready
+I, [2026-11-13T10:47:38.119967 #63594]  INFO -- [Pitchfork]: worker=0 gen=0 pid=63634 registered
+I, [2026-11-13T10:47:38.120236 #63594]  INFO -- [Pitchfork]: worker=1 gen=0 pid=63635 registered
+I, [2026-11-13T10:47:38.120226 #63641]  INFO -- [Pitchfork]: worker=7 gen=0 pid=63641 spawned
+I, [2026-11-13T10:47:38.120473 #63641]  INFO -- [Pitchfork]: worker=7 gen=0 pid=63641 ready
+I, [2026-11-13T10:47:38.120274 #63594]  INFO -- [Pitchfork]: worker=2 gen=0 pid=63636 registered
+I, [2026-11-13T10:47:38.120948 #63594]  INFO -- [Pitchfork]: worker=3 gen=0 pid=63637 registered
+I, [2026-11-13T10:47:38.121262 #63594]  INFO -- [Pitchfork]: worker=4 gen=0 pid=63638 registered
+I, [2026-11-13T10:47:38.121312 #63594]  INFO -- [Pitchfork]: worker=5 gen=0 pid=63639 registered
+I, [2026-11-13T10:47:38.121373 #63594]  INFO -- [Pitchfork]: worker=6 gen=0 pid=63640 registered
+I, [2026-11-13T10:47:38.122907 #63594]  INFO -- [Pitchfork]: worker=7 gen=0 pid=63641 registered
+E, [2026-11-13T10:47:43.520185 #63634] ERROR -- [Pitchfork]: app error: Invalid argument - getpeername(2) (Errno::EINVAL)
+E, [2026-11-13T10:47:43.582285 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'BasicSocket#remote_address'
+E, [2026-11-13T10:47:43.599115 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'Pitchfork::HttpParser#read'
+E, [2026-11-13T10:47:43.630796 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:848:in 'Pitchfork::HttpServer#process_client'
+E, [2026-11-13T10:47:43.679115 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1017:in 'Pitchfork::HttpServer#worker_loop'
+E, [2026-11-13T10:47:43.738398 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:616:in 'block in Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T10:47:43.764410 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:170:in 'block in Pitchfork.clean_fork'
+E, [2026-11-13T10:47:43.779856 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Kernel#catch'
+E, [2026-11-13T10:47:43.808006 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Pitchfork.clean_fork'
+E, [2026-11-13T10:47:43.851625 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1234:in 'Pitchfork::HttpServer#fork_sibling'
+E, [2026-11-13T10:47:43.921762 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:612:in 'Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T10:47:43.922857 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:732:in 'Pitchfork::HttpServer#spawn_missing_workers'
+E, [2026-11-13T10:47:43.946831 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:759:in 'Pitchfork::HttpServer#maintain_worker_count'
+E, [2026-11-13T10:47:43.972550 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:349:in 'Pitchfork::HttpServer#monitor_loop'
+E, [2026-11-13T10:47:43.974197 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:309:in 'Pitchfork::HttpServer#join'
+E, [2026-11-13T10:47:43.975891 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/exe/pitchfork:110:in '<top (required)>'
+E, [2026-11-13T10:47:43.978059 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T10:47:43.988017 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T10:47:43.997422 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/bin/pitchfork:25:in '<top (required)>'
+E, [2026-11-13T10:47:43.997833 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Kernel.load'
+E, [2026-11-13T10:47:43.998053 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Bundler::CLI::Exec#kernel_load'
+E, [2026-11-13T10:47:43.998236 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:24:in 'Bundler::CLI::Exec#run'
+E, [2026-11-13T10:47:44.004476 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:508:in 'Bundler::CLI#exec'
+E, [2026-11-13T10:47:44.033953 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/command.rb:28:in 'Bundler::Thor::Command#run'
+E, [2026-11-13T10:47:44.036234 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/invocation.rb:127:in 'Bundler::Thor::Invocation#invoke_command'
+E, [2026-11-13T10:47:44.046673 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor.rb:538:in 'Bundler::Thor.dispatch'
+E, [2026-11-13T10:47:44.052794 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:35:in 'Bundler::CLI.dispatch'
+E, [2026-11-13T10:47:44.053771 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/base.rb:584:in 'Bundler::Thor::Base::ClassMethods#start'
+E, [2026-11-13T10:47:44.056136 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:29:in 'Bundler::CLI.start'
+E, [2026-11-13T10:47:44.058499 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:28:in 'block in <top (required)>'
+E, [2026-11-13T10:47:44.061958 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/friendly_errors.rb:118:in 'Bundler.with_friendly_errors'
+E, [2026-11-13T10:47:44.086522 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:20:in '<top (required)>'
+E, [2026-11-13T10:47:44.088514 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T10:47:44.091133 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T10:47:44.097071 #63634] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/bin/bundle:25:in '<main>'
+I, [2026-11-13T10:48:30.931178 #63594]  INFO -- [Pitchfork]: TERM received, starting graceful shutdown
+I, [2026-11-13T10:48:30.934940 #63634]  INFO -- [Pitchfork]: worker=0 gen=0 pid=63634 exiting
+I, [2026-11-13T10:48:30.935371 #63635]  INFO -- [Pitchfork]: worker=1 gen=0 pid=63635 exiting
+I, [2026-11-13T10:48:30.935408 #63640]  INFO -- [Pitchfork]: worker=6 gen=0 pid=63640 exiting
+I, [2026-11-13T10:48:30.935588 #63639]  INFO -- [Pitchfork]: worker=5 gen=0 pid=63639 exiting
+I, [2026-11-13T10:48:30.936206 #63638]  INFO -- [Pitchfork]: worker=4 gen=0 pid=63638 exiting
+I, [2026-11-13T10:48:30.936836 #63636]  INFO -- [Pitchfork]: worker=2 gen=0 pid=63636 exiting
+I, [2026-11-13T10:48:30.936601 #63637]  INFO -- [Pitchfork]: worker=3 gen=0 pid=63637 exiting
+I, [2026-11-13T10:48:30.937425 #63641]  INFO -- [Pitchfork]: worker=7 gen=0 pid=63641 exiting
+I, [2026-11-13T10:48:30.949570 #63594]  INFO -- [Pitchfork]: worker=4 gen=0 pid=63638 reaped (#<Process::Status: pid 63638 exit 0>)
+I, [2026-11-13T10:48:30.949670 #63594]  INFO -- [Pitchfork]: worker=7 gen=0 pid=63641 reaped (#<Process::Status: pid 63641 exit 0>)
+I, [2026-11-13T10:48:30.950063 #63594]  INFO -- [Pitchfork]: worker=6 gen=0 pid=63640 reaped (#<Process::Status: pid 63640 exit 0>)
+I, [2026-11-13T10:48:30.952300 #63594]  INFO -- [Pitchfork]: worker=5 gen=0 pid=63639 reaped (#<Process::Status: pid 63639 exit 0>)
+I, [2026-11-13T10:48:30.952361 #63594]  INFO -- [Pitchfork]: worker=3 gen=0 pid=63637 reaped (#<Process::Status: pid 63637 exit 0>)
+I, [2026-11-13T10:48:30.952380 #63594]  INFO -- [Pitchfork]: worker=2 gen=0 pid=63636 reaped (#<Process::Status: pid 63636 exit 0>)
+I, [2026-11-13T10:48:30.952398 #63594]  INFO -- [Pitchfork]: worker=1 gen=0 pid=63635 reaped (#<Process::Status: pid 63635 exit 0>)
+I, [2026-11-13T10:48:30.952414 #63594]  INFO -- [Pitchfork]: worker=0 gen=0 pid=63634 reaped (#<Process::Status: pid 63634 exit 0>)
+I, [2026-11-13T10:48:30.953895 #63594]  INFO -- [Pitchfork]: monitor complete status=0

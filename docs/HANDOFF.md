@@ -2,6 +2,39 @@
 
 Entri terbaru di atas.
 
+## 2026-11-13 ~13:55 WIB -- `Kilau::RackApp` jadi mode resmi kedua; semua server diukur ulang di belakang nginx
+
+**Status**
+- Push: `main` di `origin/main` sampai `38a6d9f` (izin user). Komit sesudahnya lokal.
+- **D-032, `Kilau::RackApp`** (`framework/kilau/rack_app.rb`, `a0ada2a`): app Kilau di CRuby di belakang server Rack
+  mana pun; tidak dimuat `require "kilau"`, tidak di-compile Spinel, tanpa gem `rack`. Dispatcher + pool dibuat saat
+  request pertama dan dibuat ulang per proses hasil fork. Tes `framework/test/cruby/rack_app_test.rb` (12 cek, termasuk
+  fork) dijalankan `make test-cruby` (29/29); `spin test` tidak melihat direktori itu (framework tetap 16/16).
+  `examples/blog/config.ru` dan bagian README "Running under a Rack server" ditambahkan.
+- **nginx** 1.31.8 dipasang lewat Homebrew (mise tidak punya). Tidak dijalankan sebagai service; `run.sh` menyalakan dan
+  mematikannya per sel.
+- **Sesi nginx** `bench/results/20261113-1242-servers-nginx` (64 sel, bersih: baris `-direct` mengulang sesi pagi) dan
+  sesi pendek `20261113-1344-servers-nginx-unix`. Tafsir di `FINDINGS.md` §6 "Semua server di belakang nginx":
+  - list c16: pitchfork 3.768, kilau-puma 3.424, falcon 3.175, rails-puma 2.688, kilau-cruby 1.962, kilau-spinel 1.782;
+  - Pitchfork kini sah (0 error) dan setara Puma dalam throughput bila socket-nya sama; unggulnya di p99 list
+    (33 ms vs 111 ms di c64);
+  - nginx di laptop yang sama memangkas endpoint ringan ~separuh (berebut CPU);
+  - `kilau-puma` tetap 1,27x-2,3x di atas `rails-puma`.
+- Sesi nginx pertama (`...-1019-servers-nginx-tercemar`) tidak dipakai: 2-3x lebih lambat karena beban lain di laptop,
+  dan daya pindah di tengah sesi. Ada `CATATAN.md` di dalamnya.
+
+**Lanjut dari sini**
+1. Push komit baru bila user setuju.
+2. Bila angka akan dikutip keluar: ulang sesi nginx 3x dengan AC, Low Power Mode mati, laptop tidak dipakai.
+3. Profil `kilau-spinel` di S3 c16 untuk menunjukkan apa yang menahan skala satu proses (bersama K-045).
+4. Reforking Pitchfork dan nginx di mesin terpisah butuh Linux; di luar jangkauan laptop ini.
+
+**Pelajaran sesi**
+- Sebelum memercayai satu sesi benchmark, cocokkan baris kontrolnya dengan sesi sebelumnya pada kondisi daya yang
+  sama. Sesi 10:19 lolos tanpa error dan repetisinya konsisten, tetapi seluruhnya 2-3x lambat.
+- Selisih antar-server bisa berasal dari jenis socket, bukan servernya: Pitchfork tampak 70% di atas Puma di `_ping`
+  sampai Puma diberi Unix socket yang sama.
+
 ## 2026-11-13 ~09:25 WIB -- server Kilau dibandingkan dengan Puma, Pitchfork, Falcon (blog yang sama di CRuby lewat Rack)
 
 **Status**

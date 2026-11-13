@@ -273,6 +273,52 @@ dengan body yang identik. Angka = req/s.
   adil butuh nginx di depannya, dan Linux untuk reforking.
 - S2 dan S4 hanya diukur di c16. Satu sesi, belum diulang.
 
+### Semua server di belakang nginx (2026-11-13)
+
+Sesi `bench/results/20261113-1242-servers-nginx` (baterai, Low Power Mode; prosedur
+sama). nginx 1.31.8 di mesin yang sama, `worker_processes auto`, keep-alive ke klien
+dan ke upstream lewat TCP. Pitchfork lewat Unix socket tanpa keep-alive, karena ia
+menutup tiap koneksi. Dua baris `-direct` tidak lewat nginx dan ada di sesi yang sama.
+Semua body identik; tidak ada status tak terduga atau error di sel mana pun. Angka =
+req/s, p99 dalam kurung untuk kolom list.
+
+| App | S1 c16 | S2 c16 | S3 c1 | S3 c16 | S3 c64 | S4 c16 |
+|---|---|---|---|---|---|---|
+| kilau-spinel-direct | 15.546 | 14.049 | 1.429 | 1.852 (18 ms) | 1.777 (87 ms) | 10.718 |
+| kilau-spinel | 7.237 | 6.748 | 980 | 1.782 (20 ms) | 1.754 (107 ms) | 6.216 |
+| kilau-cruby | 8.067 | 7.540 | 959 | 1.962 (10 ms) | 1.712 (50 ms) | 7.454 |
+| kilau-puma-direct | 14.420 | 9.025 | 1.216 | 4.063 (17 ms) | 4.066 (61 ms) | 6.884 |
+| kilau-puma | 6.995 | 6.917 | 898 | 3.424 (11 ms) | 3.019 (158 ms) | 6.159 |
+| kilau-pitchfork | 11.955 | 8.396 | 1.190 | 3.768 (11 ms) | 3.866 (28 ms) | 6.291 |
+| kilau-falcon | 7.316 | 6.219 | 880 | 3.175 (25 ms) | 2.750 (84 ms) | 5.684 |
+| rails-puma | 3.622 | 3.859 | 909 | 2.688 (17 ms) | 2.685 (205 ms) | 2.656 |
+
+- **Baris `-direct` mengulang sesi pagi** (S1 c16 15.546 vs 16.149; `kilau-puma` S3
+  c16 4.063 vs 3.831), jadi sesi ini bersih. Sesi nginx pertama
+  (`20261113-1019-servers-nginx-tercemar`) terukur 2-3× lebih lambat karena beban
+  lain di laptop dan tidak dipakai.
+- **nginx di mesin yang sama memangkas endpoint ringan sekitar separuh** (S1
+  `kilau-spinel` 15.546 ke 7.237), karena ia berebut CPU dengan app dan `oha`. Di
+  halaman list biayanya kecil untuk satu proses (1.852 ke 1.782) dan 16-26% untuk
+  Puma. Ini biaya penempatan di satu laptop, bukan ukuran nginx di produksi.
+- **Urutan di halaman list bertahan:** server multi-proses (3.000-3.900) di atas Rails
+  (2.700) di atas Kilau satu proses (1.700-2.000). `kilau-puma` / `rails-puma` di
+  belakang nginx: 1,9× (S1), 1,8× (S2), 1,27× (S3 c16), 2,3× (S4).
+- **Pitchfork sekarang terukur sah dan setara Puma dalam throughput.** Angkanya yang
+  lebih tinggi dari `kilau-puma` di tabel berasal dari Unix socket, bukan dari
+  Pitchfork: di sesi `20261113-1344-servers-nginx-unix`, Puma lewat Unix socket
+  memberi 11.569 (S1 c16) dan 3.682 (S3 c16), Pitchfork 12.020 dan 3.679.
+- **Keunggulan Pitchfork yang nyata ada di ekor latensi** halaman list: p99 13 ms vs
+  20 ms (c16) dan 33 ms vs 111 ms (c64) terhadap Puma lewat socket yang sama. Satu
+  request per proses berarti tidak ada thread yang berebut GVL. Reforking, fitur
+  memorinya, tidak diuji (hanya Linux); RSS-nya di sini setara Puma.
+- **Falcon di bawah Puma dan Pitchfork** di hampir semua sel; bebannya CPU dan SQLite.
+- **Di belakang proxy, satu proses Kilau kehilangan keunggulannya di endpoint
+  ringan:** `kilau-spinel` dan `kilau-cruby` setara dengan Puma dan Falcon di S1/S2/S4
+  (semua dibatasi nginx), dan tetap kalah di halaman list.
+- Satu sesi bersih untuk tabel utama dan satu sesi pendek untuk Unix socket; belum
+  diulang tiga kali.
+
 ## 7. Batasan pengukuran
 
 - **Satu laptop:** MacBook Air M1, 8 core, 8 GB. oha berjalan di mesin yang sama dan

@@ -90,11 +90,16 @@ start_server() {
     if [ "$app" = kilau-pitchfork ]; then
       rm -f "$PITCHFORK_SOCK"; listen=$PITCHFORK_SOCK
       start_nginx "unix:$PITCHFORK_SOCK" no
+    elif [ "$app" = kilau-puma-unix ]; then
+      # Puma over the same kind of socket as Pitchfork, keep-alive kept.
+      rm -f "$PITCHFORK_SOCK"; listen=$PITCHFORK_SOCK
+      start_nginx "unix:$PITCHFORK_SOCK" yes
     else
       start_nginx "127.0.0.1:$port" yes
     fi
   fi
   app=${app%-direct}
+  app=${app%-unix}
   case $app in
     kilau-spinel) start_app kilau-routes "$port" "$db" "$log" ;;
     rails-puma) start_app rails "$port" "$db" "$log" ;;

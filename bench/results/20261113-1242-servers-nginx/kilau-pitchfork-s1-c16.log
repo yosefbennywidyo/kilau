@@ -1,0 +1,300 @@
+SEQPACKET (SCTP) isn't supported, falling back to STREAM
+I, [2026-11-13T12:55:23.354528 #47292]  INFO -- [Pitchfork]: listening on addr=/tmp/kilau-servers-pitchfork.sock fd=9
+I, [2026-11-13T12:55:23.354615 #47292]  INFO -- [Pitchfork]: mold gen=0 pid=47292 spawned
+I, [2026-11-13T12:55:23.354635 #47292]  INFO -- [Pitchfork]: monitor pid=47292 ready
+I, [2026-11-13T12:55:23.354657 #47292]  INFO -- [Pitchfork]: monitor process ready
+I, [2026-11-13T12:55:23.354715 #47292]  INFO -- [Pitchfork]: worker=0 gen=0 spawning...
+I, [2026-11-13T12:55:23.356918 #47292]  INFO -- [Pitchfork]: worker=1 gen=0 spawning...
+I, [2026-11-13T12:55:23.357888 #47292]  INFO -- [Pitchfork]: worker=2 gen=0 spawning...
+I, [2026-11-13T12:55:23.359018 #47339]  INFO -- [Pitchfork]: worker=0 gen=0 pid=47339 spawned
+I, [2026-11-13T12:55:23.359196 #47292]  INFO -- [Pitchfork]: worker=3 gen=0 spawning...
+I, [2026-11-13T12:55:23.359480 #47339]  INFO -- [Pitchfork]: worker=0 gen=0 pid=47339 ready
+I, [2026-11-13T12:55:23.359615 #47340]  INFO -- [Pitchfork]: worker=1 gen=0 pid=47340 spawned
+I, [2026-11-13T12:55:23.359966 #47340]  INFO -- [Pitchfork]: worker=1 gen=0 pid=47340 ready
+I, [2026-11-13T12:55:23.360724 #47341]  INFO -- [Pitchfork]: worker=2 gen=0 pid=47341 spawned
+I, [2026-11-13T12:55:23.361090 #47292]  INFO -- [Pitchfork]: worker=4 gen=0 spawning...
+I, [2026-11-13T12:55:23.361284 #47341]  INFO -- [Pitchfork]: worker=2 gen=0 pid=47341 ready
+I, [2026-11-13T12:55:23.363151 #47292]  INFO -- [Pitchfork]: worker=5 gen=0 spawning...
+I, [2026-11-13T12:55:23.363123 #47342]  INFO -- [Pitchfork]: worker=3 gen=0 pid=47342 spawned
+I, [2026-11-13T12:55:23.363719 #47342]  INFO -- [Pitchfork]: worker=3 gen=0 pid=47342 ready
+I, [2026-11-13T12:55:23.364976 #47343]  INFO -- [Pitchfork]: worker=4 gen=0 pid=47343 spawned
+I, [2026-11-13T12:55:23.366244 #47343]  INFO -- [Pitchfork]: worker=4 gen=0 pid=47343 ready
+I, [2026-11-13T12:55:23.366759 #47292]  INFO -- [Pitchfork]: worker=6 gen=0 spawning...
+I, [2026-11-13T12:55:23.368145 #47344]  INFO -- [Pitchfork]: worker=5 gen=0 pid=47344 spawned
+I, [2026-11-13T12:55:23.369128 #47344]  INFO -- [Pitchfork]: worker=5 gen=0 pid=47344 ready
+I, [2026-11-13T12:55:23.369584 #47292]  INFO -- [Pitchfork]: worker=7 gen=0 spawning...
+I, [2026-11-13T12:55:23.371456 #47345]  INFO -- [Pitchfork]: worker=6 gen=0 pid=47345 spawned
+I, [2026-11-13T12:55:23.371802 #47345]  INFO -- [Pitchfork]: worker=6 gen=0 pid=47345 ready
+I, [2026-11-13T12:55:23.372347 #47292]  INFO -- [Pitchfork]: worker=0 gen=0 pid=47339 registered
+I, [2026-11-13T12:55:23.372497 #47292]  INFO -- [Pitchfork]: worker=1 gen=0 pid=47340 registered
+I, [2026-11-13T12:55:23.372560 #47292]  INFO -- [Pitchfork]: worker=2 gen=0 pid=47341 registered
+I, [2026-11-13T12:55:23.373448 #47348]  INFO -- [Pitchfork]: worker=7 gen=0 pid=47348 spawned
+I, [2026-11-13T12:55:23.373547 #47292]  INFO -- [Pitchfork]: worker=3 gen=0 pid=47342 registered
+I, [2026-11-13T12:55:23.373759 #47348]  INFO -- [Pitchfork]: worker=7 gen=0 pid=47348 ready
+I, [2026-11-13T12:55:23.374066 #47292]  INFO -- [Pitchfork]: worker=4 gen=0 pid=47343 registered
+I, [2026-11-13T12:55:23.374137 #47292]  INFO -- [Pitchfork]: worker=5 gen=0 pid=47344 registered
+I, [2026-11-13T12:55:23.374279 #47292]  INFO -- [Pitchfork]: worker=6 gen=0 pid=47345 registered
+I, [2026-11-13T12:55:23.378634 #47292]  INFO -- [Pitchfork]: worker=7 gen=0 pid=47348 registered
+E, [2026-11-13T12:55:28.752332 #47348] ERROR -- [Pitchfork]: app error: Invalid argument - getpeername(2) (Errno::EINVAL)
+E, [2026-11-13T12:55:28.753322 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'BasicSocket#remote_address'
+E, [2026-11-13T12:55:28.754066 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'Pitchfork::HttpParser#read'
+E, [2026-11-13T12:55:28.754285 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:848:in 'Pitchfork::HttpServer#process_client'
+E, [2026-11-13T12:55:28.754498 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1017:in 'Pitchfork::HttpServer#worker_loop'
+E, [2026-11-13T12:55:28.754672 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:616:in 'block in Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:28.754853 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:170:in 'block in Pitchfork.clean_fork'
+E, [2026-11-13T12:55:28.755022 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Kernel#catch'
+E, [2026-11-13T12:55:28.755189 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Pitchfork.clean_fork'
+E, [2026-11-13T12:55:28.755425 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1234:in 'Pitchfork::HttpServer#fork_sibling'
+E, [2026-11-13T12:55:28.755594 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:612:in 'Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:28.755759 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:732:in 'Pitchfork::HttpServer#spawn_missing_workers'
+E, [2026-11-13T12:55:28.755924 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:759:in 'Pitchfork::HttpServer#maintain_worker_count'
+E, [2026-11-13T12:55:28.756090 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:349:in 'Pitchfork::HttpServer#monitor_loop'
+E, [2026-11-13T12:55:28.756255 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:309:in 'Pitchfork::HttpServer#join'
+E, [2026-11-13T12:55:28.758752 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/exe/pitchfork:110:in '<top (required)>'
+E, [2026-11-13T12:55:28.761381 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:28.761541 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:28.761692 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/bin/pitchfork:25:in '<top (required)>'
+E, [2026-11-13T12:55:28.761919 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Kernel.load'
+E, [2026-11-13T12:55:28.762082 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Bundler::CLI::Exec#kernel_load'
+E, [2026-11-13T12:55:28.762222 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:24:in 'Bundler::CLI::Exec#run'
+E, [2026-11-13T12:55:28.762362 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:508:in 'Bundler::CLI#exec'
+E, [2026-11-13T12:55:28.762502 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/command.rb:28:in 'Bundler::Thor::Command#run'
+E, [2026-11-13T12:55:28.762653 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/invocation.rb:127:in 'Bundler::Thor::Invocation#invoke_command'
+E, [2026-11-13T12:55:28.762792 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor.rb:538:in 'Bundler::Thor.dispatch'
+E, [2026-11-13T12:55:28.762932 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:35:in 'Bundler::CLI.dispatch'
+E, [2026-11-13T12:55:28.763067 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/base.rb:584:in 'Bundler::Thor::Base::ClassMethods#start'
+E, [2026-11-13T12:55:28.763205 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:29:in 'Bundler::CLI.start'
+E, [2026-11-13T12:55:28.763642 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:28:in 'block in <top (required)>'
+E, [2026-11-13T12:55:28.763991 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/friendly_errors.rb:118:in 'Bundler.with_friendly_errors'
+E, [2026-11-13T12:55:28.764166 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:20:in '<top (required)>'
+E, [2026-11-13T12:55:28.764302 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:28.764436 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:28.764570 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/bin/bundle:25:in '<main>'
+E, [2026-11-13T12:55:44.090199 #47345] ERROR -- [Pitchfork]: app error: Invalid argument - getpeername(2) (Errno::EINVAL)
+E, [2026-11-13T12:55:44.090299 #47348] ERROR -- [Pitchfork]: app error: Invalid argument - getpeername(2) (Errno::EINVAL)
+E, [2026-11-13T12:55:44.090639 #47339] ERROR -- [Pitchfork]: app error: Invalid argument - getpeername(2) (Errno::EINVAL)
+E, [2026-11-13T12:55:44.090654 #47340] ERROR -- [Pitchfork]: app error: Invalid argument - getpeername(2) (Errno::EINVAL)
+E, [2026-11-13T12:55:44.091572 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'BasicSocket#remote_address'
+E, [2026-11-13T12:55:44.091583 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'BasicSocket#remote_address'
+E, [2026-11-13T12:55:44.091642 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'BasicSocket#remote_address'
+E, [2026-11-13T12:55:44.091836 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'Pitchfork::HttpParser#read'
+E, [2026-11-13T12:55:44.091868 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'Pitchfork::HttpParser#read'
+E, [2026-11-13T12:55:44.091975 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'Pitchfork::HttpParser#read'
+E, [2026-11-13T12:55:44.092096 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:848:in 'Pitchfork::HttpServer#process_client'
+E, [2026-11-13T12:55:44.092053 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:848:in 'Pitchfork::HttpServer#process_client'
+E, [2026-11-13T12:55:44.091589 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'BasicSocket#remote_address'
+E, [2026-11-13T12:55:44.092216 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:848:in 'Pitchfork::HttpServer#process_client'
+E, [2026-11-13T12:55:44.092357 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1017:in 'Pitchfork::HttpServer#worker_loop'
+E, [2026-11-13T12:55:44.092456 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1017:in 'Pitchfork::HttpServer#worker_loop'
+E, [2026-11-13T12:55:44.092412 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1017:in 'Pitchfork::HttpServer#worker_loop'
+E, [2026-11-13T12:55:44.092711 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:616:in 'block in Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:44.092571 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:616:in 'block in Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:44.092784 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:616:in 'block in Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:44.092496 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'Pitchfork::HttpParser#read'
+E, [2026-11-13T12:55:44.093020 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:170:in 'block in Pitchfork.clean_fork'
+E, [2026-11-13T12:55:44.092977 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:170:in 'block in Pitchfork.clean_fork'
+E, [2026-11-13T12:55:44.093282 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Kernel#catch'
+E, [2026-11-13T12:55:44.093293 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:848:in 'Pitchfork::HttpServer#process_client'
+E, [2026-11-13T12:55:44.093517 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Pitchfork.clean_fork'
+E, [2026-11-13T12:55:44.093603 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1017:in 'Pitchfork::HttpServer#worker_loop'
+E, [2026-11-13T12:55:44.092931 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:170:in 'block in Pitchfork.clean_fork'
+E, [2026-11-13T12:55:44.093717 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1234:in 'Pitchfork::HttpServer#fork_sibling'
+E, [2026-11-13T12:55:44.093807 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:616:in 'block in Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:44.093299 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Kernel#catch'
+E, [2026-11-13T12:55:44.093925 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:612:in 'Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:44.094009 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:170:in 'block in Pitchfork.clean_fork'
+E, [2026-11-13T12:55:44.094122 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:732:in 'Pitchfork::HttpServer#spawn_missing_workers'
+E, [2026-11-13T12:55:44.094238 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Kernel#catch'
+E, [2026-11-13T12:55:44.094375 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:759:in 'Pitchfork::HttpServer#maintain_worker_count'
+E, [2026-11-13T12:55:44.094485 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Pitchfork.clean_fork'
+E, [2026-11-13T12:55:44.094576 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:349:in 'Pitchfork::HttpServer#monitor_loop'
+E, [2026-11-13T12:55:44.093986 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Kernel#catch'
+E, [2026-11-13T12:55:44.094726 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1234:in 'Pitchfork::HttpServer#fork_sibling'
+E, [2026-11-13T12:55:44.094768 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:309:in 'Pitchfork::HttpServer#join'
+E, [2026-11-13T12:55:44.094161 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Pitchfork.clean_fork'
+E, [2026-11-13T12:55:44.094917 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Pitchfork.clean_fork'
+E, [2026-11-13T12:55:44.094998 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/exe/pitchfork:110:in '<top (required)>'
+E, [2026-11-13T12:55:44.095070 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:612:in 'Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:44.095100 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1234:in 'Pitchfork::HttpServer#fork_sibling'
+E, [2026-11-13T12:55:44.095213 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:44.095152 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1234:in 'Pitchfork::HttpServer#fork_sibling'
+E, [2026-11-13T12:55:44.095389 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:612:in 'Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:44.095363 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:732:in 'Pitchfork::HttpServer#spawn_missing_workers'
+E, [2026-11-13T12:55:44.095452 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:44.095521 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:612:in 'Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:44.095663 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:732:in 'Pitchfork::HttpServer#spawn_missing_workers'
+E, [2026-11-13T12:55:44.095705 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/bin/pitchfork:25:in '<top (required)>'
+E, [2026-11-13T12:55:44.095687 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:759:in 'Pitchfork::HttpServer#maintain_worker_count'
+E, [2026-11-13T12:55:44.095839 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:732:in 'Pitchfork::HttpServer#spawn_missing_workers'
+E, [2026-11-13T12:55:44.095911 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:759:in 'Pitchfork::HttpServer#maintain_worker_count'
+E, [2026-11-13T12:55:44.095964 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Kernel.load'
+E, [2026-11-13T12:55:44.096007 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:349:in 'Pitchfork::HttpServer#monitor_loop'
+E, [2026-11-13T12:55:44.096080 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:759:in 'Pitchfork::HttpServer#maintain_worker_count'
+E, [2026-11-13T12:55:44.096132 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:349:in 'Pitchfork::HttpServer#monitor_loop'
+E, [2026-11-13T12:55:44.096240 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Bundler::CLI::Exec#kernel_load'
+E, [2026-11-13T12:55:44.096269 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:309:in 'Pitchfork::HttpServer#join'
+E, [2026-11-13T12:55:44.096313 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:349:in 'Pitchfork::HttpServer#monitor_loop'
+E, [2026-11-13T12:55:44.096427 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:309:in 'Pitchfork::HttpServer#join'
+E, [2026-11-13T12:55:44.096496 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/exe/pitchfork:110:in '<top (required)>'
+E, [2026-11-13T12:55:44.096475 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:24:in 'Bundler::CLI::Exec#run'
+E, [2026-11-13T12:55:44.096543 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:309:in 'Pitchfork::HttpServer#join'
+E, [2026-11-13T12:55:44.096692 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/exe/pitchfork:110:in '<top (required)>'
+E, [2026-11-13T12:55:44.096776 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:508:in 'Bundler::CLI#exec'
+E, [2026-11-13T12:55:44.096869 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/exe/pitchfork:110:in '<top (required)>'
+E, [2026-11-13T12:55:44.097004 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/command.rb:28:in 'Bundler::Thor::Command#run'
+E, [2026-11-13T12:55:44.097012 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:44.097100 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:44.097235 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/invocation.rb:127:in 'Bundler::Thor::Invocation#invoke_command'
+E, [2026-11-13T12:55:44.097270 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:44.097321 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:44.097493 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor.rb:538:in 'Bundler::Thor.dispatch'
+E, [2026-11-13T12:55:44.097544 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/bin/pitchfork:25:in '<top (required)>'
+E, [2026-11-13T12:55:44.097567 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/bin/pitchfork:25:in '<top (required)>'
+E, [2026-11-13T12:55:44.097740 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:35:in 'Bundler::CLI.dispatch'
+E, [2026-11-13T12:55:44.097790 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Kernel.load'
+E, [2026-11-13T12:55:44.097872 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Kernel.load'
+E, [2026-11-13T12:55:44.097956 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/base.rb:584:in 'Bundler::Thor::Base::ClassMethods#start'
+E, [2026-11-13T12:55:44.098025 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Bundler::CLI::Exec#kernel_load'
+E, [2026-11-13T12:55:44.098081 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Bundler::CLI::Exec#kernel_load'
+E, [2026-11-13T12:55:44.098189 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:29:in 'Bundler::CLI.start'
+E, [2026-11-13T12:55:44.098299 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:24:in 'Bundler::CLI::Exec#run'
+E, [2026-11-13T12:55:44.098427 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:28:in 'block in <top (required)>'
+E, [2026-11-13T12:55:44.098627 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/friendly_errors.rb:118:in 'Bundler.with_friendly_errors'
+E, [2026-11-13T12:55:44.098836 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:20:in '<top (required)>'
+E, [2026-11-13T12:55:44.099007 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:44.099182 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:44.099352 #47348] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/bin/bundle:25:in '<main>'
+E, [2026-11-13T12:55:44.099638 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:44.103989 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:44.104178 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/bin/pitchfork:25:in '<top (required)>'
+E, [2026-11-13T12:55:44.104340 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Kernel.load'
+E, [2026-11-13T12:55:44.104502 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Bundler::CLI::Exec#kernel_load'
+E, [2026-11-13T12:55:44.104644 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:24:in 'Bundler::CLI::Exec#run'
+E, [2026-11-13T12:55:44.100979 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:24:in 'Bundler::CLI::Exec#run'
+E, [2026-11-13T12:55:44.104829 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:508:in 'Bundler::CLI#exec'
+E, [2026-11-13T12:55:44.104972 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/command.rb:28:in 'Bundler::Thor::Command#run'
+E, [2026-11-13T12:55:44.105090 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:508:in 'Bundler::CLI#exec'
+E, [2026-11-13T12:55:44.105119 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/invocation.rb:127:in 'Bundler::Thor::Invocation#invoke_command'
+E, [2026-11-13T12:55:44.105313 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor.rb:538:in 'Bundler::Thor.dispatch'
+E, [2026-11-13T12:55:44.102666 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:508:in 'Bundler::CLI#exec'
+E, [2026-11-13T12:55:44.105303 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/command.rb:28:in 'Bundler::Thor::Command#run'
+E, [2026-11-13T12:55:44.105557 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:35:in 'Bundler::CLI.dispatch'
+E, [2026-11-13T12:55:44.105605 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/invocation.rb:127:in 'Bundler::Thor::Invocation#invoke_command'
+E, [2026-11-13T12:55:44.105716 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/base.rb:584:in 'Bundler::Thor::Base::ClassMethods#start'
+E, [2026-11-13T12:55:44.105801 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/command.rb:28:in 'Bundler::Thor::Command#run'
+E, [2026-11-13T12:55:44.105871 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:29:in 'Bundler::CLI.start'
+E, [2026-11-13T12:55:44.105806 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor.rb:538:in 'Bundler::Thor.dispatch'
+E, [2026-11-13T12:55:44.106003 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/invocation.rb:127:in 'Bundler::Thor::Invocation#invoke_command'
+E, [2026-11-13T12:55:44.106093 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:35:in 'Bundler::CLI.dispatch'
+E, [2026-11-13T12:55:44.106163 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor.rb:538:in 'Bundler::Thor.dispatch'
+E, [2026-11-13T12:55:44.106274 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/base.rb:584:in 'Bundler::Thor::Base::ClassMethods#start'
+E, [2026-11-13T12:55:44.106321 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:35:in 'Bundler::CLI.dispatch'
+E, [2026-11-13T12:55:44.106394 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:28:in 'block in <top (required)>'
+E, [2026-11-13T12:55:44.106500 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:29:in 'Bundler::CLI.start'
+E, [2026-11-13T12:55:44.106505 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/base.rb:584:in 'Bundler::Thor::Base::ClassMethods#start'
+E, [2026-11-13T12:55:44.106806 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:29:in 'Bundler::CLI.start'
+E, [2026-11-13T12:55:44.106876 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/friendly_errors.rb:118:in 'Bundler.with_friendly_errors'
+E, [2026-11-13T12:55:44.106964 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:28:in 'block in <top (required)>'
+E, [2026-11-13T12:55:44.107193 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:20:in '<top (required)>'
+E, [2026-11-13T12:55:44.107340 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:44.107419 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:28:in 'block in <top (required)>'
+E, [2026-11-13T12:55:44.107485 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:44.107490 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/friendly_errors.rb:118:in 'Bundler.with_friendly_errors'
+E, [2026-11-13T12:55:44.107675 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/bin/bundle:25:in '<main>'
+E, [2026-11-13T12:55:44.107786 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:20:in '<top (required)>'
+E, [2026-11-13T12:55:44.107935 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:44.107980 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/friendly_errors.rb:118:in 'Bundler.with_friendly_errors'
+E, [2026-11-13T12:55:44.108088 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:44.108257 #47340] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/bin/bundle:25:in '<main>'
+E, [2026-11-13T12:55:44.108306 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:20:in '<top (required)>'
+E, [2026-11-13T12:55:44.108468 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:44.108664 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:44.108809 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/bin/bundle:25:in '<main>'
+E, [2026-11-13T12:55:59.552753 #47339] ERROR -- [Pitchfork]: app error: Invalid argument - getpeername(2) (Errno::EINVAL)
+E, [2026-11-13T12:55:59.552729 #47345] ERROR -- [Pitchfork]: app error: Invalid argument - getpeername(2) (Errno::EINVAL)
+E, [2026-11-13T12:55:59.554006 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'BasicSocket#remote_address'
+E, [2026-11-13T12:55:59.554019 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'BasicSocket#remote_address'
+E, [2026-11-13T12:55:59.554245 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'Pitchfork::HttpParser#read'
+E, [2026-11-13T12:55:59.554301 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_parser.rb:71:in 'Pitchfork::HttpParser#read'
+E, [2026-11-13T12:55:59.554448 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:848:in 'Pitchfork::HttpServer#process_client'
+E, [2026-11-13T12:55:59.554540 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:848:in 'Pitchfork::HttpServer#process_client'
+E, [2026-11-13T12:55:59.554643 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1017:in 'Pitchfork::HttpServer#worker_loop'
+E, [2026-11-13T12:55:59.554754 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1017:in 'Pitchfork::HttpServer#worker_loop'
+E, [2026-11-13T12:55:59.554848 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:616:in 'block in Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:59.554954 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:616:in 'block in Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:59.555079 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:170:in 'block in Pitchfork.clean_fork'
+E, [2026-11-13T12:55:59.555197 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:170:in 'block in Pitchfork.clean_fork'
+E, [2026-11-13T12:55:59.555307 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Kernel#catch'
+E, [2026-11-13T12:55:59.555406 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Kernel#catch'
+E, [2026-11-13T12:55:59.555504 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Pitchfork.clean_fork'
+E, [2026-11-13T12:55:59.555604 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork.rb:168:in 'Pitchfork.clean_fork'
+E, [2026-11-13T12:55:59.555694 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1234:in 'Pitchfork::HttpServer#fork_sibling'
+E, [2026-11-13T12:55:59.555794 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:1234:in 'Pitchfork::HttpServer#fork_sibling'
+E, [2026-11-13T12:55:59.555881 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:612:in 'Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:59.555981 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:612:in 'Pitchfork::HttpServer#spawn_worker'
+E, [2026-11-13T12:55:59.556068 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:732:in 'Pitchfork::HttpServer#spawn_missing_workers'
+E, [2026-11-13T12:55:59.556167 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:732:in 'Pitchfork::HttpServer#spawn_missing_workers'
+E, [2026-11-13T12:55:59.556255 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:759:in 'Pitchfork::HttpServer#maintain_worker_count'
+E, [2026-11-13T12:55:59.556354 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:759:in 'Pitchfork::HttpServer#maintain_worker_count'
+E, [2026-11-13T12:55:59.556444 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:349:in 'Pitchfork::HttpServer#monitor_loop'
+E, [2026-11-13T12:55:59.556543 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:349:in 'Pitchfork::HttpServer#monitor_loop'
+E, [2026-11-13T12:55:59.556631 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:309:in 'Pitchfork::HttpServer#join'
+E, [2026-11-13T12:55:59.556738 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/lib/pitchfork/http_server.rb:309:in 'Pitchfork::HttpServer#join'
+E, [2026-11-13T12:55:59.556814 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/exe/pitchfork:110:in '<top (required)>'
+E, [2026-11-13T12:55:59.556932 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/gems/pitchfork-0.18.2/exe/pitchfork:110:in '<top (required)>'
+E, [2026-11-13T12:55:59.556999 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:59.557118 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:59.557185 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:59.557377 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:59.557393 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/bin/pitchfork:25:in '<top (required)>'
+E, [2026-11-13T12:55:59.557562 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/apps/me/gems/kilau/bench/servers/vendor/bundle/ruby/4.0.0/bin/pitchfork:25:in '<top (required)>'
+E, [2026-11-13T12:55:59.557587 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Kernel.load'
+E, [2026-11-13T12:55:59.557748 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Kernel.load'
+E, [2026-11-13T12:55:59.557777 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Bundler::CLI::Exec#kernel_load'
+E, [2026-11-13T12:55:59.557933 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:61:in 'Bundler::CLI::Exec#kernel_load'
+E, [2026-11-13T12:55:59.557967 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:24:in 'Bundler::CLI::Exec#run'
+E, [2026-11-13T12:55:59.558120 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli/exec.rb:24:in 'Bundler::CLI::Exec#run'
+E, [2026-11-13T12:55:59.558156 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:508:in 'Bundler::CLI#exec'
+E, [2026-11-13T12:55:59.558307 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:508:in 'Bundler::CLI#exec'
+E, [2026-11-13T12:55:59.558345 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/command.rb:28:in 'Bundler::Thor::Command#run'
+E, [2026-11-13T12:55:59.558496 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/command.rb:28:in 'Bundler::Thor::Command#run'
+E, [2026-11-13T12:55:59.558536 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/invocation.rb:127:in 'Bundler::Thor::Invocation#invoke_command'
+E, [2026-11-13T12:55:59.558686 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/invocation.rb:127:in 'Bundler::Thor::Invocation#invoke_command'
+E, [2026-11-13T12:55:59.558725 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor.rb:538:in 'Bundler::Thor.dispatch'
+E, [2026-11-13T12:55:59.558896 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor.rb:538:in 'Bundler::Thor.dispatch'
+E, [2026-11-13T12:55:59.558915 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:35:in 'Bundler::CLI.dispatch'
+E, [2026-11-13T12:55:59.559105 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:35:in 'Bundler::CLI.dispatch'
+E, [2026-11-13T12:55:59.559120 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/base.rb:584:in 'Bundler::Thor::Base::ClassMethods#start'
+E, [2026-11-13T12:55:59.559289 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/vendor/thor/lib/thor/base.rb:584:in 'Bundler::Thor::Base::ClassMethods#start'
+E, [2026-11-13T12:55:59.559312 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:29:in 'Bundler::CLI.start'
+E, [2026-11-13T12:55:59.559474 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/cli.rb:29:in 'Bundler::CLI.start'
+E, [2026-11-13T12:55:59.559500 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:28:in 'block in <top (required)>'
+E, [2026-11-13T12:55:59.559660 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:28:in 'block in <top (required)>'
+E, [2026-11-13T12:55:59.559689 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/friendly_errors.rb:118:in 'Bundler.with_friendly_errors'
+E, [2026-11-13T12:55:59.559848 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/bundler/friendly_errors.rb:118:in 'Bundler.with_friendly_errors'
+E, [2026-11-13T12:55:59.559877 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:20:in '<top (required)>'
+E, [2026-11-13T12:55:59.560031 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/gems/4.0.0/gems/bundler-4.0.16/exe/bundle:20:in '<top (required)>'
+E, [2026-11-13T12:55:59.560065 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:59.560215 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+E, [2026-11-13T12:55:59.560254 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:59.560404 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+E, [2026-11-13T12:55:59.560444 #47339] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/bin/bundle:25:in '<main>'
+E, [2026-11-13T12:55:59.560592 #47345] ERROR -- [Pitchfork]: /Users/crowdotech/.local/share/mise/installs/ruby/4.0.6/bin/bundle:25:in '<main>'
+I, [2026-11-13T12:56:15.080029 #47292]  INFO -- [Pitchfork]: TERM received, starting graceful shutdown
+I, [2026-11-13T12:56:15.082800 #47339]  INFO -- [Pitchfork]: worker=0 gen=0 pid=47339 exiting
+I, [2026-11-13T12:56:15.082833 #47340]  INFO -- [Pitchfork]: worker=1 gen=0 pid=47340 exiting
+I, [2026-11-13T12:56:15.083723 #47343]  INFO -- [Pitchfork]: worker=4 gen=0 pid=47343 exiting
+I, [2026-11-13T12:56:15.083837 #47344]  INFO -- [Pitchfork]: worker=5 gen=0 pid=47344 exiting
+I, [2026-11-13T12:56:15.083996 #47341]  INFO -- [Pitchfork]: worker=2 gen=0 pid=47341 exiting
+I, [2026-11-13T12:56:15.083884 #47342]  INFO -- [Pitchfork]: worker=3 gen=0 pid=47342 exiting
+I, [2026-11-13T12:56:15.087250 #47345]  INFO -- [Pitchfork]: worker=6 gen=0 pid=47345 exiting
+I, [2026-11-13T12:56:15.088128 #47348]  INFO -- [Pitchfork]: worker=7 gen=0 pid=47348 exiting
+I, [2026-11-13T12:56:15.092890 #47292]  INFO -- [Pitchfork]: worker=1 gen=0 pid=47340 reaped (#<Process::Status: pid 47340 exit 0>)
+I, [2026-11-13T12:56:15.093659 #47292]  INFO -- [Pitchfork]: worker=0 gen=0 pid=47339 reaped (#<Process::Status: pid 47339 exit 0>)
+I, [2026-11-13T12:56:15.094659 #47292]  INFO -- [Pitchfork]: worker=5 gen=0 pid=47344 reaped (#<Process::Status: pid 47344 exit 0>)
+I, [2026-11-13T12:56:15.095747 #47292]  INFO -- [Pitchfork]: worker=4 gen=0 pid=47343 reaped (#<Process::Status: pid 47343 exit 0>)
+I, [2026-11-13T12:56:15.097661 #47292]  INFO -- [Pitchfork]: worker=6 gen=0 pid=47345 reaped (#<Process::Status: pid 47345 exit 0>)
+I, [2026-11-13T12:56:15.097691 #47292]  INFO -- [Pitchfork]: worker=3 gen=0 pid=47342 reaped (#<Process::Status: pid 47342 exit 0>)
+I, [2026-11-13T12:56:15.097715 #47292]  INFO -- [Pitchfork]: worker=2 gen=0 pid=47341 reaped (#<Process::Status: pid 47341 exit 0>)
+I, [2026-11-13T12:56:15.097885 #47292]  INFO -- [Pitchfork]: worker=7 gen=0 pid=47348 reaped (#<Process::Status: pid 47348 exit 0>)
+I, [2026-11-13T12:56:15.099805 #47292]  INFO -- [Pitchfork]: monitor complete status=0
