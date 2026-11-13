@@ -38,6 +38,9 @@ mkdir -p "$OUT"
   echo "kilau_sha=$(git -C "$BENCH/.." rev-parse --short HEAD)"
   echo "machine=$(sysctl -n hw.model) $(sysctl -n machdep.cpu.brand_string) cores=$CORES mem=$(( $(sysctl -n hw.memsize) / 1073741824 ))GB"
   echo "os=$(sw_vers -productName) $(sw_vers -productVersion)"
+  # On battery this machine's profile turns Low Power Mode on, and every app
+  # then measures 25-35% slower: a session is only comparable with itself.
+  echo "power=$(pmset -g batt | head -1 | sed "s/.*'\(.*\)'.*/\1/") lowpowermode=$(pmset -g | awk '/lowpowermode/ {print $2}')"
   echo "spinel=$(spinel --version 2>&1 | head -1)"
   echo "ruby=$(ruby -v)"
   echo "rails=$(cd "$BENCH/rails_blog" && bundle exec ruby -e 'require "rails"; print Rails.version')"
