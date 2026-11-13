@@ -1,5 +1,16 @@
 # Katalog batas AOT
 
+**Bump 2026-11-13** (~13:50 WIB install, diverifikasi 14:06-14:18 WIB): compiler terpasang
+sekarang `2026.10.25+4731 (01ef5b4b2)`, naik dari `+4639 (d1878a068)` (termasuk
+#11723 untuk K-042). Diverifikasi: `make test` kilau dari `spin clean` **28/28
+lulus** (16/16 framework, 8/8 tool, 4/4 examples/blog), exit 0, 0 `(cached)`;
+`make test-cruby` 29/29 (termasuk `test/cruby/rack_app_test.rb`); `make e2e` blog
+35/35 pada kedua binary. Semua 37 `repro/*.rb` dijalankan ulang terhadap CRuby
+4.0.6: 29 identik, termasuk `k026_*` dan `k042_*` yang kemarin berbeda (K-042
+tertutup). 8 sisanya: 5 berbeda karena repronya sendiri (`k003`, `k006`, `k007`,
+`k015`, `k023`), `k032` (desain), dan `k043`, `k044` (terbuka). K-045 TIDAK berubah
+(lihat entrinya). Sapuan `yield-sweep` tidak dijalankan ulang pada build ini.
+
 **Bump 2026-11-12** (~22:20 WIB): compiler terpasang sekarang
 `2026.10.25+4639 (d1878a068)`, naik dari `+4410 (494deaacb)` (termasuk delapan
 PR `find`/`rfind` K-039, #11670 s.d. #11691, dan #11481-#11483 untuk K-040/K-041).
@@ -2172,6 +2183,9 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `-O`/flag build default berubah. Belum dibisect, belum ada repro mikro di luar Kilau.
 - Dampak: satu-satunya skenario tempat Kilau kalah dari Rails di bawah konkurensi, dan waktu build yang
   dulu ~2-4 dtk sekarang ~16 dtk.
+- **Diukur ulang 2026-11-13 ~14:15 WIB pada `01ef5b4b2`: tidak berubah.** `spin build blog` 15,97 / 15,99 / 16,01 dtk;
+  binary 1,98 MB. S3 c1 1.453 / 1.451 / 1.454 req/s (pada `d1878a068`, kondisi daya sama: 1.449 dan 1.429);
+  rasio terhadap `kilau-puma` di sesi yang sama 1,17 (kemarin 1,15-1,18).
 - Status: dicatat; belum diajukan ke upstream. Langkah berikut: repro mikro (loop `buf << escape(str)`
   tanpa HTTP/SQLite), lalu bisect compiler dengan repro itu.
 

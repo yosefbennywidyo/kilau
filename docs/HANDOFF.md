@@ -2,6 +2,23 @@
 
 Entri terbaru di atas.
 
+## 2026-11-13 ~14:20 WIB -- kilau diverifikasi pada compiler `01ef5b4b2`
+
+**Status**
+- Compiler terpasang `2026.10.25+4731 (01ef5b4b2)`. Semua lulus: `make test` dari `spin clean` 28/28 (0 `(cached)`),
+  `make test-cruby` 29/29, `make e2e` 35/35 pada kedua binary.
+- 37 `repro/*.rb` dijalankan ulang: 29 identik dengan CRuby. `k026_*` dan `k042_*` kini identik (K-042 tertutup oleh
+  #11723). Yang berbeda: 5 karena repronya sendiri, `k032` (desain), `k043` dan `k044` (terbuka, milik sesi lain).
+- **K-045 tidak berubah:** build ~16,0 dtk, binary 1,98 MB, S3 c1 ~1.453 req/s (sama dengan `d1878a068`).
+- TIDAK dijalankan pada build ini: sapuan `yield-sweep`, sesi benchmark server penuh.
+- Entri 14:10 WIB di bawah menyebut verifikasi ini sebagai langkah berikutnya: sudah selesai.
+
+**Lanjut dari sini**
+1. Push komit lokal bila user setuju.
+2. K-045: repro mikro lalu bisect compiler (lihat entri 08:20 WIB).
+3. K-043, K-044: status di katalog (sesi lain).
+4. Sisanya seperti entri 13:55 WIB.
+
 ## 2026-11-13 ~14:10 WIB -- peringkat hasil pengetesan server didokumentasikan
 
 **Status**
