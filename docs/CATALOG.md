@@ -2112,3 +2112,34 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   Gap terpisah yang ditemukan di jalan dan TIDAK ikut: `method(:to_set).call` (NameError) dan
   `map(&:to_set).map(&:size)` (NoMethodError `size` untuk Set, juga dengan `.to_set` tertulis).
 - Status: perbaikan siap di fork; PR belum dibuka (menunggu konfirmasi user).
+
+## K-043: `method(:to_set)` sobre builtin -> NameError run-time (Array) / C compile error (Range)
+
+- Lapisan: compiler, objek Method untuk `to_set` pada receiver builtin (bukan pemindai K-042: gejalanya tetap
+  ada dengan `require "set"`).
+- Ditemukan: 2026-11-13, saat memperbaiki K-042, compiler `d1878a068`.
+- Gejala: `p [1, 1].method(:to_set).call.size` -> `undefined method 'to_set' for class 'Array' (NameError)`
+  (CRuby 4.0.6: `1`). `p (1..3).method(:to_set).call.size` -> C compile error mentah `operand of type
+  'sp_Range' where arithmetic or pointer type is required` (CRuby: `3`), kategori terburuk.
+- Pengamatan sampingan (belum diselidiki, mungkin keluarga yang sama): `[1, 1].method(:map).call { |x| x + 1 }`
+  mencetak `#<Enumerator: [1, 1]:map>` (CRuby `[2, 2]`), yaitu blok pada `Method#call` untuk builtin dibuang;
+  `method(:to_a).call` benar.
+- Repro: `repro/k043_method_object_to_set.rb` (bentuk Array; bentuk Range ada di gejala di atas).
+- Klasifikasi: Array = gagal keras run-time; Range = C error mentah. Dampak praktis rendah (`method(:to_set)`
+  jarang), tetapi C error mentah melanggar aturan "penolakan harus bernama" di CLAUDE.md spinel.
+- Status: dicatat; akar belum dibaca; belum diperbaiki; belum diajukan ke upstream. `to_set` ditulis sebagai
+  panggilan lewat `.to_set` di analisis (rewrite ke `Set.new`, `src/analyze.c`), sedangkan `method(:x)` melihat
+  tabel metode; dugaan ini BELUM diverifikasi.
+
+## K-044: Set hasil `.to_set` di dalam blok tidak menjawab `size`/`length`
+
+- Lapisan: compiler, dispatch metode pada Set yang dibuat oleh rewrite `to_set` -> `Set.new`.
+- Ditemukan: 2026-11-13, saat memperbaiki K-042, compiler `d1878a068`. Bukan K-042: `require "set"` ada.
+- Gejala: `s = [[1, 1], [2]].map { |a| a.to_set }; p s[0].size` -> `undefined method 'size' for an instance of
+  Set (NoMethodError)` (CRuby 4.0.6: `1`). Sama untuk `length` dan untuk `s.map(&:size)`.
+- Ablasi: dengan `Set.new(a)` menggantikan `a.to_set` hasilnya identik dengan CRuby, dan `s.first.class` serta
+  `s.first.include?(1)` pada Set hasil `to_set` benar. Jadi hanya `size`/`length` pada Set dari `to_set` di dalam blok
+  yang hilang; belum dicoba di luar blok dan belum diketahui apakah elemen array bersarang (IntArray) berperan.
+- Repro: `repro/k044_to_set_in_block_size_missing.rb`.
+- Klasifikasi: gagal keras run-time (NoMethodError), bukan nilai salah diam-diam.
+- Status: dicatat; akar belum dibaca; belum diperbaiki; belum diajukan ke upstream.
