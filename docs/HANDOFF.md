@@ -2,6 +2,27 @@
 
 Entri terbaru di atas.
 
+## 2026-11-13 ~14:10 WIB -- peringkat hasil pengetesan server didokumentasikan
+
+**Status**
+- Peringkat per skenario, peringkat keseluruhan, dan peringkat p99/memori/start ditulis ke `FINDINGS.md` §6
+  ("Peringkat") dan diringkas dalam bahasa Inggris di `README.md` ("How the servers rank"). Sumber: sesi nginx bersih
+  `bench/results/20261113-1242-servers-nginx`. Rata-rata peringkat throughput: pitchfork 1,2; puma 3,2; kilau-cruby
+  3,2; falcon 3,8; kilau-spinel 4,4; rails-puma 5,2.
+- Tiga catatan yang wajib ikut bila peringkat dikutip: Pitchfork = Puma bila socket sama (keunggulannya p99);
+  S1/S2/S4 dibatasi nginx di laptop yang sama; baru satu sesi.
+- `FINDINGS.md` §4/§8 disesuaikan: K-042 diperbaiki upstream (#11723, dicatat sesi lain di `2cbf143`).
+- Compiler terpasang sekarang `2026.10.25+4731 (01ef5b4b2)` (di-install sekitar 13:50 WIB, bukan oleh sesi ini). Semua
+  sesi benchmark hari ini memakai binary yang dibangun `d1878a068` (binary blog bertanggal 12 Nov 23:31; `meta.txt`
+  mencatat `d1878a068`). Suite kilau BELUM dijalankan ulang oleh sesi ini pada `01ef5b4b2`.
+- Komit lokal belum di-push (menunggu izin user).
+
+**Lanjut dari sini**
+1. Push bila user setuju.
+2. Jalankan `make test`, `make test-cruby`, `make e2e` dan semua repro pada `01ef5b4b2`; catat bump di `CATALOG.md`.
+3. Ukur ulang K-045 (S3, waktu build, ukuran binary) pada `01ef5b4b2`: belum diketahui apakah berubah.
+4. Sisanya seperti entri 13:55 WIB di bawah.
+
 ## 2026-11-13 ~13:55 WIB -- `Kilau::RackApp` jadi mode resmi kedua; semua server diukur ulang di belakang nginx
 
 **Status**

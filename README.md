@@ -138,6 +138,31 @@ than Rails on the same server (`docs/FINDINGS.md` §6). The config file is read 
 same way; `server.host`, `server.port` and `logger.requests` belong to the Rack
 server in this mode. Each worker process opens its own SQLite pool.
 
+### How the servers rank
+
+One session on 2026-11-13 put the same blog behind each server, all behind nginx
+on the same laptop (`bench/results/20261113-1242-servers-nginx`; battery, Low
+Power Mode, so read the order and not the absolute figures). Requests per second
+at 16 connections, rank in brackets:
+
+| Variant | `GET /_ping` | `GET /posts/:id` | `GET /posts`, 100 rows | `POST /posts` | Peak RSS |
+|---|---|---|---|---|---|
+| CRuby, Pitchfork (8) | 11,955 [1] | 8,396 [1] | 3,768 [1] | 6,291 [2] | 310 MB |
+| CRuby, Puma (8 × 5) | 6,995 [5] | 6,917 [3] | 3,424 [2] | 6,159 [4] | 334 MB |
+| CRuby, Kilau's own server | 8,067 [2] | 7,540 [2] | 1,962 [5] | 7,454 [1] | 46 MB |
+| CRuby, Falcon (8) | 7,316 [3] | 6,219 [5] | 3,175 [3] | 5,684 [5] | 407 MB |
+| Spinel binary, Kilau's own server | 7,237 [4] | 6,748 [4] | 1,782 [6] | 6,216 [3] | 24 MB |
+| Rails, Puma (8 × 5) | 3,622 [6] | 3,859 [6] | 2,688 [4] | 2,656 [6] | 683 MB |
+
+Three things qualify the table. Pitchfork ran on a Unix socket and Puma on TCP;
+given the same socket Puma matches it (11,569 against 12,020 on `/_ping`), and
+what stays Pitchfork's own is the tail on the list page (p99 33 ms against 111 ms
+at 64 connections). nginx shares the laptop's cores, which is what holds the light
+endpoints near 7,000; without it the binary serves 15,546 on `/_ping`. And this is
+one session, so close pairs are not settled. `docs/FINDINGS.md` §6 has the full
+tables, the ranks for latency, memory and start-up, and the session that was thrown
+away.
+
 ## Benchmark
 
 ```sh
@@ -153,6 +178,8 @@ laptop on AC with Low Power Mode off for the whole session (`pmset -g batt`,
 `pmset -g | grep lowpowermode`): on battery in Low Power Mode every app measured
 25-35% slower. `SCENARIOS=s3 bench/run.sh` runs one scenario (about 19 minutes).
 A blog binary takes about 16 s to build on `d1878a068`.
+`bench/servers/run.sh` compares HTTP servers (`bench/servers/README.md`);
+`PROXY=nginx` puts nginx in front of each.
 
 ## Status
 

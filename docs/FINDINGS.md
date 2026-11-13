@@ -89,7 +89,7 @@ di kedua engine.
 | K-038 | `yield` sebagai argumen konstruktor yang `initialize`-nya memakai `yield`/`block_given?` | **nilai salah diam-diam** / `LocalJumpError` palsu | **diperbaiki upstream** (#11451) |
 | K-039 | `Array#rfind` pada receiver yang tipenya baru diketahui saat run | `NoMethodError` / C tidak valid | **diperbaiki upstream** (#11670 + 7 PR tindak lanjut s.d. #11691) |
 | K-040, K-041 | tes `scale-test` upstream buta; kerja kompilasi kuadratik untuk banyak konstanta | bukan bug kebenaran | **diperbaiki upstream oleh pihak lain** (#11481 s.d. #11483) |
-| K-042 s.d. K-044 | `respond_to?(:to_set)`, `method(:to_set)`, dan `size` pada Set dari `to_set` di dalam blok | nilai salah / error | terbuka; perbaikan K-042 sedang disiapkan (lihat katalog) |
+| K-042 s.d. K-044 | `respond_to?(:to_set)`, `method(:to_set)`, dan `size` pada Set dari `to_set` di dalam blok | nilai salah / error | K-042 **diperbaiki upstream** (#11723, terverifikasi di `01ef5b4b2`); K-043 dan K-044 lihat katalog |
 | K-045 | halaman list 26-37% lebih lambat, build 4× lebih lama, binary 2,3× lebih besar dibanding compiler September | **performa dan DX** | terbuka; terbukti di compiler, belum dibisect |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
@@ -319,6 +319,46 @@ req/s, p99 dalam kurung untuk kolom list.
 - Satu sesi bersih untuk tabel utama dan satu sesi pendek untuk Unix socket; belum
   diulang tiga kali.
 
+#### Peringkat (sesi nginx, enam varian di belakang proxy)
+
+Peringkat throughput per skenario (1 = tertinggi), req/s dalam kurung:
+
+| Varian | S1 c16 | S2 c16 | S3 c16 | S3 c64 | S4 c16 | Rata-rata |
+|---|---|---|---|---|---|---|
+| kilau-pitchfork | 1 (11.955) | 1 (8.396) | 1 (3.768) | 1 (3.866) | 2 (6.291) | 1,2 |
+| kilau-puma | 5 (6.995) | 3 (6.917) | 2 (3.424) | 2 (3.019) | 4 (6.159) | 3,2 |
+| kilau-cruby | 2 (8.067) | 2 (7.540) | 5 (1.962) | 6 (1.712) | 1 (7.454) | 3,2 |
+| kilau-falcon | 3 (7.316) | 5 (6.219) | 3 (3.175) | 3 (2.750) | 5 (5.684) | 3,8 |
+| kilau-spinel | 4 (7.237) | 4 (6.748) | 6 (1.782) | 5 (1.754) | 3 (6.216) | 4,4 |
+| rails-puma | 6 (3.622) | 6 (3.859) | 4 (2.688) | 4 (2.685) | 6 (2.656) | 5,2 |
+
+Peringkat di luar throughput:
+
+| Varian | p99 S3 c64 | RSS puncak (S3 c16) | Start sampai 200 pertama |
+|---|---|---|---|
+| kilau-pitchfork | 1 (28 ms) | 3 (310 MB) | 3-4 (~0,5 dtk) |
+| kilau-cruby | 2 (50 ms) | 2 (46 MB) | 2 (~0,45 dtk) |
+| kilau-falcon | 3 (84 ms) | 5 (407 MB) | 5 (~0,7 dtk) |
+| kilau-spinel | 4 (107 ms) | 1 (24 MB) | 1 (~0,05 dtk) |
+| kilau-puma | 5 (158 ms) | 4 (334 MB) | 3-4 (~0,5 dtk) |
+| rails-puma | 6 (205 ms) | 6 (683 MB) | 6 (~1,7 dtk) |
+
+Waktu start diambil dari sesi pagi tanpa nginx; di sesi nginx angka itu memuat start
+nginx.
+
+Cara membaca peringkat ini:
+
+- **Pitchfork dan Puma seri dalam throughput bila socket-nya sama** (lihat di atas).
+  Peringkat 1 Pitchfork di S1/S2 berasal dari Unix socket. Yang miliknya sendiri
+  adalah peringkat 1 di p99.
+- **Peringkat S1, S2, dan S4 dibatasi nginx**, bukan app: lima varian Kilau berkumpul
+  di 5.700-8.400 req/s. Tanpa nginx `kilau-spinel` mencapai 15.546 di S1.
+- **Rata-rata memberi bobot sama ke tiap skenario.** Untuk beban yang didominasi
+  halaman berat urutannya Pitchfork, Puma, Falcon, Rails, lalu Kilau satu proses.
+  Untuk endpoint ringan dengan memori ketat, `kilau-spinel` dan `kilau-cruby` di atas.
+- **Selisih kecil tidak pasti** (satu sesi): misalnya Falcon dan `kilau-spinel` di S1
+  (7.316 vs 7.237), atau `kilau-pitchfork`, `kilau-spinel`, dan `kilau-puma` di S4.
+
 ## 7. Batasan pengukuran
 
 - **Satu laptop:** MacBook Air M1, 8 core, 8 GB. oha berjalan di mesin yang sama dan
@@ -361,4 +401,4 @@ sudah selesai; riwayatnya ada di `docs/HANDOFF.md`.
    September; sesi ini menunjukkan lagi bahwa angka lintas-sesi di satu laptop tidak
    bisa dibandingkan. `bench/run.sh` sebaiknya mencatat sumber daya dan Low Power
    Mode ke `meta.txt`.
-6. **K-042** ke upstream bila dianggap layak (prioritas rendah).
+6. ~~K-042 ke upstream~~ selesai: diperbaiki lewat matz/spinel#11723 (2026-11-13).
