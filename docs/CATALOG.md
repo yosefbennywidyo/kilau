@@ -2174,7 +2174,14 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - **2026-11-14 16:29 WIB: #11809 MERGED** (merge `e9878ab03`, parent kedua `168f569a7`). Diverifikasi di master
   `b06753016` (build lokal): `method(:to_set).call.size` / `method(:inject).call(:+)` / `{a: 1}.method(:map).arity`
   mencetak `1 6 0` = CRuby. Temuan CodeRabbit di PR itu dicatat sebagai K-046.
-- Status: SELESAI di upstream untuk Array/Hash (#11809). Bentuk Range belum diperbaiki. Compiler terpasang belum di-bump.
+- **Lanjutan, Range Integer (2026-11-14 ~19:30 WIB):** `(1..3).method(:size)` adalah C error untuk nama apa pun karena
+  `sp_Range` (nilai) di-cast ke pointer slot self. Perbaikan di spinel branch `method-obj-range-receiver` (`6377223b1`,
+  lokal): Range dibawa lewat holder satu-elemen seperti Float (`poly_self`), dan nama yang tidak ada menaikkan NameError
+  CRuby. Tes `test/method_obj_range_receiver.rb`; sapuan 26 method milik Range: 22 cocok, 4 selisih bukan dari jalur
+  Method (`step`/`%` menjawab Array juga pada panggilan langsung, nilai `hash`, `===` tak punya bentuk wrapper).
+  Batas: nama milik Enumerable pada Range belum dilayani; `==` dua Method dari Range yang sama `false` (CRuby `true`);
+  `unbind.bind` ditolak; Range Float dan String = K-047. Belum di-gate, PR belum dibuka.
+- Status: SELESAI di upstream untuk Array/Hash (#11809), terpasang (`548d2b672`). Range Integer: perbaikan lokal.
 
 ## K-044: Set hasil `.to_set` di dalam blok tidak menjawab `size`/`length`
 
@@ -2240,6 +2247,23 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   **matz/spinel#11819** (tiga repro + bentuk Method; menawarkan PR penolakan saat kompilasi bila itu jawaban yang
   diinginkan). Janji PR `arity` di thread CodeRabbit #11809 dikoreksi secara terbuka (r4573455672), menunjuk ke issue.
 - Status: issue #11819 terbuka, menunggu arahan matz. Tidak ada perubahan kode.
+
+## K-047: Method pada Range String menjawab nilai salah diam-diam; Range Float masih C error
+
+- Lapisan: compiler, objek Method untuk receiver Range (keluarga K-043).
+- Ditemukan: 2026-11-14 ~19:25 WIB, saat mengerjakan lanjutan K-043 (Method pada Range Integer), compiler `548d2b672`.
+- Gejala (a), nilai salah tanpa error: `r = ("a".."c"); p r.method(:to_a).call` -> `[]` (CRuby 4.0.9:
+  `["a", "b", "c"]`). Panggilan langsung `r.to_a` benar. `r.method(:size).call` -> `nil`, kebetulan sama dengan CRuby.
+- Gejala (b), C error mentah: `p (1.0..2.0).method(:include?).call(1.5)` -> `operand of type 'sp_FloatRange' where
+  arithmetic or pointer type is required` (CRuby: `true`). Sama dengan bentuk Range Integer sebelum diperbaiki.
+- Dicoba dan DITARIK: memperluas aturan holder (`poly_self`, `src/analyze.c`) ke `TY_FLOAT_RANGE` dan `TY_STR_RANGE`.
+  Range String: `to_a`, `include?`, `first(2)`, `last`, `min`, `count` jadi benar, tetapi `size` menjawab `3` (CRuby
+  `nil`), `owner` menjawab `Array` (CRuby `Range`), dan nama yang tidak ada tidak lagi menaikkan NameError.
+  Range Float: objek Method-nya tak bertipe (`undefined method 'call' for unknown`). Jadi keduanya butuh pekerjaan
+  sendiri (kelas builtin untuk gerbang wrapper: `bcls` hanya memetakan `TY_RANGE` ke "Range").
+- Repro: `repro/k047_method_obj_string_range_wrong_value.rb` (bentuk a; bentuk b ada di gejala).
+- Klasifikasi: (a) nilai salah diam-diam, kategori terburuk, tetapi bentuknya langka; (b) C error mentah.
+- Status: dicatat; belum diperbaiki; belum diajukan ke upstream.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
