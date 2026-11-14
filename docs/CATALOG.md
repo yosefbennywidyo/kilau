@@ -2180,7 +2180,9 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   CRuby. Tes `test/method_obj_range_receiver.rb`; sapuan 26 method milik Range: 22 cocok, 4 selisih bukan dari jalur
   Method (`step`/`%` menjawab Array juga pada panggilan langsung, nilai `hash`, `===` tak punya bentuk wrapper).
   Batas: nama milik Enumerable pada Range belum dilayani; `==` dua Method dari Range yang sama `false` (CRuby `true`);
-  `unbind.bind` ditolak; Range Float dan String = K-047. Belum di-gate, PR belum dibuka.
+  `unbind.bind` ditolak; Range Float dan String = K-047. Setelah rebase ke master `db1348ab2` (`c5b072842`): gate fork
+  run 43596698490 **23/23**, PR **matz/spinel#11839** dibuka 2026-11-14 malam. Satu run GC stress lokal pernah
+  melaporkan selisih yang tak terulang dalam 80 run; ditulis apa adanya di body PR.
 - Status: SELESAI di upstream untuk Array/Hash (#11809), terpasang (`548d2b672`). Range Integer: perbaikan lokal.
 
 ## K-044: Set hasil `.to_set` di dalam blok tidak menjawab `size`/`length`
