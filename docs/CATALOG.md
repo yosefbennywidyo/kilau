@@ -2162,7 +2162,10 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   (`chunk`, `grep`, `grep_v`, `tally`, `collect_concat`, `drop_while`, `minmax_by`, `take_while`, `each_with_object`,
   `lazy`; belum dicoba: `chunk_while`, `slice_when`, `cycle`, `sum`); receiver Range masih C error mentah untuk nama
   APA PUN (`(1..3).method(:size)`), gap tersendiri; blok pada `m.call { }` dibuang untuk semua Method builtin.
-- Status: PR #11809 terbuka (bentuk Array/Hash). Bentuk Range belum diperbaiki.
+- **2026-11-14 16:29 WIB: #11809 MERGED** (merge `e9878ab03`, parent kedua `168f569a7`). Diverifikasi di master
+  `b06753016` (build lokal): `method(:to_set).call.size` / `method(:inject).call(:+)` / `{a: 1}.method(:map).arity`
+  mencetak `1 6 0` = CRuby. Temuan CodeRabbit di PR itu dicatat sebagai K-046.
+- Status: SELESAI di upstream untuk Array/Hash (#11809). Bentuk Range belum diperbaiki. Compiler terpasang belum di-bump.
 
 ## K-044: Set hasil `.to_set` di dalam blok tidak menjawab `size`/`length`
 
@@ -2195,6 +2198,23 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   master `ee365bf41` (build lokal, belum `make install`): `size` / `empty?` / `add(5).size` pada Set dari `to_set` di
   blok mencetak `1 false 2` = CRuby.
 - Status: SELESAI di upstream (#11805). Compiler terpasang belum di-bump.
+
+## K-046: `Method#arity` salah bila method builtin di-reopen secara bersyarat
+
+- Lapisan: compiler, objek Method untuk builtin (`cplan_bam_reopen_target == -2`, "belum pasti builtin atau def program").
+- Ditemukan: 2026-11-14 ~17:00 WIB, dari temuan CodeRabbit (Minor) pada matz/spinel#11809, compiler `b06753016`.
+- Gejala: `if ARGV.empty?; class Array; def inject(a, b) = 1; end; end; p [1].method(:inject).arity` -> `-1`
+  (CRuby 4.0.9: `2`). Hal yang sama untuk nama MILIK kelasnya, juga di compiler lama `01ef5b4b2`:
+  `[1].method(:size).arity` -> `0` (CRuby `2`), `1.method(:clamp).arity` -> `-1` (CRuby `3`).
+  Reopen TANPA syarat benar (`2`), dan `m.call(1, 2)` di bawah reopen bersyarat benar (`1`).
+- Catatan jujur: untuk nama Enumerable (`inject`), sebelum #11809 bentuk ini DITOLAK saat kompilasi (penolakan bernama
+  pada `arity`); sesudahnya terkompilasi dan mencetak nilai salah. Jadi #11809 memperluas gap lama ke satu bentuk baru.
+- Dicoba: penjaga yang disarankan CodeRabbit (`rd != -2` di cabang Enumerable, `src/codegen_call_method.c`) TIDAK cukup:
+  jawabannya menjadi `0`, tetap salah. Perbaikan sebenarnya = arity dibaca saat run-time dari `sp_BoundMethod` (atau
+  ditolak) untuk seluruh keluarga, bukan hanya cabang Enumerable.
+- Repro: `repro/k046_method_arity_conditional_builtin_reopen.rb`.
+- Klasifikasi: nilai salah diam-diam, bentuk langka (reopen bersyarat atas builtin + `Method#arity`).
+- Status: dicatat; belum diperbaiki; komentar CodeRabbit belum dibalas.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
