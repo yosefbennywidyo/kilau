@@ -2,6 +2,24 @@
 
 Entri terbaru di atas.
 
+## 2026-11-14 ~19:20 WIB -- bump ke `548d2b672`; K-043 dan K-044 tertutup; K-046 jadi issue upstream
+
+**Status**
+- Compiler terpasang `2026.10.25+4965 (548d2b672)` (user: pull + `make install`). Lulus: `make test` dari `spin clean`
+  28/28 (0 `(cached)`), `make test-cruby` 29/29, `make e2e` 35/35. Repro: 32 dari 39 identik dengan CRuby.
+- **K-044 MERGED** sebagai matz/spinel#11805 dan **K-043 MERGED** sebagai #11809 (akar K-043 ternyata gerbang wrapper
+  Method untuk nama milik Enumerable, bukan lowering `to_set`). Kedua repro kini identik.
+- **K-046** (baru): reopen bersyarat atas kelas builtin diperlakukan tanpa syarat, juga untuk panggilan biasa.
+  Dilaporkan sebagai issue matz/spinel#11819; tidak ada kode yang ditulis, menunggu arahan matz.
+- Lanjutan K-043 sedang dikerjakan di spinel branch `method-obj-range-receiver` (Method pada receiver Range, yang
+  sebelumnya C error mentah): belum di-commit saat entri ini ditulis.
+- Entri 13:55 WIB di bawah: langkah 1 (PR K-044) sudah selesai. Langkah 2-4 (K-045) belum disentuh sesi ini.
+
+**Lanjut dari sini**
+1. Baca jawaban matz di #11819 sebelum menulis kode untuk K-046.
+2. K-045: periksa `config.mk` spinel (`COPT`) dan ukur ulang pada build terpasang ini.
+3. Push komit lokal kilau bila user setuju.
+
 ## 2026-11-14 ~13:55 WIB -- K-045: lambatnya halaman list = compiler terpasang dibangun `-O0`; K-044 siap diajukan
 
 **Status**

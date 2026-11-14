@@ -1,5 +1,14 @@
 # Katalog batas AOT
 
+**Bump 2026-11-14** (install oleh user sebelum ~19:10 WIB, diverifikasi 19:14-19:18 WIB): compiler terpasang
+sekarang `2026.10.25+4965 (548d2b672)`, naik dari `+4731 (01ef5b4b2)` (termasuk #11805 untuk K-044 dan #11809
+untuk K-043). Diverifikasi: `make test` kilau dari `spin clean` **28/28 lulus**, exit 0, 0 `(cached)`;
+`make test-cruby` 29/29; `make e2e` blog 35/35 pada kedua binary. Semua 39 `repro/*.rb` dijalankan ulang terhadap
+CRuby: 32 identik, termasuk `k043_*` dan `k044_*` yang sebelumnya berbeda (keduanya tertutup). 7 sisanya: 5 karena
+repronya sendiri (`k003`, `k006`, `k007`, `k015`, `k023`), `k032` (desain), dan `k046` (terbuka, issue #11819).
+`k046b` identik hanya karena dijalankan tanpa argumen (syarat benar). TIDAK diukur pada build ini: K-045 (kecepatan,
+waktu build, ukuran binary), apakah compiler dipasang `-O0` atau `-O2`, dan sapuan `yield-sweep`.
+
 **Bump 2026-11-13** (~13:50 WIB install, diverifikasi 14:06-14:18 WIB): compiler terpasang
 sekarang `2026.10.25+4731 (01ef5b4b2)`, naik dari `+4639 (d1878a068)` (termasuk
 #11723 untuk K-042). Diverifikasi: `make test` kilau dari `spin clean` **28/28
