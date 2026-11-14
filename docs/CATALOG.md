@@ -2168,7 +2168,13 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - **Perbaikan:** `to_set` tanpa argumen menambah keturunan Set ke fakta panggilannya bila program punya Set
   (`cf_builtin_rule`). Branch spinel `to-set-in-block-size` (`5eb08c280`), tes `test/to_set_in_block_poly_receiver.rb`
   (merah tanpa perbaikan), 29 tes `to_set` PASS, gate fork run 43437988230.
-- Status: perbaikan siap di fork; PR belum dibuka (menunggu gate dan konfirmasi user).
+- **2026-11-14 ~13:55 WIB:** branch di-rebase sekali ke master `020275b35` (`b1ad23d31`, sesi lain, 08:45 WIB); gate fork
+  ulang run 43542978762 **23/23 sukses** pada `ebdb460b3` (= `b1ad23d31` + dua commit workflow fork-only). Dibuktikan ulang
+  di worktree terpisah pada master `bac2b4d72`: tes merah tanpa perbaikan, hijau dengan perbaikan (default, promote,
+  `SPINEL_GC_STRESS=1`), 10 tes `test/*to_set*.rb` PASS, `git merge-tree` bersih. Repro satu baris
+  `repro/k044_to_set_in_block_size_missing.rb` sudah mencetak `1` di master murni; bentuk lain di tes PR masih gagal.
+- Status: siap diajukan; `b1ad23d31` BELUM di-push ke branch PR di fork (masih `5eb08c280`) dan PR belum dibuka: `gh pr
+  create` ditolak pengaman izin sesi, menunggu user menjalankannya.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
@@ -2198,6 +2204,31 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - **Diukur ulang 2026-11-13 ~14:15 WIB pada `01ef5b4b2`: tidak berubah.** `spin build blog` 15,97 / 15,99 / 16,01 dtk;
   binary 1,98 MB. S3 c1 1.453 / 1.451 / 1.454 req/s (pada `d1878a068`, kondisi daya sama: 1.449 dan 1.429);
   rasio terhadap `kilau-puma` di sesi yang sama 1,17 (kemarin 1,15-1,18).
-- Status: dicatat; belum diajukan ke upstream. Langkah berikut: repro mikro (loop `buf << escape(str)`
-  tanpa HTTP/SQLite), lalu bisect compiler dengan repro itu.
+- **Akar bagian kecepatan (2026-11-14 ~09:15 WIB): BUKAN regresi upstream, melainkan build lokal tanpa optimasi.**
+  `~/apps/me/gems/spinel/config.mk` (gitignored, bertanggal 2026-10-18) berisi `COPT=-O0 -g0`, sehingga setiap
+  `make install` sejak itu memasang compiler DAN `libspinel_rt.a` yang dibangun `-O0`. Compiler `38dc57dde` pada A/B
+  2026-11-13 dibangun di worktree bersih (`-O2`), jadi A/B itu membandingkan `-O2` dengan `-O0`.
+  - Repro mikro `repro/k045/list_render.rb` (halaman list tanpa HTTP/SQLite): compiler terpasang 4,7-5,4 dtk,
+    `38dc57dde` 1,9-2,4 dtk. Ablasi `repro/k045/ablate/`: hanya `String#gsub` yang melambat (10 juta `gsub` tanpa
+    cocok: 0,8-1,1 dtk lama, 2,3-3,2 dtk terpasang); `<<` dan `Integer#to_s` setara. `sample`: `sp_bytestr` dan
+    `sp_str_byte_len` (tidak ter-inline) di puncak.
+  - Master `020275b35` dibangun bersih di worktree tanpa `config.mk` (`-O2`): `gsub` 1,0-1,1 dtk, setara compiler lama.
+    `sp_str.o` terpasang 116 KB vs 160 KB, dan `sp_str_byte_len` out-of-line hanya di arsip terpasang.
+  - Halaman list asli, berselang-seling, baterai + Low Power Mode (`bench/results/20261114-0906-ab-runtime-opt/`;
+    `old` = compiler terpasang `01ef5b4b2` `-O0`, `new` = master `020275b35` `-O2`): c1 1.292 / 1.080 / 807 vs
+    1.948 / 2.020 / 2.029 req/s; c16 1.827 / 1.877 / 1.910 vs 2.858 / 3.077 / 2.813. Angka `-O2` setara
+    `38dc57dde` pada 2026-11-13 (1.843-2.001 dan 2.715-2.999). Mesin sedang dipakai sesi lain saat pengukuran.
+  - Teori yang gugur: pemindahan `gsub` ke `sp_str_cold.c` (`081f8c282`); salinan lokal `sp_bytestr` tidak mengubah apa pun.
+- **Yang TETAP dari upstream:** waktu build dan ukuran. `spin build blog_routes` dengan master `-O2`: 15,1 / 17,8 dtk dan
+  1,78 MB (terpasang `-O0`: 17,3-25,5 dtk, 1,96 MB), melawan 3,95 dtk / 0,82 MB pada `38dc57dde`. Belum dibisect.
+  Rincian satu binary (`spinel bin/blog_routes.rb -o x`, kedua compiler `-O2`, sumber Kilau sama, sccache mati):
+  `38dc57dde` 2,7-2,8 dtk dan 0,86 MB; master `bac2b4d72` 7,1 dtk dan 1,76 MB. Emisi C saja (`-c`): 0,36-0,39 dtk dan
+  28.332 baris / 1,89 MB C melawan 1,64-1,71 dtk dan 40.977 baris / 3,01 MB C. Jadi C yang dihasilkan 1,6x lebih besar,
+  emisi 4,5x lebih lama, dan sisanya (kira-kira 2,4 dtk -> 5,4 dtk) adalah `cc`. Compiler terpasang `-O0` memperparah
+  emisi (7,8 dtk tercatat 2026-11-12).
+- **Akibat:** semua angka `kilau-spinel` sejak 2026-10-18 (termasuk perbandingan server 2026-11-12/13, FINDINGS §6)
+  diukur dengan runtime `-O0` dan perlu diukur ulang setelah compiler dipasang ulang dengan `-O2`.
+- Status: bagian kecepatan terjelaskan (konfigurasi lokal, tidak ada yang perlu diajukan ke upstream); bagian waktu
+  build/ukuran masih terbuka. Langkah berikut: user memasang ulang spinel tanpa `COPT=-O0` (atau `make install COPT=-O2`),
+  lalu ukur ulang S3 dan tabel server.
 

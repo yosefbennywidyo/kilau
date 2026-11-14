@@ -2,6 +2,29 @@
 
 Entri terbaru di atas.
 
+## 2026-11-14 ~13:55 WIB -- K-045: lambatnya halaman list = compiler terpasang dibangun `-O0`; K-044 siap diajukan
+
+**Status**
+- **K-045, bagian kecepatan, terjelaskan dan BUKAN regresi upstream.** `~/apps/me/gems/spinel/config.mk` berisi
+  `COPT=-O0 -g0` sejak 2026-10-18, jadi compiler dan `libspinel_rt.a` yang terpasang dibangun tanpa optimasi. Master
+  `020275b35` dibangun bersih (`-O2`) melayani halaman list 1.948-2.029 req/s di c1 dan 2.813-3.077 di c16; binary dari
+  compiler terpasang 807-1.292 dan 1.827-1.910 pada sesi yang sama (`bench/results/20261114-0906-ab-runtime-opt/`).
+  Repro mikro dan ablasi: `repro/k045/` (hanya `String#gsub` yang melambat). Rincian di katalog K-045.
+- **K-045, bagian build, tetap dari upstream:** satu binary blog 2,8 dtk / 0,86 MB (`38dc57dde`) -> 7,1 dtk / 1,76 MB
+  (master `-O2`); C yang dihasilkan 1,6x lebih besar. Belum dibisect.
+- **Semua angka `kilau-spinel` sejak 2026-10-18 diukur dengan runtime `-O0`**, termasuk perbandingan server dan
+  peringkat di `docs/FINDINGS.md` §6 dan README. Angka itu belum dikoreksi di kedua dokumen tersebut.
+- **K-044:** gate ulang 23/23 sukses pada hasil rebase, merah/hijau dibuktikan ulang pada master `bac2b4d72`. PR belum
+  dibuka (ditolak pengaman izin sesi). K-043 sedang dikerjakan sesi lain di branch `method-obj-to-set`.
+- Worktree sementara spinel: `~/apps/me/gems/spinel-k045-old` (`38dc57dde`) dan `~/apps/me/gems/spinel-k044-master`
+  (master + perbaikan K-044, tak ter-commit). Hapus bila sudah tidak dipakai.
+
+**Lanjut dari sini**
+1. User: buka PR K-044 (push `b1ad23d31` ke `fork/to-set-in-block-size`, lalu `gh pr create`; body sudah ditulis).
+2. User: pasang ulang spinel dengan `-O2` (`make install COPT=-O2`, atau ubah `config.mk`).
+3. Setelah itu: ukur ulang S3 dan tabel server, lalu koreksi FINDINGS §6 dan README.
+4. Opsional: bisect pertumbuhan waktu build/ukuran C (kemungkinan akumulasi, bukan satu commit).
+
 ## 2026-11-13 ~14:20 WIB -- kilau diverifikasi pada compiler `01ef5b4b2`
 
 **Status**
