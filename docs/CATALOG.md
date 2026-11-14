@@ -2227,8 +2227,10 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   menyebutnya "until a run-time version of the method tells"), wilayah yang sedang dikerjakan matz (#10866,
   `call_target`, method-table check). Bukan PR kecil. Belum diperbaiki, belum diajukan sebagai issue.
 - Repro tambahan: `repro/k046b_conditional_builtin_reopen_call.rb` (jalankan dengan dan tanpa argumen).
-- Status: dicatat; komentar CodeRabbit dibalas (r4573442899) dengan janji PR terpisah untuk `arity`, yang perlu
-  DIKOREKSI di thread itu bila diputuskan menjadi issue.
+- **2026-11-14 ~18:30 WIB:** diverifikasi ulang di master `548d2b672` (hasil sama), lalu dilaporkan sebagai issue
+  **matz/spinel#11819** (tiga repro + bentuk Method; menawarkan PR penolakan saat kompilasi bila itu jawaban yang
+  diinginkan). Janji PR `arity` di thread CodeRabbit #11809 dikoreksi secara terbuka (r4573455672), menunjuk ke issue.
+- Status: issue #11819 terbuka, menunggu arahan matz. Tidak ada perubahan kode.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
