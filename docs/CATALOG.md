@@ -2214,7 +2214,21 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   ditolak) untuk seluruh keluarga, bukan hanya cabang Enumerable.
 - Repro: `repro/k046_method_arity_conditional_builtin_reopen.rb`.
 - Klasifikasi: nilai salah diam-diam, bentuk langka (reopen bersyarat atas builtin + `Method#arity`).
-- Status: dicatat; belum diperbaiki; komentar CodeRabbit belum dibalas.
+- **Akar yang lebih luas (2026-11-14 ~18:00 WIB, master `b06753016`):** bukan soal `arity`. Reopen BERSYARAT atas kelas
+  builtin diperlakukan sebagai tanpa syarat untuk PANGGILAN BIASA juga. `if ARGV.empty?; class Array; def size = 77;
+  end; end; p [1, 2].size` dijalankan dengan satu argumen (syarat salah): CRuby `2`, Spinel `77`. Method baru pada
+  builtin sama: `class String; def shout = upcase; end` di bawah syarat salah -> CRuby NoMethodError, Spinel `"A"`.
+  Untuk KELAS PROGRAM bentuk yang sama benar (`77` / `2`), jadi mesin versi (entry/cells) ada tetapi tidak dipakai
+  untuk reopen builtin. C hasil emit: wrapper `__bam_N` memanggil `sp_Array_inject` langsung, tanpa uji versi.
+  Di dalam pendekatan itu `m.call` menjalankan def program (benar bila syarat benar) sedangkan `m.arity` menjawab
+  arity builtin (benar hanya bila syarat salah): tidak konsisten, tetapi memperbaiki `arity` saja tidak membuat program
+  benar di kedua dunia. `docs/limitations.md` tidak memuat baris tentang ini.
+- Penilaian: perbaikan sebenarnya = versi run-time untuk method reopen builtin (komentar `cplan_bam_reopen_target`
+  menyebutnya "until a run-time version of the method tells"), wilayah yang sedang dikerjakan matz (#10866,
+  `call_target`, method-table check). Bukan PR kecil. Belum diperbaiki, belum diajukan sebagai issue.
+- Repro tambahan: `repro/k046b_conditional_builtin_reopen_call.rb` (jalankan dengan dan tanpa argumen).
+- Status: dicatat; komentar CodeRabbit dibalas (r4573442899) dengan janji PR terpisah untuk `arity`, yang perlu
+  DIKOREKSI di thread itu bila diputuskan menjadi issue.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
