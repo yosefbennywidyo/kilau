@@ -2145,7 +2145,24 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `to_set` "absent" untuk Array: `to_set` bukan baris builtin-op, melainkan lowering `LR_TO_SET` (`recv.to_set` ->
   `Set.new(recv.to_a)`, `src/analyze.c`), sehingga objek Method tak punya target untuk dipanggil. Memperbaikinya berarti
   mengajari objek Method memanggil metode hasil lowering, wilayah kerja Method yang besar dan berisiko; belum dicoba.
-- Status: dicatat; akar sebagian dibaca; belum diperbaiki; belum diajukan ke upstream.
+- **Akar sebenarnya (2026-11-14, mengoreksi "akar sebagian" di atas):** bukan soal lowering `LR_TO_SET`. Capture
+  `recv.method(:sym)` pada receiver builtin dibuatkan wrapper `def __bam_N(__bam_r) = __bam_r.sym` hanya bila tabel
+  fakta builtin menyatakan kelas receiver punya nama itu (`builtin_method_known`, `src/analyze.c`), dan tabel itu
+  hanya memuat method MILIK kelasnya sendiri. Jadi SEMUA nama yang dimiliki Enumerable gagal di Array/Hash, bukan
+  hanya `to_set`: `[1, 2].method(:inject)`, `method(:group_by)`, `{a: 1}.method(:map)` semuanya NameError. Milik
+  Comparable dan Numeric sudah punya pengecualian (`builtin_comparable_owns`, `builtin_numeric_owns`); Enumerable belum.
+  Ditemukan dengan membandingkan C hasil emit `method(:to_a)` (ada `sp___bam_N`) dengan `method(:to_set)` (langsung
+  `sp_raise_cls("NameError")`), lalu probe `inject`/`group_by` yang gagal sama.
+- **Perbaikan:** `builtin_enumerable_owns` + `builtin_enumerable_arity` (`src/builtin_names.c`, 47 nama dengan arity
+  CRuby 4.0.9) masuk ke gerbang wrapper, owner (`Enumerable`) dan dua titik arity. Branch spinel `method-obj-to-set`
+  (`168f569a7` di atas master `0a6027869`), tes `test/method_obj_enumerable_owned_builtin.rb` (merah tanpa perbaikan;
+  hijau default, promote, GC stress), sweep per-situs 58/58 cocok CRuby, 253 tes Method lama PASS, C optcarrot + 74
+  benchmark identik, gate fork run 43568870044 **23/23**. PR **matz/spinel#11809** dibuka 2026-11-14 15:56 WIB.
+- **Batas yang tersisa (tertulis di PR):** 14 nama Enumerable dikeluarkan dari tabel dan tetap seperti di master
+  (`chunk`, `grep`, `grep_v`, `tally`, `collect_concat`, `drop_while`, `minmax_by`, `take_while`, `each_with_object`,
+  `lazy`; belum dicoba: `chunk_while`, `slice_when`, `cycle`, `sum`); receiver Range masih C error mentah untuk nama
+  APA PUN (`(1..3).method(:size)`), gap tersendiri; blok pada `m.call { }` dibuang untuk semua Method builtin.
+- Status: PR #11809 terbuka (bentuk Array/Hash). Bentuk Range belum diperbaiki.
 
 ## K-044: Set hasil `.to_set` di dalam blok tidak menjawab `size`/`length`
 
@@ -2173,8 +2190,11 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   di worktree terpisah pada master `bac2b4d72`: tes merah tanpa perbaikan, hijau dengan perbaikan (default, promote,
   `SPINEL_GC_STRESS=1`), 10 tes `test/*to_set*.rb` PASS, `git merge-tree` bersih. Repro satu baris
   `repro/k044_to_set_in_block_size_missing.rb` sudah mencetak `1` di master murni; bentuk lain di tes PR masih gagal.
-- Status: siap diajukan; `b1ad23d31` BELUM di-push ke branch PR di fork (masih `5eb08c280`) dan PR belum dibuka: `gh pr
-  create` ditolak pengaman izin sesi, menunggu user menjalankannya.
+- **2026-11-14 13:47 WIB:** user menyetujui; `b1ad23d31` di-push ke fork dan PR dibuka sebagai matz/spinel#11805.
+  **MERGED 14:33 WIB** (merge `6b43fe94d`, parent kedua `b1ad23d31`, commit apa adanya). Diverifikasi 15:57 WIB di
+  master `ee365bf41` (build lokal, belum `make install`): `size` / `empty?` / `add(5).size` pada Set dari `to_set` di
+  blok mencetak `1 false 2` = CRuby.
+- Status: SELESAI di upstream (#11805). Compiler terpasang belum di-bump.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
