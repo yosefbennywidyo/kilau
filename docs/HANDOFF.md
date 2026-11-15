@@ -18,9 +18,10 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
 - Katalog: K-048 dan K-049 ditutup (repro identik dengan CRuby di spinel master `93d7883bd`). K-047, K-050, K-051 masih
   beda dengan CRuby di master yang sama. **K-052 baru** (`super` dengan rest/splat ke `Errno::*`/`SystemExit` ditolak).
 - Branch `gate/*` lama di fork dibersihkan (25), hanya milik #11913 yang tersisa.
-- Compiler terpasang masih `c0d01d67d` dan **dibangun `-O0`** (`~/apps/me/gems/spinel/config.mk` = `COPT=-O0 -g0`);
-  master spinel sudah `93d7883bd`. Suite kilau belum dijalankan pada master baru.
-- Kilau: 13 komit lokal belum di-push (ditambah komit entri ini).
+- Compiler terpasang `93d7883bd` (user pull + install, 2026-11-15 malam), tetapi `~/apps/me/gems/spinel/config.mk` masih
+  `COPT=-O0 -g0`, jadi kemungkinan besar tetap **dibangun `-O0`**. Suite kilau belum dijalankan pada build ini.
+- Kilau di-push sampai `9fb971e` (izin user). Worktree `spinel-k044-master`/`spinel-k045-old` dan 10 branch lokal spinel
+  yang sudah merged dihapus (isi worktree K-044 dicek ada di master lebih dulu).
 
 **Lanjut dari sini**
 1. **K-052 (dipilih user: perbaiki).** Buat `super(*args)` / `super` polos dengan rest atau `**kw` ke subclass `Errno::*`
@@ -40,7 +41,7 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
 2. **#11913:** awasi CI/CodeRabbit/komentar matz. Setelah merged: pastikan commit-nya ada di master, lalu hapus kedua
    branch di atas.
 3. **Compiler:** user memasang ulang spinel dengan `-O2` (hapus `COPT=-O0 -g0` dari `config.mk`, atau `make install
-   COPT=-O2`) pada master terbaru; lalu `make test` dari `spin clean` (hitung `(cached)` = 0), `make test-cruby`,
+   COPT=-O2`); lalu `make test` dari `spin clean` (hitung `(cached)` = 0), `make test-cruby`,
    `make e2e`, semua `repro/*.rb` dibandingkan dengan CRuby, dan catat bump di `CATALOG.md`.
 4. **K-045 / angka benchmark:** semua angka `kilau-spinel` sejak 2026-10-18 diukur dengan runtime `-O0`, termasuk
    `FINDINGS.md` §6 dan peringkat di README; belum dikoreksi. Setelah langkah 3: ukur ulang S3 dan tabel server (AC, Low
@@ -50,14 +51,15 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
 5. **K-item terbuka lain:** K-047 (Method pada Range String/Float), K-050 (method tak ada pada Fiber ditolak), K-051
    (`NoMethodError#initialize` program dijalankan arm dispatcher). Sesuai aturan user: yang dikerjakan diperbaiki lewat
    PR; yang tidak dikerjakan diajukan sebagai issue.
-6. **Keputusan user yang masih menunggu:** push 14 komit lokal kilau; arah Kilau berikutnya (irisan vertikal kedua:
+6. **Keputusan user yang masih menunggu:** arah Kilau berikutnya (irisan vertikal kedua:
    session/cookie + CSRF + autentikasi, atau tutup sebagai riset); sisa Fase F (`resources`, nama route, file route
    tunggal); `spin publish` untuk `spinel-sqlite` (Rencana 7); apakah YAML dan `Time.parse` dicoba di bawah
    `--require-gate` untuk mencabut parser config/waktu epoch buatan sendiri (uji dulu).
-7. **Bersih-bersih:** worktree spinel `~/apps/me/gems/spinel-k044-master` dan `~/apps/me/gems/spinel-k045-old` (K-044
-   sudah merged; K-045 selesai diukur) bisa dihapus bila user setuju (`git worktree remove`). Branch lokal spinel yang
-   sudah merged, termasuk `backup/p2a-old` dan `backup/p2b-old` (versi rewrite yang tidak dipakai), juga bisa dihapus.
-   `tools/gate.rb linux --target/--shard` (branch fork `gate-shard-option`): jalur Docker belum pernah dijalankan.
+7. **Bersih-bersih tersisa:** branch lokal spinel yang tidak merged tetapi usang: `subclass-shares-builtin-reopen-ivars`
+   (`5d8dade07`) dan `string-subclass-reopen-self-identity` (`59fcdee57`), versi rewrite yang tidak dipakai karena matz
+   mengambil versi lama; `exc-init-zsuper-rest` (#11906 ditutup). Hapus bila user setuju. `git stash list` spinel memuat
+   dua stash lama (WIP rewrite P2b, WIP `respond-to-to-set-no-set`). `tools/gate.rb linux --target/--shard` (branch
+   `gate-shard-option`): jalur Docker belum pernah dijalankan.
 
 **Pelajaran yang masih berlaku** (yang belum tercatat di skill `spinel-notes`, `~/.claude/CLAUDE.md`, atau memory)
 - Selisih antar-server bisa berasal dari jenis socket, bukan servernya: Pitchfork tampak 70% di atas Puma di `_ping`
