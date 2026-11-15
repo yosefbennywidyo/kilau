@@ -2280,8 +2280,15 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     (`class Float; alias half ceil if ARGV.empty?; end; p 1.5.half`) menemukan arah sebaliknya: syarat BENAR -> Spinel
     NoMethodError, CRuby `2`. Bentuk tanpa syarat benar. Sudah ada sebelum perbaikan matz (sama di `bac2b4d72`). Belum
     dilaporkan ke upstream.
-- Status: SELESAI di upstream (issue #11819 ditutup, tiga commit matz), terpasang `c0d01d67d`. Sisa = tiga bentuk alias/
-  attr_reader di atas, belum diajukan.
+- **Akar sisa (2026-11-15):** hanya node `def` yang diberi versi (`desugar_conditional_defs`). Alias bersyarat di body
+  kelas dibuang (`register_aliases` membaca `elab_entries` tanpa `ELAB_ENTRY_MAY`); alias di reopen bersyarat tetap
+  berlaku karena `lr_def_applied` hanya menerapkan `bmay` ke def `cond_lone`; reader `attr_*` dibuat setelah pass itu.
+  Dilaporkan ke matz di #11819 (komentar 6891695030), diserahkan ke langkah #10866 (alias/attr_* menulis cell).
+- **Temuan sampingan, FiberError:** arm "no method" dispatcher memakai `raise` tanpa receiver, yang di method Fiber/Thread
+  berarti `Fiber#raise`/`Thread#raise` (Thread dengan def Integer: C gagal compile). Perbaikan: `raise` itu ditandai
+  `kernel_recv`. PR **matz/spinel#11888** dibuka 2026-11-15 ~13:00 WIB (head `5069056a8`, gate fork 43680023920 23/23).
+- Status: SELESAI di upstream (issue #11819 ditutup, tiga commit matz), terpasang `c0d01d67d`. Sisa alias/attr diserahkan
+  ke #10866; FiberError/Thread = PR #11888 terbuka.
 
 ## K-047: Method pada Range String menjawab nilai salah diam-diam; Range Float masih C error
 
