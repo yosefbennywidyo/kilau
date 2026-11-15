@@ -2307,6 +2307,59 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Klasifikasi: (a) nilai salah diam-diam, kategori terburuk, tetapi bentuknya langka; (b) C error mentah.
 - Status: dicatat; belum diperbaiki; belum diajukan ke upstream.
 
+## K-048: `super` tanpa argumen di `initialize` exception yang punya parameter rest -> C error mentah
+
+- Lapisan: compiler, konstruktor exception (`super` implisit meneruskan elemen parameter rest).
+- Ditemukan: 2026-11-15, saat menyiapkan matz/spinel#11888 (temuan sampingan K-046), compiler `c0d01d67d`.
+- Gejala: `class AppError < StandardError; def initialize(*args); super; end; end; p AppError.new("x").message` ->
+  `incompatible pointer types assigning to 'const char *' from 'sp_PolyArray *'` (CRuby 4.0.6: `"x"`). Array rest
+  diteruskan utuh sebagai message.
+- Ablasi: kena untuk `(*a, **k)` dan `(*a)`, baik di subclass program maupun di reopen `StandardError`, `RuntimeError`,
+  `NameError`, `NoMethodError`, `KeyError`. Aman dengan `(m = nil)`, dengan `super(*a)` eksplisit, dan di reopen `Array`.
+- Repro: `repro/k048_exception_init_rest_zsuper_c_error.rb`.
+- Klasifikasi: C error mentah (melanggar kontrak penolakan bernama); polanya umum di kelas error kustom.
+- Status: dilaporkan sebagai issue **matz/spinel#11889** (2026-11-15). Belum diperbaiki.
+
+## K-049: ivar di method yang ditambahkan ke kelas exception builtin -> C error mentah
+
+- Lapisan: compiler, layout ivar untuk reopen exception builtin.
+- Ditemukan: 2026-11-15, bersama K-048, compiler `c0d01d67d`.
+- Gejala: `class RuntimeError; def initialize(m = nil); super(m); @own = 1; end; end` lalu `raise "boom"` ->
+  `no member named 'iv_own' in 'struct sp_Exception_s'` (CRuby: `"boom"`). `docs/limitations.md` (baris Time) menyatakan
+  exception menyimpan ivar di tabel per objek, jadi ini bug, bukan batasan.
+- Ablasi: kena di reopen `RuntimeError`/`StandardError`/`NoMethodError`, juga di method non-initialize yang dipanggil;
+  ditambah `attr_reader` -> penolakan "unsupported call". Aman di subclass program (`MyErr < StandardError`), di method yang
+  tak pernah dipanggil, dan di reopen `Array`.
+- Repro: `repro/k049_builtin_exception_reopen_ivar_c_error.rb`.
+- Klasifikasi: C error mentah.
+- Status: dilaporkan sebagai issue **matz/spinel#11890** (2026-11-15). Belum diperbaiki.
+
+## K-050: method yang tidak ada pada Fiber ditolak saat kompilasi
+
+- Lapisan: compiler, dispatch pada receiver Fiber.
+- Ditemukan: 2026-11-15, saat menyiapkan matz/spinel#11888, compiler `c0d01d67d`.
+- Gejala: `f = Fiber.new { }; p((f.tag rescue [$!.class, $!.message]))` -> `unsupported call: node 11 (CallNode 'tag')
+  recv=LocalVariableReadNode/ty33` saat kompilasi. CRuby menaikkan NoMethodError saat run-time, dan Spinel sendiri
+  melakukannya untuk `[1].tag`.
+- Repro: `repro/k050_fiber_undefined_method_refused.rb`.
+- Klasifikasi: beda perilaku (penolakan bernama, bukan nilai salah); program yang menyelamatkan NoMethodError tak bisa
+  di-compile.
+- Status: dicatat; belum diajukan ke upstream.
+
+## K-051: `NoMethodError#initialize` milik program dijalankan oleh arm dispatcher def bersyarat
+
+- Lapisan: compiler, arm "no method" dari `desugar_conditional_defs` (`disp_raise_with`, cabang `nomethod_own_init`).
+- Ditemukan: 2026-11-15, saat menyiapkan matz/spinel#11888, compiler `c0d01d67d`.
+- Gejala (a): dengan `class NoMethodError; def initialize(m = nil) = super("own: " + m.to_s); end` dan def bersyarat
+  yang tidak jalan, error-nya berpesan `"own: undefined method 'tag' ..."`. CRuby tidak pernah menjalankan
+  `initialize` program untuk error panggilan gagal: pesannya tanpa `own: `. Sama untuk kelas program, Fiber, dan
+  Thread (Fiber/Thread sejak #11888).
+- Gejala (b): dengan `def initialize(*a, **k) = super(*a, **k)`, program ditolak saat kompilasi ("a method argument given
+  a String, which no conversion keeps in its sp_PolyArray * slot"). CRuby berjalan normal.
+- Repro: `repro/k051_own_nomethoderror_init_run_by_arm.rb` (jalankan dengan argumen).
+- Klasifikasi: (a) nilai salah (pesan); (b) penolakan bernama. Bentuknya langka.
+- Status: dicatat; disebut di body PR #11888 sebagai batasan lama; belum diajukan tersendiri.
+
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
 - Lapisan: compiler/runtime spinel. BUKAN kode Kilau (dibuktikan di bawah). Bukan bug kebenaran.
