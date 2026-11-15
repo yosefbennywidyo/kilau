@@ -18,8 +18,9 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
 - Katalog: K-048 dan K-049 ditutup (repro identik dengan CRuby di spinel master `93d7883bd`). K-047, K-050, K-051 masih
   beda dengan CRuby di master yang sama. **K-052 baru** (`super` dengan rest/splat ke `Errno::*`/`SystemExit` ditolak).
 - Branch `gate/*` lama di fork dibersihkan (25), hanya milik #11913 yang tersisa.
-- Compiler terpasang `93d7883bd` (user pull + install, 2026-11-15 malam), tetapi `~/apps/me/gems/spinel/config.mk` masih
-  `COPT=-O0 -g0`, jadi kemungkinan besar tetap **dibangun `-O0`**. Suite kilau belum dijalankan pada build ini.
+- Compiler terpasang `93d7883bd`, **dibangun `-O2`** (user: `make clean && make install COPT=-O2`, ~23:05 WIB;
+  `config.mk` tetap `-O0` untuk build kerja, jadi install berikutnya juga butuh `make clean` + `COPT=-O2`). Kilau
+  diverifikasi dari bersih: 28/28, test-cruby 29/29, e2e 35/35, repro 35/45 identik (rincian di bump CATALOG).
 - Kilau di-push sampai `9fb971e` (izin user). Worktree `spinel-k044-master`/`spinel-k045-old` dan 10 branch lokal spinel
   yang sudah merged dihapus (isi worktree K-044 dicek ada di master lebih dulu).
 
@@ -40,11 +41,10 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
      user untuk `gh pr create`.
 2. **#11913:** awasi CI/CodeRabbit/komentar matz. Setelah merged: pastikan commit-nya ada di master, lalu hapus kedua
    branch di atas.
-3. **Compiler:** user memasang ulang spinel dengan `-O2` (hapus `COPT=-O0 -g0` dari `config.mk`, atau `make install
-   COPT=-O2`); lalu `make test` dari `spin clean` (hitung `(cached)` = 0), `make test-cruby`,
-   `make e2e`, semua `repro/*.rb` dibandingkan dengan CRuby, dan catat bump di `CATALOG.md`.
+3. **Compiler:** selesai (bump 2026-11-15 di CATALOG). Install berikutnya: `make clean && make install COPT=-O2`;
+   tanpa `make clean`, `make install COPT=-O2` menyalin objek `-O0` lama apa adanya (Make tidak melacak flag).
 4. **K-045 / angka benchmark:** semua angka `kilau-spinel` sejak 2026-10-18 diukur dengan runtime `-O0`, termasuk
-   `FINDINGS.md` §6 dan peringkat di README; belum dikoreksi. Setelah langkah 3: ukur ulang S3 dan tabel server (AC, Low
+   `FINDINGS.md` §6 dan peringkat di README; belum dikoreksi. Compiler kini `-O2`: ukur ulang S3 dan tabel server (AC, Low
    Power Mode mati, laptop tidak dipakai, 3x bila angkanya akan dikutip), lalu koreksi kedua dokumen. Bagian waktu
    build/ukuran binary K-045 masih terbuka (opsional: bisect kasar antar-versi compiler). Profil `kilau-spinel` di S3 c16
    (`sample` selama beban) belum dilakukan.

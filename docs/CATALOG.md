@@ -1,5 +1,16 @@
 # Katalog batas AOT
 
+**Bump 2026-11-15** (install bersih oleh user ~23:05 WIB, diverifikasi 23:07-23:13 WIB): compiler terpasang
+sekarang `2026.10.25+5285 (93d7883bd)`, naik dari `+4965 (548d2b672)`, dan untuk pertama kali sejak 2026-10-18
+**dibangun `-O2`** (`make clean && make install COPT=-O2`; `config.mk` tetap `COPT=-O0 -g0` untuk build kerja).
+Bukti: semua objek dan `libspinel_rt.a` dibangun ulang sesudah `make clean`, binary 13,92 MB (build `-O0` 14,54 MB).
+Termasuk #11888, #11901, #11902, #11907, #11908, #11909 dan perbaikan matz untuk K-048. Diverifikasi: `make test`
+kilau dari `spin clean` **28/28 lulus** (16 + 8 + 4), exit 0, 0 `(cached)`, 101 dtk; `make test-cruby` 29/29;
+`make e2e` blog 35/35. Semua 45 `repro/*.rb` dijalankan ulang terhadap CRuby: 35 identik (termasuk `k048_*` dan
+`k049_*`, keduanya tertutup). 10 sisanya: 4 karena repronya sendiri (`k003`, `k006`, `k007`, `k015`), `k032`
+(desain), `k046` (penolakan bernama, sesuai rancangan), dan `k047`, `k050`, `k051`, `k052` (terbuka). TIDAK diukur
+pada build ini: K-045 (kecepatan S3, waktu build, ukuran binary blog) dan sapuan `yield-sweep`.
+
 **Bump 2026-11-14** (install oleh user sebelum ~19:10 WIB, diverifikasi 19:14-19:18 WIB): compiler terpasang
 sekarang `2026.10.25+4965 (548d2b672)`, naik dari `+4731 (01ef5b4b2)` (termasuk #11805 untuk K-044 dan #11809
 untuk K-043). Diverifikasi: `make test` kilau dari `spin clean` **28/28 lulus**, exit 0, 0 `(cached)`;
