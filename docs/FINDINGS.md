@@ -93,10 +93,11 @@ di kedua engine.
 | K-045 | halaman list 26-37% lebih lambat, build 4× lebih lama, binary 2,3× lebih besar dibanding compiler September | **performa dan DX** | terbuka; terbukti di compiler, belum dibisect |
 | K-046 | `def` di dalam reopen BERSYARAT kelas builtin dianggap tanpa syarat (`[1, 2].size` → `77` walau syaratnya salah) | **nilai salah diam-diam** | **diperbaiki upstream oleh matz** (issue #11819: `55761e4946`, `abb97b0b6a`, `962bd8d97e`); sisa: tiga bentuk alias/`attr_reader`, lihat katalog |
 | K-047 | Method pada Range String (`.method(:to_a).call` → `[]`); Range Float = C error | **nilai salah diam-diam** / C error | terbuka, belum diajukan |
-| K-048 | `super` tanpa argumen di `initialize(*args)` exception (termasuk subclass `AppError < StandardError`) | **C error mentah** | dilaporkan (matz/spinel#11889) |
-| K-049 | ivar di method yang ditambahkan ke exception builtin (`class RuntimeError; ... @own = 1`) | **C error mentah** | dilaporkan (matz/spinel#11890) |
+| K-048 | `super` tanpa argumen di `initialize(*args)` exception (termasuk subclass `AppError < StandardError`) | **C error mentah** | **diperbaiki upstream oleh matz** (`728e0e567`; PR kita #11906 ditutup) |
+| K-049 | ivar di method yang ditambahkan ke exception builtin (`class RuntimeError; ... @own = 1`) | **C error mentah** | **diperbaiki upstream** (#11907, #11909, #11908; lanjutan #11913 terbuka) |
 | K-050 | method yang tidak ada pada Fiber ditolak saat kompilasi (CRuby: NoMethodError run-time) | penolakan bernama | terbuka, belum diajukan |
 | K-051 | `NoMethodError#initialize` program dijalankan arm dispatcher def bersyarat; bentuk `(*a, **k)` ditolak | nilai salah (pesan) / penolakan | terbuka, disebut di PR #11888 |
+| K-052 | `super` dengan rest/splat ke subclass `Errno::*`/`SystemExit` ditolak saat kompilasi (CRuby menjalankannya) | penolakan bernama | terbuka; dipilih untuk diperbaiki |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa

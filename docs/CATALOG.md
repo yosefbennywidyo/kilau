@@ -2318,7 +2318,10 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `NameError`, `NoMethodError`, `KeyError`. Aman dengan `(m = nil)`, dengan `super(*a)` eksplisit, dan di reopen `Array`.
 - Repro: `repro/k048_exception_init_rest_zsuper_c_error.rb`.
 - Klasifikasi: C error mentah (melanggar kontrak penolakan bernama); polanya umum di kelas error kustom.
-- Status: dilaporkan sebagai issue **matz/spinel#11889** (2026-11-15). Diperbaiki di branch spinel `exc-init-zsuper-rest` (`053fc393f`, `Fixes #11889`), gate fork berjalan, PR belum dibuka.
+- Status: **TERTUTUP** (2026-11-15). matz memperbaikinya sendiri di master (`728e0e567`, `zspread` di `emit_super`: `*rest`
+  dan `**kwrest`, tanpa SystemCallError/SystemExit) beberapa jam setelah issue #11889 dibuka; PR kita #11906 ditutup sebagai
+  "already on master". Repro identik dengan CRuby di master `93d7883bd`. SystemCallError/SystemExit dengan `super`
+  rest/splat tetap ditolak bernama: lihat K-052.
 
 ## K-049: ivar di method yang ditambahkan ke kelas exception builtin -> C error mentah
 
@@ -2332,7 +2335,13 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   tak pernah dipanggil, dan di reopen `Array`.
 - Repro: `repro/k049_builtin_exception_reopen_ivar_c_error.rb`.
 - Klasifikasi: C error mentah.
-- Status: dilaporkan sebagai issue **matz/spinel#11890** (2026-11-15). Diperbaiki di branch spinel `exc-reopen-ivar-table` (`793f80f44`, `Fixes #11890`). Lanjutannya: subclass program yang berbagi ivar dengan reopen builtin (`e2e8a0185`) dan identitas `self` String subclass (`9a2eb117f`, `3d3ef813d`). Gate fork berjalan, PR belum dibuka.
+- Status: **TERTUTUP** (2026-11-15). matz sempat memperbaikinya sendiri (`521212347`), lalu menarik aturannya (`2776fa4e1`,
+  "your rule ... is the general one") dan menggabungkan rantai kita apa adanya: #11907 (`793f80f44`), #11909 (subclass
+  Array/Hash/exception berbagi ivar reopen, `e2e8a0185` + `1f726d510`), #11908 (`self` String subclass + String berbagi
+  ivar, `7f6dac7b0` + `1c948131b`). Lanjutan #11913 (subclass tanpa method sendiri: `instance_variables` menjawab `[]`)
+  terbuka. Ikut merged dari temuan yang sama: #11901 (`raise "msg"` menjalankan `initialize` reopen RuntimeError) dan
+  #11902 (tipe parameter method reopen exception dari receiver exception builtin). Repro identik dengan CRuby di
+  master `93d7883bd`.
 
 ## K-050: method yang tidak ada pada Fiber ditolak saat kompilasi
 
@@ -2359,6 +2368,31 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Repro: `repro/k051_own_nomethoderror_init_run_by_arm.rb` (jalankan dengan argumen).
 - Klasifikasi: (a) nilai salah (pesan); (b) penolakan bernama. Bentuknya langka.
 - Status: dicatat; disebut di body PR #11888 sebagai batasan lama; belum diajukan tersendiri.
+
+## K-052: `super` dengan rest/splat ke kelas `Errno::*`/`SystemExit` ditolak saat kompilasi
+
+- Lapisan: compiler, konstruktor exception (`emit_super`, `src/codegen.c` ~17066; `codegen_call.c` ~5632).
+- Ditemukan: 2026-11-15, saat memeriksa bentuk yang disebut matz di penutupan #11906, master `93d7883bd`.
+- Gejala: subclass `Errno::ENOENT` (atau `Errno::*` lain) / `SystemExit` dengan `def initialize(*args); super; end` (juga
+  `(*args, **kw)`) ditolak: "unsupported a bare super forwarding a rest, keyword or block parameter to
+  SystemCallError#initialize" (atau `SystemExit#initialize`). Bentuk eksplisit `super(*args, **kw)` juga ditolak ("a splat,
+  keyword or block argument to a SystemCallError constructor"). CRuby 4.0.6 menjalankannya:
+  - subclass `Errno::ENOENT`: `(msg = nil, func = nil)`, errno dari kelas. `new("file.txt", "open")` ->
+    `"No such file or directory @ open - file.txt"`, errno 2; tiga argumen -> ArgumentError `(given 3, expected 0..2)`;
+  - subclass `SystemExit`: `(status = true, msg = nil)`. `new(3, "bye")` -> status 3, pesan "bye"; `new(false)` -> status 1;
+    tiga argumen -> ArgumentError `(given 2, expected 0..1)` (pesan CRuby memang begitu);
+  - subclass langsung `SystemCallError` (tanpa errno sendiri): CRuby menaikkan TypeError untuk argumen apa pun, jadi
+    bentuk ini tidak dipakai program yang benar.
+- Sebab: helper runtime `sp_syserr_super(exc, msg, func)` dan `sp_sysexit_super(exc, status, msg)` menerima argumen
+  posisi tetap, sedangkan panjang rest/splat baru diketahui saat run-time. Penolakannya bernama (sesuai kontrak), tetapi
+  tidak tercatat di `docs/limitations.md`. Bentuk lain yang disebut matz (exception yang `initialize`-nya menerima
+  argumen sendiri: KeyError, NameError, NoMethodError, FrozenError, StopIteration) sudah identik dengan CRuby.
+- Repro: `repro/k052_syserr_sysexit_rest_super_refused.rb` (CRuby menjalankan semua baris; Spinel menolak empat
+  `initialize`).
+- Klasifikasi: penolakan bernama (bukan nilai salah); pola di kelas error kustom yang membungkus errno/exit.
+- Status: user memilih **diperbaiki** (2026-11-15): bongkar array rest/splat saat run-time ke slot `Errno::*` (pesan, nama
+  fungsi) dan `SystemExit` (status, pesan), dengan ArgumentError CRuby bila kelebihan, untuk bentuk `super` polos dan
+  eksplisit. Belum dikerjakan; rencana di HANDOFF entri 2026-11-15 ~22:50 WIB.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
