@@ -2288,7 +2288,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   berarti `Fiber#raise`/`Thread#raise` (Thread dengan def Integer: C gagal compile). Perbaikan: `raise` itu ditandai
   `kernel_recv`. PR **matz/spinel#11888** dibuka 2026-11-15 ~13:00 WIB (head `5069056a8`, gate fork 43680023920 23/23).
 - Status: SELESAI di upstream (issue #11819 ditutup, tiga commit matz), terpasang `c0d01d67d`. Sisa alias/attr diserahkan
-  ke #10866; FiberError/Thread = PR #11888 terbuka.
+  ke #10866; FiberError/Thread = PR #11888 MERGED 2026-11-15 09:25Z.
 
 ## K-047: Method pada Range String menjawab nilai salah diam-diam; Range Float masih C error
 
@@ -2318,7 +2318,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `NameError`, `NoMethodError`, `KeyError`. Aman dengan `(m = nil)`, dengan `super(*a)` eksplisit, dan di reopen `Array`.
 - Repro: `repro/k048_exception_init_rest_zsuper_c_error.rb`.
 - Klasifikasi: C error mentah (melanggar kontrak penolakan bernama); polanya umum di kelas error kustom.
-- Status: dilaporkan sebagai issue **matz/spinel#11889** (2026-11-15). Belum diperbaiki.
+- Status: dilaporkan sebagai issue **matz/spinel#11889** (2026-11-15). Diperbaiki di branch spinel `exc-init-zsuper-rest` (`053fc393f`, `Fixes #11889`), gate fork berjalan, PR belum dibuka.
 
 ## K-049: ivar di method yang ditambahkan ke kelas exception builtin -> C error mentah
 
@@ -2332,7 +2332,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   tak pernah dipanggil, dan di reopen `Array`.
 - Repro: `repro/k049_builtin_exception_reopen_ivar_c_error.rb`.
 - Klasifikasi: C error mentah.
-- Status: dilaporkan sebagai issue **matz/spinel#11890** (2026-11-15). Belum diperbaiki.
+- Status: dilaporkan sebagai issue **matz/spinel#11890** (2026-11-15). Diperbaiki di branch spinel `exc-reopen-ivar-table` (`793f80f44`, `Fixes #11890`). Lanjutannya: subclass program yang berbagi ivar dengan reopen builtin (`e2e8a0185`) dan identitas `self` String subclass (`9a2eb117f`, `3d3ef813d`). Gate fork berjalan, PR belum dibuka.
 
 ## K-050: method yang tidak ada pada Fiber ditolak saat kompilasi
 
