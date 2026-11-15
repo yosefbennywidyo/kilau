@@ -2183,7 +2183,10 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `unbind.bind` ditolak; Range Float dan String = K-047. Setelah rebase ke master `db1348ab2` (`c5b072842`): gate fork
   run 43596698490 **23/23**, PR **matz/spinel#11839** dibuka 2026-11-14 malam. Satu run GC stress lokal pernah
   melaporkan selisih yang tak terulang dalam 80 run; ditulis apa adanya di body PR.
-- Status: SELESAI di upstream untuk Array/Hash (#11809), terpasang (`548d2b672`). Range Integer: perbaikan lokal.
+- **2026-11-14 18:13Z: #11839 MERGED** (merge `269631382`). `test/method_obj_range_receiver.rb` PASS di master
+  `c0d01d67d` (2026-11-15).
+- Status: SELESAI di upstream untuk Array/Hash (#11809) dan Range Integer (#11839), terpasang `c0d01d67d`. Range
+  String/Float = K-047, masih terbuka.
 
 ## K-044: Set hasil `.to_set` di dalam blok tidak menjawab `size`/`length`
 
@@ -2248,7 +2251,37 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - **2026-11-14 ~18:30 WIB:** diverifikasi ulang di master `548d2b672` (hasil sama), lalu dilaporkan sebagai issue
   **matz/spinel#11819** (tiga repro + bentuk Method; menawarkan PR penolakan saat kompilasi bila itu jawaban yang
   diinginkan). Janji PR `arity` di thread CodeRabbit #11809 dikoreksi secara terbuka (r4573455672), menunjuk ke issue.
-- Status: issue #11819 terbuka, menunggu arahan matz. Tidak ada perubahan kode.
+- **Komentar di issue (2026-11-14/15):** FrancescoK (15:21Z) menilai perbaikan bersihnya ada di langkah #10866, yaitu
+  "method builtin sebagai versi 0". Matz (23:15Z) memperbaiki bentuk laporan di `55761e4946` dan mendaftar tiga bentuk
+  yang masih terbuka. Dua di antaranya ia tutup sendiri di commit berikutnya, lalu issue ditutup (00:10Z, komentar
+  6886386871).
+- **Perbaikan matz (tiga commit, semuanya `Refs #11819`):**
+  - `55761e4946`: `if c; class Array; def ...` dibaca seperti `class Array; if c; def ...`. Pass conditional-defs
+    mempertahankan syarat di reopen top-level kelas builtin (`cdef_builtin_class`), dan load record menerapkan def itu
+    hanya di cabang yang jalan (`LrStmt.bmay`, `lr_def_applied`). Arm else = method asli builtin. Def yang tidak bisa
+    jatuh kembali ke builtin karena arity (mis. `def inject(s)`) ditolak dengan diagnostik bernama.
+  - `abb97b0b6a`: menambal regresi commit pertama (def tanpa syarat yang sudah ada sebelumnya, `class Numeric; def
+    secs`, ikut dianggap "mungkin tak terdefinisi", jadi `1.secs` menjawab nil). Kini hanya def `cond_lone` yang kena
+    syarat. Bentuk yang sama pada KELAS PROGRAM yang sudah dibuka sebelumnya (`class Foo; end; if c; class Foo; def bar`)
+    ternyata juga salah dan ikut diperbaiki (`cond_reopen`). Klaim di issue kita bahwa kelas program "sudah benar" hanya
+    diuji untuk override, tidak untuk nama baru.
+  - `962bd8d97e`: alias yang dibuat ulang di bawah syarat dan dipanggil pada nilai builtin (`5.minute`) kini mengikuti
+    version entry alias, tidak lagi di-rename sekali saat inferensi.
+- **Diverifikasi 2026-11-15 11:48 WIB di master `c0d01d67d`** (juga compiler terpasang): `repro/k046b` = CRuby untuk
+  kedua cabang (`77` / `2`). `repro/k046` (`def inject(a, b)` lalu `.arity`) kini DITOLAK saat kompilasi ("a def under a
+  condition only the run time decides, of a name another method answers ... is not supported"), sesuai rancangan, tidak
+  lagi nilai salah. Tes upstream `cond_reopen_of_builtin_class`, `cond_reopen_of_program_class`,
+  `alias_version_on_builtin_value` PASS.
+- **Yang tidak ditangani (daftar matz, dicek ulang di `c0d01d67d`, kondisi salah = dijalankan dengan argumen):**
+  - alias di bawah syarat untuk def yang hanya dibuat cabang itu (`if c; class Integer; def soft; alias yell soft`):
+    syarat salah -> Spinel `:s`, CRuby NoMethodError (nilai salah diam-diam);
+  - `if c; Fiber.attr_reader :tag` dengan syarat salah: Spinel `nil`, CRuby NoMethodError;
+  - alias method builtin yang dibuat ulang di bawah syarat (`alias half ceil if c`). Probe kita untuk alias PERTAMA KALI
+    (`class Float; alias half ceil if ARGV.empty?; end; p 1.5.half`) menemukan arah sebaliknya: syarat BENAR -> Spinel
+    NoMethodError, CRuby `2`. Bentuk tanpa syarat benar. Sudah ada sebelum perbaikan matz (sama di `bac2b4d72`). Belum
+    dilaporkan ke upstream.
+- Status: SELESAI di upstream (issue #11819 ditutup, tiga commit matz), terpasang `c0d01d67d`. Sisa = tiga bentuk alias/
+  attr_reader di atas, belum diajukan.
 
 ## K-047: Method pada Range String menjawab nilai salah diam-diam; Range Float masih C error
 
