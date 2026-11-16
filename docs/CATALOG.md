@@ -2,7 +2,7 @@
 
 **Bump 2026-11-16 (malam)** (user `git pull` + `make install`, diverifikasi 21:13-21:25 WIB): compiler terpasang sekarang
 `2026.10.25+5532 (c892caf09)`, naik dari `+5429 (81bac3b7e)`; membawa K-051 (#11961, `1dd33c481` + `2d39a7b3c`) dan
-K-053 (#11962, `22a374a5f`). Build ini **`-O0`**, bukan `-O2`: `libspinel_rt.a` masih memuat simbol lokal
+K-053 (#11962, `22a374a5f`). Build pertama ini **`-O0`** (lalu dipasang ulang `-O2`, lihat tambahan di bawah): `libspinel_rt.a` masih memuat simbol lokal
 `sp_str_byte_len` (bump sebelumnya, `-O2`, tidak punya), dan `config.mk` spinel `COPT=-O0 -g0`; jangan membandingkan
 waktu/ukuran dengan bump `-O2` tanpa memasang ulang (`make clean && make install COPT=-O2`). Diverifikasi: `make test`
 dari `spin clean` **28/28 lulus** (16 + 8 + 4), exit 0, 0 `(cached)`, 81 dtk; `make test-cruby` 29/29; `make e2e` blog
@@ -12,6 +12,12 @@ an instance of Foo"]`, tanpa `own: `) dan `k053` (keduanya tertutup), plus `k032
 10 sisanya: `k003`, `k006`, `k007`, `k015` (repronya sendiri), `k046` (penolakan bernama), dan terbuka: `k047`, `k050`
 (penolakan bernama), `k054`, `k055`, `k056` (error C `unknown type name 'sp_NoMethodError'`). TIDAK diukur: K-045 dan
 `yield-sweep`. Catatan: RAM bebas terbaca ~85-100 MB sebelum run, tetapi build kilau tidak terdampak.
+
+**Tambahan 21:26-21:35 WIB, build yang sama dipasang ulang `-O2`** (user `make clean && make install COPT=-O2`): versi tetap
+`+5532 (c892caf09)`; bukti `-O2`: `sp_str_byte_len` tidak lagi menjadi simbol lokal di `sp_str_cold.o` (tinggal di `sp_str.o`
+dan `sp_marshal.o`), binary `spinel` 14,07 MB (build `-O0`: 14,68 MB), semua file terpasang terbaca. Diverifikasi ulang dari
+`spin clean`: `make test` 28/28, 0 `(cached)`, 61 dtk; `test-cruby` 29/29; `e2e` 35 `ok`, exit 0; repro 39/49 identik dengan
+daftar sisa yang sama persis seperti run `-O0`. Jadi blok di atas berlaku untuk kedua level; compiler terpasang SEKARANG `-O2`.
 
 **Bump 2026-11-16** (install bersih oleh user `make clean && make install COPT=-O2`, diverifikasi 09:42-09:50 WIB):
 compiler terpasang sekarang `2026.10.25+5429 (81bac3b7e)`, naik dari `+5285 (93d7883bd)`; runtime terbukti `-O2`

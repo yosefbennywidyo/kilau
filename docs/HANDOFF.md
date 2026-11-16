@@ -3,10 +3,10 @@
 Entri terbaru di atas. Entri lama (2026-09-28 s.d. 2026-11-14) dihapus pada 2026-11-15 karena isinya sudah tertutup
 atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`git show 59e79ef:docs/HANDOFF.md`).
 
-## 2026-11-16 ~21:25 WIB -- bump `c892caf09` terverifikasi; K-051 dan K-053 tertutup di kilau
+## 2026-11-16 ~21:35 WIB -- bump `c892caf09` terverifikasi; K-051 dan K-053 tertutup di kilau
 
 **Status**
-- User `git pull` + `make install` (build **`-O0`**, bukan `-O2`; bukti di bump CATALOG). Compiler terpasang
+- User `git pull` + `make install` (mulanya `-O0`), lalu `make clean && make install COPT=-O2`; sekarang terpasang **`-O2`** (bukti di bump CATALOG), hasil verifikasi identik di kedua level. Compiler terpasang
   `2026.10.25+5532 (c892caf09)`, memuat #11961 (K-051) dan #11962 (K-053).
 - Kilau dari `spin clean`: `make test` 28/28 (0 `(cached)`), `test-cruby` 29/29, `e2e` blog exit 0 (35 `ok`).
   Repro 49 berkas: 39 identik (K-051 dengan argumen dan K-053 kini identik); beda: `k003/k006/k007/k015` (repronya
@@ -17,7 +17,7 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
 **Lanjut dari sini**
 1. Kandidat berikutnya: K-056 (error C, melanggar kontrak penolakan bernama), K-054, K-055, lalu K-047, K-050.
 2. Thread CodeRabbit kedua #11961 (`self.new`) tetap tanpa balasan; kembali setelah K-056.
-3. Bila butuh angka performa/ukuran: pasang ulang `-O2` dulu (`make clean && make install COPT=-O2`).
+3. Angka performa/ukuran (K-045) kini sah dibandingkan dengan bump `-O2` sebelumnya; belum diukur.
 
 ## 2026-11-16 ~13:15 WIB -- K-051 merged (#11961); K-053 siap PR; K-054/K-055/K-056 dicatat
 
