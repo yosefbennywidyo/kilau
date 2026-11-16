@@ -266,7 +266,7 @@ dengan body yang identik. Angka = req/s.
 - **Framework Kilau lebih cepat dari Rails di server yang sama.** `kilau-puma` /
   `rails-puma`: 1,8× (S1 c16), 2,4× (S2), 1,26× (S3 c16), 2,5× (S4), dengan sekitar
   separuh memori.
-- **AOT tidak memberi keunggulan throughput atas CRuby + YJIT** pada compiler sekarang:
+- **[DIGANTIKAN 2026-11-16: diukur dengan runtime `-O0`, lihat bagian `-O2` di bawah.]** **AOT tidak memberi keunggulan throughput atas CRuby + YJIT** pada compiler sekarang:
   `kilau-spinel` dan `kilau-cruby` setara di c1 (S1 6.737 vs 7.473; S3 1.449 vs
   1.330). Yang diberikan binary Spinel adalah start ~50 ms (CRuby ~450 ms) dan memori
   separuh `kilau-cruby` atau sepersepuluh server multi-proses. Dengan compiler
@@ -370,6 +370,41 @@ Cara membaca peringkat ini:
 - **Selisih kecil tidak pasti** (satu sesi): misalnya Falcon dan `kilau-spinel` di S1
   (7.316 vs 7.237), atau `kilau-pitchfork`, `kilau-spinel`, dan `kilau-puma` di S4.
 
+### Semua server, ulang dengan runtime `-O2` dan daya AC (2026-11-16)
+
+Sesi `bench/results/20261116-2200-servers-O2-ac` (21:46-22:24 WIB; **AC, Low Power Mode mati**; prosedur sama dengan
+sesi 2026-11-13: 5 dtk pemanasan, 3 x 15 dtk, median; tanpa proxy; spinel `c892caf09` dipasang `-O2`, kilau `35bab64`,
+CRuby 4.0.6 + YJIT). Pitchfork tidak diikutkan (tak sah tanpa nginx). 40 sel, 0 status tak terduga, 0 error, semua body
+identik. Kontrol: S3 c1 `kilau-spinel` 3.999 req/s, sama dengan A/B terpisah malam itu (3.943/4.002, K-045). Angka = req/s.
+
+| App | S1 c1 | S1 c16 | S1 c64 | S2 c16 | S3 c1 | S3 c16 | S3 c64 | S4 c16 | RSS puncak (MB) |
+|---|---|---|---|---|---|---|---|---|---|
+| kilau-spinel (binary, server Kilau) | 10.253 | 31.108 | 28.466 | 26.263 | 3.999 | 4.809 | 4.349 | 15.874 | 15-28 |
+| kilau-cruby (CRuby, server Kilau) | 10.550 | 28.673 | 28.174 | 18.103 | 1.857 | 3.094 | 2.539 | 12.450 | 32-48 |
+| kilau-puma (8 x 5) | 7.935 | 26.679 | 26.212 | 21.703 | 1.692 | 7.221 | 6.691 | 9.433 | 330-372 |
+| kilau-falcon (8 instance) | 5.961 | 22.783 | 23.962 | 15.825 | 1.568 | 5.860 | 6.131 | 8.135 | 326-457 |
+| rails-puma (8 x 5) | 4.565 | 13.465 | 13.351 | 6.728 | 1.625 | 5.077 | 6.121 | 3.964 | 652-849 |
+
+Rasio (req/s): `kilau-spinel` / `rails-puma` = 2,25x (S1 c1), 2,31x (S1 c16), 3,9x (S2), **2,46x (S3 c1), 0,95x (S3 c16),
+0,71x (S3 c64)**, 4,0x (S4). `kilau-puma` / `rails-puma` = 1,98x (S1 c16), 3,2x (S2), 1,42x (S3 c16), 2,4x (S4).
+`kilau-spinel` / `kilau-cruby` = 0,97-1,08x (S1), 1,45x (S2), **2,15x / 1,55x / 1,71x (S3 c1/c16/c64)**, 1,28x (S4).
+
+- **Kesimpulan 2026-11-13 "AOT tidak memberi keunggulan atas CRuby + YJIT" gugur.** Itu diukur dengan runtime `-O0`
+  (K-045). Dengan `-O2`, binary Spinel 2,15x CRuby + YJIT di halaman list c1 (3.999 vs 1.857; dulu 1.449 vs 1.330), 1,45x
+  di S2, 1,28x di S4, dan setara di S1 (yang murni mengukur server). Start tetap ~45 ms (CRuby ~270-310 ms) dan memori
+  separuh `kilau-cruby`.
+- **Halaman list (S3) kini menang di c1, kalah tipis di c16/c64.** Satu proses Kilau 2,46x Rails (8 proses) di c1, tapi
+  0,95x di c16 dan 0,71x di c64; `kilau-puma` (8 proses) tetap tertinggi (7.221 / 6.691). Jadi "tidak menskala di satu
+  proses" masih benar secara relatif (3.999 ke 4.809 dari c1 ke c16 pada 8 worker), hanya levelnya jauh lebih tinggi.
+  Dugaan kunci global alokator belum dibuktikan dengan profil.
+- **S1, S2, S4: Kilau-spinel 2,3x / 3,9x / 4,0x Rails** (rasio di sesi yang sama; tabel September di atas: 1,9x / 2,8x /
+  2,9x pada c64 dengan compiler lain). Kerangka Kilau tetap lebih cepat dari Rails di server yang sama (`kilau-puma` vs
+  `rails-puma`: 2,0x S1, 3,2x S2, 1,4x S3 c16, 2,4x S4).
+- **Batas klaim.** Dua hal berubah sekaligus dari sesi 2026-11-13: runtime `-O0` -> `-O2` dan baterai + Low Power Mode -> AC.
+  Angka mutlak tidak bisa dibandingkan lintas sesi; hanya rasio di dalam sesi yang sah. Pemisahan `-O0` vs `-O2` pada daya
+  yang sama ada di A/B 2026-11-14 (K-045). Satu sesi, belum diulang; p99 `kilau-spinel` S4 c16 10,9 ms (tertinggi di grup
+  Kilau tunggal) tidak diselidiki.
+
 ## 7. Batasan pengukuran
 
 - **Satu laptop:** MacBook Air M1, 8 core, 8 GB. oha berjalan di mesin yang sama dan
@@ -394,7 +429,7 @@ Cara membaca peringkat ini:
 Ditulis ulang 2026-11-12. Daftar September (Rencana 5, Rencana 6, laporan upstream)
 sudah selesai; riwayatnya ada di `docs/HANDOFF.md`.
 
-1. **K-045: persempit regresi S3 di compiler.** Sudah terbukti compiler, bukan kode
+1. ~~**K-045: persempit regresi S3 di compiler.**~~ Selesai: penyebabnya runtime `-O0` lokal, bukan regresi upstream (lihat K-045). Teks lama: Sudah terbukti compiler, bukan kode
    Kilau. Berikutnya: repro mikro tanpa HTTP dan SQLite (loop `buf << escape(str)`
    untuk 100 baris), lalu bisect antara `38dc57dde` dan `d1878a068` dengan repro itu.
    Petunjuk dari `sample`: jalur String/byte dan alokator.

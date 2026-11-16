@@ -2562,6 +2562,8 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   ukuran/waktu build K-045 tetap terbuka.
 - **Akibat:** semua angka `kilau-spinel` sejak 2026-10-18 (termasuk perbandingan server 2026-11-12/13, FINDINGS §6)
   diukur dengan runtime `-O0` dan perlu diukur ulang setelah compiler dipasang ulang dengan `-O2`.
+  **Diukur ulang 2026-11-16 22:24 WIB** (`bench/results/20261116-2200-servers-O2-ac`, `-O2`, AC): S3 c1 `kilau-spinel` 3.999
+  req/s (2,15x `kilau-cruby`, 2,46x `rails-puma`), c16 4.809 (0,95x Rails); lihat FINDINGS §6 bagian `-O2` dan AC.
 - Status: bagian kecepatan terjelaskan (konfigurasi lokal, tidak ada yang perlu diajukan ke upstream); bagian waktu
   build/ukuran masih terbuka. Langkah berikut: user memasang ulang spinel tanpa `COPT=-O0` (atau `make install COPT=-O2`),
   lalu ukur ulang S3 dan tabel server.
