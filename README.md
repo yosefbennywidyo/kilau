@@ -68,8 +68,8 @@ generators are themselves compiled by Spinel.
 ## Requirements
 
 - **Spinel**, built from [matz/spinel](https://github.com/matz/spinel). Kilau was
-  developed against `38dc57dd` and was last verified on `d1878a068`
-  (`2026.10.25+4639`, 2026-11-12: tests, e2e and every `repro/` file).
+  developed against `38dc57dd` and was last verified on `81bac3b7e`
+  (`2026.10.25+5429`, 2026-11-16: tests, e2e and every `repro/` file).
   It needs at least `c6cff7c76` (matz/spinel#6151): Kilau's own tests call a
   yielding helper bare after `include Kilau::Testing`, which older compilers
   reject. Newer commits may change behaviour; see `docs/CATALOG.md` and

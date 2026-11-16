@@ -97,7 +97,7 @@ di kedua engine.
 | K-049 | ivar di method yang ditambahkan ke exception builtin (`class RuntimeError; ... @own = 1`) | **C error mentah** | **diperbaiki upstream** (#11907, #11909, #11908; lanjutan #11913 terbuka) |
 | K-050 | method yang tidak ada pada Fiber ditolak saat kompilasi (CRuby: NoMethodError run-time) | penolakan bernama | terbuka, belum diajukan |
 | K-051 | `NoMethodError#initialize` program dijalankan arm dispatcher def bersyarat; bentuk `(*a, **k)` ditolak | nilai salah (pesan) / penolakan | terbuka, disebut di PR #11888 |
-| K-052 | `super` dengan rest/splat ke subclass `Errno::*`/`SystemExit` ditolak saat kompilasi (CRuby menjalankannya) | penolakan bernama | terbuka; dipilih untuk diperbaiki |
+| K-052 | `super` dengan rest/splat ke subclass `Errno::*`/`SystemExit` ditolak saat kompilasi (CRuby menjalankannya) | penolakan bernama | SELESAI: matz/spinel#11954 (2026-11-16, `81bac3b7e`) |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa

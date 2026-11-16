@@ -3,6 +3,32 @@
 Entri terbaru di atas. Entri lama (2026-09-28 s.d. 2026-11-14) dihapus pada 2026-11-15 karena isinya sudah tertutup
 atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`git show 59e79ef:docs/HANDOFF.md`).
 
+## 2026-11-16 ~08:05 WIB -- #11913 merged; fix K-052 di branch, gate fork berjalan
+
+**Status**
+- matz/spinel#11913 **MERGED** (2026-11-15 16:47Z, parent kedua = head PR `de920e8ca`). Branch fork
+  `subclass-without-methods-lists-reopen-ivars` + `gate/...` dan branch lokalnya sudah dihapus (izin user).
+- **K-052 diperbaiki** di branch spinel `syserr-sysexit-rest-super` (commit `e717391af`, base `7d5e4df68`), PR matz/spinel#11954 dibuka 2026-11-16 (izin user), gate fork 23/23 hijau, **MERGED** 02:16Z sebagai `81bac3b7e` (commit apa adanya, CodeRabbit tanpa temuan).
+  Bare `super` / `super(*a, **k)` ke subclass `Errno::*`/`SystemExit`, plus splat ke `Errno::X.new`,
+  `SystemCallError.new`, `SystemExit.new`, sekarang mengumpulkan argumen saat run-time (memakai ulang
+  `emit_exc_attrs_zsuper` dan `emit_exc_args_gather`); hitungan argumen dinilai `sp_syserr_super`/`sp_sysexit_super`.
+  Hash keyword yang tidak kosong menjadi satu argumen tambahan, block diabaikan; hanya `super(...)` yang masih ditolak.
+  `test/reject/systemcallerror_zsuper_keyword.rb` dihapus (programnya sekarang menaikkan TypeError seperti CRuby).
+- Bukti lokal: repro K-052 identik dengan CRuby; probe 28 bentuk identik (biasa, GC stress, promote); tes baru merah di
+  base (14 penolakan) dan hijau; 943/943 tes corpus terkait PASS di `-O1`; `reject-test` pass; C yang dihasilkan identik
+  untuk 206 program (tes terkait + `benchmark/*.rb`; optcarrot tidak diukur karena `build/optcarrot-single.rb` tidak ada);
+  `check-range` bersih.
+- Gate fork: run 43783984602 (23 job) pada `gate/syserr-sysexit-rest-super`.
+
+**Lanjut dari sini**
+1. Setelah gate hijau: cek ulang master (matz bisa sudah memperbaikinya), body PR dengan baris gate, minta izin user
+   untuk `gh pr create`.
+2. ~~Setelah merged: bump compiler kilau, tandai K-052 selesai di CATALOG.~~ Selesai 09:50 WIB: user memasang
+   `81bac3b7e` (`-O2`), kilau 28/28 + test-cruby 29/29 + e2e 35/35, repro 36/45 identik (rincian di bump CATALOG
+   2026-11-16), K-052 ditutup di CATALOG/FINDINGS, README menyebut `81bac3b7e`.
+3. Terbuka di katalog: K-047, K-050, K-051 (repro K-051 harus dijalankan DENGAN argumen). Branch spinel lokal
+   `syserr-sysexit-rest-super` dan branch fork (PR + `gate/`) masih ada; tunggu keputusan user.
+
 ## 2026-11-15 ~22:50 WIB -- rantai exception/ivar spinel selesai; K-052 dipilih untuk diperbaiki sesi berikutnya
 
 **Status**

@@ -1,5 +1,16 @@
 # Katalog batas AOT
 
+**Bump 2026-11-16** (install bersih oleh user `make clean && make install COPT=-O2`, diverifikasi 09:42-09:50 WIB):
+compiler terpasang sekarang `2026.10.25+5429 (81bac3b7e)`, naik dari `+5285 (93d7883bd)`; runtime terbukti `-O2`
+(`sp_str_byte_len` tidak tersisa sebagai simbol lokal di `sp_str_cold.o`), semua file terpasang bisa dibaca. Termasuk
+#11913 dan #11954 (K-052). Diverifikasi: `make test` dari `spin clean` **28/28 lulus** (16 + 8 + 4), 0 `(cached)`, 104 dtk;
+`make test-cruby` 29/29; `make e2e` blog 35/35. 45 `repro/*.rb` dibandingkan dengan CRuby
+`--enable-frozen-string-literal`: 36 identik sungguhan (35 sebelumnya + `k052`), plus `k032` yang identik hanya karena
+flag itu (desain, lihat K-032). Sisanya sama seperti bump sebelumnya: `k003`, `k006`, `k007`, `k015` (repronya sendiri),
+`k046` (penolakan bernama), `k047`, `k050`, `k051` (terbuka). Catatan: `k051` terlihat identik bila dijalankan tanpa
+argumen; repronya harus dijalankan dengan argumen, dan dengan argumen masih berbeda (prefix `own: `). TIDAK diukur: K-045
+dan `yield-sweep`.
+
 **Bump 2026-11-15** (install bersih oleh user ~23:05 WIB, diverifikasi 23:07-23:13 WIB): compiler terpasang
 sekarang `2026.10.25+5285 (93d7883bd)`, naik dari `+4965 (548d2b672)`, dan untuk pertama kali sejak 2026-10-18
 **dibangun `-O2`** (`make clean && make install COPT=-O2`; `config.mk` tetap `COPT=-O0 -g0` untuk build kerja).
@@ -2332,7 +2343,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Status: **TERTUTUP** (2026-11-15). matz memperbaikinya sendiri di master (`728e0e567`, `zspread` di `emit_super`: `*rest`
   dan `**kwrest`, tanpa SystemCallError/SystemExit) beberapa jam setelah issue #11889 dibuka; PR kita #11906 ditutup sebagai
   "already on master". Repro identik dengan CRuby di master `93d7883bd`. SystemCallError/SystemExit dengan `super`
-  rest/splat tetap ditolak bernama: lihat K-052.
+  rest/splat tetap ditolak bernama: lihat K-052 (diperbaiki #11954, 2026-11-16).
 
 ## K-049: ivar di method yang ditambahkan ke kelas exception builtin -> C error mentah
 
@@ -2380,7 +2391,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Klasifikasi: (a) nilai salah (pesan); (b) penolakan bernama. Bentuknya langka.
 - Status: dicatat; disebut di body PR #11888 sebagai batasan lama; belum diajukan tersendiri.
 
-## K-052: `super` dengan rest/splat ke kelas `Errno::*`/`SystemExit` ditolak saat kompilasi
+## K-052: `super` dengan rest/splat ke kelas `Errno::*`/`SystemExit` ditolak saat kompilasi (SELESAI, #11954)
 
 - Lapisan: compiler, konstruktor exception (`emit_super`, `src/codegen.c` ~17066; `codegen_call.c` ~5632).
 - Ditemukan: 2026-11-15, saat memeriksa bentuk yang disebut matz di penutupan #11906, master `93d7883bd`.
@@ -2403,7 +2414,9 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Klasifikasi: penolakan bernama (bukan nilai salah); pola di kelas error kustom yang membungkus errno/exit.
 - Status: user memilih **diperbaiki** (2026-11-15): bongkar array rest/splat saat run-time ke slot `Errno::*` (pesan, nama
   fungsi) dan `SystemExit` (status, pesan), dengan ArgumentError CRuby bila kelebihan, untuk bentuk `super` polos dan
-  eksplisit. Belum dikerjakan; rencana di HANDOFF entri 2026-11-15 ~22:50 WIB.
+  eksplisit. **SELESAI 2026-11-16:** diperbaiki di matz/spinel#11954 (MERGED 02:16Z, `81bac3b7e`): argumen dikumpulkan
+  saat run-time, Hash keyword tidak kosong menjadi satu argumen tambahan, block diabaikan; hanya `super(...)` yang masih
+  ditolak (bernama). Repro identik dengan CRuby pada compiler terpasang `81bac3b7e` (bump 2026-11-16).
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
