@@ -2444,7 +2444,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Klasifikasi: nilai salah (refleksi).
 - Status 2026-11-16: diperbaiki lokal di worktree `../spinel-k053`, branch `nameerror-respond-to-gated-accessor`
   (rebased `d04364e64`, base `e6b86345c`): nama bergerbang pada receiver exception memakai jawaban run-time
-  (`emit_respond_to_exc_cls`), kecuali Object milik program mendefinisikan nama itu. Gate fork run 43806060797 hijau 23/23; belum PR (menunggu #11961 selesai). Sisa: K-055.
+  (`emit_respond_to_exc_cls`), kecuali Object milik program mendefinisikan nama itu. Gate fork run 43806060797 hijau 23/23; di-rebase ke `2d39a7b3c` (`dded46e1a`), **PR matz/spinel#11962** dibuka 2026-11-16. Sisa: K-055.
 
 ## K-054: `super` dari `NoMethodError#initialize` reopen melewati `NameError#initialize` reopen
 
