@@ -3,6 +3,22 @@
 Entri terbaru di atas. Entri lama (2026-09-28 s.d. 2026-11-14) dihapus pada 2026-11-15 karena isinya sudah tertutup
 atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`git show 59e79ef:docs/HANDOFF.md`).
 
+## 2026-11-16 ~21:25 WIB -- bump `c892caf09` terverifikasi; K-051 dan K-053 tertutup di kilau
+
+**Status**
+- User `git pull` + `make install` (build **`-O0`**, bukan `-O2`; bukti di bump CATALOG). Compiler terpasang
+  `2026.10.25+5532 (c892caf09)`, memuat #11961 (K-051) dan #11962 (K-053).
+- Kilau dari `spin clean`: `make test` 28/28 (0 `(cached)`), `test-cruby` 29/29, `e2e` blog exit 0 (35 `ok`).
+  Repro 49 berkas: 39 identik (K-051 dengan argumen dan K-053 kini identik); beda: `k003/k006/k007/k015` (repronya
+  sendiri), `k046`, `k047`, `k050`, `k054`, `k055`, `k056`.
+- Dibersihkan: worktree spinel `../spinel-k053` dan branch PR K-051/K-053 (lokal + fork) dihapus; `gate/*` disimpan;
+  checkout spinel di `master`.
+
+**Lanjut dari sini**
+1. Kandidat berikutnya: K-056 (error C, melanggar kontrak penolakan bernama), K-054, K-055, lalu K-047, K-050.
+2. Thread CodeRabbit kedua #11961 (`self.new`) tetap tanpa balasan; kembali setelah K-056.
+3. Bila butuh angka performa/ukuran: pasang ulang `-O2` dulu (`make clean && make install COPT=-O2`).
+
 ## 2026-11-16 ~13:15 WIB -- K-051 merged (#11961); K-053 siap PR; K-054/K-055/K-056 dicatat
 
 **Status**
@@ -11,7 +27,7 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
   `::NameError` saat modul membayangi nama; tanpa itu C gagal dikompilasi) di-push 05:04Z, terlewat dari batch itu,
   lalu masuk di siklus berikutnya sebagai `2d39a7b3c` (05:38Z) setelah komentar penjelasan di PR. Pola sama dengan
   follow-up #11959. Re-gate fork master + `b0b9a9276` (run 43810841197) 23/23 hijau; CI master hijau, tanpa kegagalan.
-  Belum ada di compiler terpasang (`81bac3b7e`); repro K-051 harus dijalankan DENGAN argumen.
+  Terpasang sejak bump malam 2026-11-16 (`c892caf09`); repro K-051 harus dijalankan DENGAN argumen.
 - Temuan CodeRabbit kedua di #11961 (`builtin_new` harus menang atas `self.new` program) ditolak dengan bukti di komentar
   PR: tidak bisa dicapai karena K-056. Thread inline-nya masih belum resolved (belum ada balasan di thread).
 - **K-053 siap PR:** worktree spinel `../spinel-k053`, branch `nameerror-respond-to-gated-accessor`, `d04364e64` di atas
@@ -26,8 +42,7 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
 **Lanjut dari sini**
 1. ~~K-053 PR~~ matz/spinel#11962 MERGED 07:33Z (`22a374a5f`); temuan Major CodeRabbit (argumen kedua `respond_to?`) dibantah dengan probe di thread-nya.
 2. Thread CodeRabbit kedua #11961: user memutuskan tidak dibalas (penjelasan sudah di komentar PR; kembali setelah K-056).
-3. Bump compiler kilau berikutnya membawa K-051 (+ K-053 bila sudah merged); jalankan verifikasi penuh seperti bump
-   2026-11-16 (catatan: `make clean && make install COPT=-O2`).
+3. ~~Bump compiler kilau membawa K-051 + K-053~~ Selesai 21:25 WIB, lihat entri di atas.
 4. Kandidat berikutnya: K-054, K-056 (C error, melanggar kontrak penolakan bernama), K-055, K-047, K-050.
 
 ## 2026-11-16 ~08:05 WIB -- #11913 merged; fix K-052 di branch, gate fork berjalan

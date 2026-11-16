@@ -1,5 +1,18 @@
 # Katalog batas AOT
 
+**Bump 2026-11-16 (malam)** (user `git pull` + `make install`, diverifikasi 21:13-21:25 WIB): compiler terpasang sekarang
+`2026.10.25+5532 (c892caf09)`, naik dari `+5429 (81bac3b7e)`; membawa K-051 (#11961, `1dd33c481` + `2d39a7b3c`) dan
+K-053 (#11962, `22a374a5f`). Build ini **`-O0`**, bukan `-O2`: `libspinel_rt.a` masih memuat simbol lokal
+`sp_str_byte_len` (bump sebelumnya, `-O2`, tidak punya), dan `config.mk` spinel `COPT=-O0 -g0`; jangan membandingkan
+waktu/ukuran dengan bump `-O2` tanpa memasang ulang (`make clean && make install COPT=-O2`). Diverifikasi: `make test`
+dari `spin clean` **28/28 lulus** (16 + 8 + 4), exit 0, 0 `(cached)`, 81 dtk; `make test-cruby` 29/29; `make e2e` blog
+exit 0, 35 `ok`, 0 gagal. 49 `repro/*.rb` dibandingkan dengan CRuby 4.0.6 `--enable-frozen-string-literal`
+(`k051` dan `k046` dengan argumen): **39 identik**, termasuk `k051` (kini `[NoMethodError, "undefined method 'tag' for
+an instance of Foo"]`, tanpa `own: `) dan `k053` (keduanya tertutup), plus `k032` yang identik karena flag itu (desain).
+10 sisanya: `k003`, `k006`, `k007`, `k015` (repronya sendiri), `k046` (penolakan bernama), dan terbuka: `k047`, `k050`
+(penolakan bernama), `k054`, `k055`, `k056` (error C `unknown type name 'sp_NoMethodError'`). TIDAK diukur: K-045 dan
+`yield-sweep`. Catatan: RAM bebas terbaca ~85-100 MB sebelum run, tetapi build kilau tidak terdampak.
+
 **Bump 2026-11-16** (install bersih oleh user `make clean && make install COPT=-O2`, diverifikasi 09:42-09:50 WIB):
 compiler terpasang sekarang `2026.10.25+5429 (81bac3b7e)`, naik dari `+5285 (93d7883bd)`; runtime terbukti `-O2`
 (`sp_str_byte_len` tidak tersisa sebagai simbol lokal di `sp_str_cold.o`), semua file terpasang bisa dibaca. Termasuk
@@ -2396,7 +2409,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   matz merge commit pertama saja (`1dd33c481` = `cc9157306`, 04:59Z). Follow-up `b0b9a9276` (temuan CodeRabbit:
   `::NameError` saat modul membayangi nama; tanpa itu C gagal dikompilasi) masih di PR yang tetap OPEN; komentar
   penjelasan diposting 2026-11-16 05:31Z; matz merge `b0b9a9276` di siklus berikutnya sebagai `2d39a7b3c` (05:38Z),
-  PR #11961 MERGED. **K-051 SELESAI upstream** (belum di compiler terpasang kilau sampai bump berikutnya). Temuan CodeRabbit kedua
+  PR #11961 MERGED. **K-051 SELESAI upstream**; terpasang di kilau dan diverifikasi (`c892caf09`, bump 2026-11-16 malam: repro dengan argumen identik dengan CRuby). Temuan CodeRabbit kedua
   (`self.new`) ditolak dengan bukti: lihat K-056.
 
 ## K-052: `super` dengan rest/splat ke kelas `Errno::*`/`SystemExit` ditolak saat kompilasi (SELESAI, #11954)
@@ -2444,7 +2457,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Klasifikasi: nilai salah (refleksi).
 - Status 2026-11-16: diperbaiki lokal di worktree `../spinel-k053`, branch `nameerror-respond-to-gated-accessor`
   (rebased `d04364e64`, base `e6b86345c`): nama bergerbang pada receiver exception memakai jawaban run-time
-  (`emit_respond_to_exc_cls`), kecuali Object milik program mendefinisikan nama itu. Gate fork run 43806060797 hijau 23/23; di-rebase ke `2d39a7b3c` (`dded46e1a`), **PR matz/spinel#11962** dibuka 2026-11-16, **MERGED** 07:33Z sebagai `22a374a5f`. Temuan CodeRabbit (argumen kedua dibuang) tidak terbukti: dibalas dengan probe. Sisa: K-055.
+  (`emit_respond_to_exc_cls`), kecuali Object milik program mendefinisikan nama itu. Gate fork run 43806060797 hijau 23/23; di-rebase ke `2d39a7b3c` (`dded46e1a`), **PR matz/spinel#11962** dibuka 2026-11-16, **MERGED** 07:33Z sebagai `22a374a5f`. Temuan CodeRabbit (argumen kedua dibuang) tidak terbukti: dibalas dengan probe. Sisa: K-055. Terpasang di kilau (`c892caf09`) dan diverifikasi: `k053` identik dengan CRuby.
 
 ## K-054: `super` dari `NoMethodError#initialize` reopen melewati `NameError#initialize` reopen
 
