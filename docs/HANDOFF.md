@@ -3,6 +3,33 @@
 Entri terbaru di atas. Entri lama (2026-09-28 s.d. 2026-11-14) dihapus pada 2026-11-15 karena isinya sudah tertutup
 atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`git show 59e79ef:docs/HANDOFF.md`).
 
+## 2026-11-16 ~13:15 WIB -- K-051 merged (#11961); K-053 siap PR; K-054/K-055/K-056 dicatat
+
+**Status**
+- **K-051 SELESAI upstream:** matz/spinel#11961 MERGED. matz merge commit pertama `cc9157306` sebagai `1dd33c481`
+  (dibuat 04:59Z, di-push 05:23Z bersama #11959/#11960). Follow-up `b0b9a9276` (temuan CodeRabbit pertama:
+  `::NameError` saat modul membayangi nama; tanpa itu C gagal dikompilasi) di-push 05:04Z, terlewat dari batch itu,
+  lalu masuk di siklus berikutnya sebagai `2d39a7b3c` (05:38Z) setelah komentar penjelasan di PR. Pola sama dengan
+  follow-up #11959. Re-gate fork master + `b0b9a9276` (run 43810841197) 23/23 hijau; CI master hijau, tanpa kegagalan.
+  Belum ada di compiler terpasang (`81bac3b7e`); repro K-051 harus dijalankan DENGAN argumen.
+- Temuan CodeRabbit kedua di #11961 (`builtin_new` harus menang atas `self.new` program) ditolak dengan bukti di komentar
+  PR: tidak bisa dicapai karena K-056. Thread inline-nya masih belum resolved (belum ada balasan di thread).
+- **K-053 siap PR:** worktree spinel `../spinel-k053`, branch `nameerror-respond-to-gated-accessor`, `d04364e64` di atas
+  `e6b86345c`, sudah di fork, gate run 43806060797 23/23 hijau. Lingkup sebenarnya: 16 accessor bergerbang kelas menjawab
+  `true` untuk semua exception pada receiver statis. Batas yang diketahui: K-055.
+- **Baru di katalog (terbuka):** K-054 (super dari reopen NoMethodError#initialize melewati reopen NameError#initialize),
+  K-055 (subclass program dari exception builtin, accessor bergerbang induk menjawab false), K-056 (`def self.new` di
+  reopen NoMethodError gagal dikompilasi C). Repro: `repro/k053..k056_*.rb`.
+- Halaman penjelas "How Spinel Works" (artifact privat, slug `6e4a5aaf-30a1-4d11-b9c4-58071fafa5dc`) dibuat; generator
+  peta kodenya disimpan di branch lokal spinel `local-dev-tools` (`tools/codemap/`, `940f513c2`, jangan di-push).
+
+**Lanjut dari sini**
+1. K-053: `git fetch`, cek tumpang tindih dengan master, tulis body PR dari log gate, minta izin user, `gh pr create`.
+2. Pertanyaan terbuka ke user: balas satu baris di thread CodeRabbit kedua #11961 (publik)?
+3. Bump compiler kilau berikutnya membawa K-051 (+ K-053 bila sudah merged); jalankan verifikasi penuh seperti bump
+   2026-11-16 (catatan: `make clean && make install COPT=-O2`).
+4. Kandidat berikutnya: K-054, K-056 (C error, melanggar kontrak penolakan bernama), K-055, K-047, K-050.
+
 ## 2026-11-16 ~08:05 WIB -- #11913 merged; fix K-052 di branch, gate fork berjalan
 
 **Status**

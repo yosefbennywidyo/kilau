@@ -96,8 +96,12 @@ di kedua engine.
 | K-048 | `super` tanpa argumen di `initialize(*args)` exception (termasuk subclass `AppError < StandardError`) | **C error mentah** | **diperbaiki upstream oleh matz** (`728e0e567`; PR kita #11906 ditutup) |
 | K-049 | ivar di method yang ditambahkan ke exception builtin (`class RuntimeError; ... @own = 1`) | **C error mentah** | **diperbaiki upstream** (#11907, #11909, #11908; lanjutan #11913 terbuka) |
 | K-050 | method yang tidak ada pada Fiber ditolak saat kompilasi (CRuby: NoMethodError run-time) | penolakan bernama | terbuka, belum diajukan |
-| K-051 | `NoMethodError#initialize` program dijalankan arm dispatcher def bersyarat; bentuk `(*a, **k)` ditolak | nilai salah (pesan) / penolakan | terbuka, disebut di PR #11888 |
+| K-051 | `NoMethodError#initialize` program dijalankan arm dispatcher def bersyarat; bentuk `(*a, **k)` ditolak | nilai salah (pesan) / penolakan | SELESAI: matz/spinel#11961 (`1dd33c481` + `2d39a7b3c`, 2026-11-16) |
 | K-052 | `super` dengan rest/splat ke subclass `Errno::*`/`SystemExit` ditolak saat kompilasi (CRuby menjalankannya) | penolakan bernama | SELESAI: matz/spinel#11954 (2026-11-16, `81bac3b7e`) |
+| K-053 | `respond_to?` statis untuk 16 accessor exception bergerbang kelas menjawab true di semua kelas exception | nilai salah | diperbaiki lokal (branch `nameerror-respond-to-gated-accessor`), belum PR |
+| K-054 | `super` dari `NoMethodError#initialize` reopen melewati `NameError#initialize` reopen | nilai salah | terbuka |
+| K-055 | subclass program dari exception builtin menjawab false untuk accessor bergerbang induknya | nilai salah | terbuka |
+| K-056 | `def self.new` di reopen `NoMethodError` gagal dikompilasi C (`unknown type name sp_NoMethodError`) | C compile error | terbuka |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa

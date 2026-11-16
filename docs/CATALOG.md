@@ -2389,7 +2389,15 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   a String, which no conversion keeps in its sp_PolyArray * slot"). CRuby berjalan normal.
 - Repro: `repro/k051_own_nomethoderror_init_run_by_arm.rb` (jalankan dengan argumen).
 - Klasifikasi: (a) nilai salah (pesan); (b) penolakan bernama. Bentuknya langka.
-- Status: dicatat; disebut di body PR #11888 sebagai batasan lama; belum diajukan tersendiri.
+- Status: dicatat; disebut di body PR #11888 sebagai batasan lama. **2026-11-16: diperbaiki, PR matz/spinel#11961**
+  (branch `nomethod-arm-skips-program-initialize`, `cc9157306`, gate fork 23/23): cabang `raise NoMethodError, msg`
+  dihapus, panggilan `.new` arm ditandai `builtin_new` dan codegen melewati `initialize` reopen untuknya. Gejala (b)
+  sudah tidak ditolak di master saat itu, tapi `name`/`receiver` nil; keduanya kini identik dengan CRuby.
+  matz merge commit pertama saja (`1dd33c481` = `cc9157306`, 04:59Z). Follow-up `b0b9a9276` (temuan CodeRabbit:
+  `::NameError` saat modul membayangi nama; tanpa itu C gagal dikompilasi) masih di PR yang tetap OPEN; komentar
+  penjelasan diposting 2026-11-16 05:31Z; matz merge `b0b9a9276` di siklus berikutnya sebagai `2d39a7b3c` (05:38Z),
+  PR #11961 MERGED. **K-051 SELESAI upstream** (belum di compiler terpasang kilau sampai bump berikutnya). Temuan CodeRabbit kedua
+  (`self.new`) ditolak dengan bukti: lihat K-056.
 
 ## K-052: `super` dengan rest/splat ke kelas `Errno::*`/`SystemExit` ditolak saat kompilasi (SELESAI, #11954)
 
@@ -2417,6 +2425,61 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   eksplisit. **SELESAI 2026-11-16:** diperbaiki di matz/spinel#11954 (MERGED 02:16Z, `81bac3b7e`): argumen dikumpulkan
   saat run-time, Hash keyword tidak kosong menjadi satu argumen tambahan, block diabaikan; hanya `super(...)` yang masih
   ditolak (bernama). Repro identik dengan CRuby pada compiler terpasang `81bac3b7e` (bump 2026-11-16).
+
+## K-053: `NameError#respond_to?(:args)` menjawab `true`
+
+- Lapisan: compiler/runtime spinel, refleksi exception.
+- Ditemukan: 2026-11-16, saat memeriksa tetangga K-051, compiler `81bac3b7e`.
+- Gejala: `NameError.new("m", :x).respond_to?(:args)` menjawab `true`; CRuby `false` (`args` hanya milik
+  NoMethodError). Memanggil `e.args` sesudahnya menaikkan NoMethodError, jadi kode yang menjaga `args` dengan
+  `respond_to?` crash pada NameError (mis. NameError dari panggilan mirip variabel).
+- Lingkup sebenarnya (diukur 2026-11-16): pada receiver exception bertipe statis, SEMUA 16 accessor bergerbang kelas
+  (`key receiver args private_call? reason exit_value tag value status success? signo signm name errno error_code
+  result`) menjawab `true` untuk SEMUA kelas exception, termasuk StandardError. Receiver dinamis (mis. dalam loop
+  `each`) sudah benar.
+- Sebab: `respond_to_static_answer` memakai probe yang mengetik `e.<nama>`; accessor itu diketik untuk exception apa
+  pun (pembaca run-time yang menaikkan NoMethodError), jadi probe selalu "ya". Run-time `sp_poly_responds_builtin`
+  sudah menggerbang per kelas lewat `sp_exc_is_a`.
+- Repro: `repro/k053_nameerror_respond_to_args.rb`.
+- Klasifikasi: nilai salah (refleksi).
+- Status 2026-11-16: diperbaiki lokal di worktree `../spinel-k053`, branch `nameerror-respond-to-gated-accessor`
+  (rebased `d04364e64`, base `e6b86345c`): nama bergerbang pada receiver exception memakai jawaban run-time
+  (`emit_respond_to_exc_cls`), kecuali Object milik program mendefinisikan nama itu. Gate fork run 43806060797 hijau 23/23; belum PR (menunggu #11961 selesai). Sisa: K-055.
+
+## K-054: `super` dari `NoMethodError#initialize` reopen melewati `NameError#initialize` reopen
+
+- Lapisan: compiler, `super` dari reopen exception builtin.
+- Ditemukan: 2026-11-16, saat memeriksa tetangga K-051, compiler `81bac3b7e`.
+- Gejala: program membuka ulang `NameError` dan `NoMethodError`, keduanya dengan `initialize` yang memanggil `super`.
+  `NoMethodError.new("x").message` menjadi `"M: x"`; CRuby `"N: M: x"` (super dari NoMethodError mencapai `initialize`
+  NameError milik program, karena NoMethodError < NameError).
+- Repro: `repro/k054_reopen_super_to_reopen_initialize.rb`.
+- Klasifikasi: nilai salah (pesan). Belum diselidiki.
+
+## K-055: subclass program dari exception builtin menjawab `false` untuk accessor bergerbang induknya
+
+- Lapisan: compiler, `respond_to?` statis pada receiver bertipe kelas program (`rto_exact_class_answer` /
+  `obj_responds_answer`).
+- Ditemukan: 2026-11-16, saat memeriksa tetangga K-053, compiler `81bac3b7e` dan branch K-053.
+- Gejala: `class MyKE < KeyError; end; MyKE.new("m").respond_to?(:key)` menjawab `false`; CRuby `true`.
+- Sebab (dugaan): jalur objek membaca tabel method program dan tabel builtin (`builtin_arity.inc`), yang tidak punya
+  baris accessor exception; hanya run-time yang tahu kelas gerbang tiap nama. Perbaikan perlu jawaban run-time di
+  jalur objek, atau daftar gerbang kedua di compiler (duplikasi, hindari).
+- Repro: `repro/k055_exc_subclass_respond_to_gated_accessor.rb`.
+- Klasifikasi: nilai salah (refleksi). Belum dikerjakan.
+
+## K-056: `def self.new` di reopen `NoMethodError` gagal dikompilasi C
+
+- Lapisan: compiler, konstruktor kelas exception builtin yang dibuka ulang.
+- Ditemukan: 2026-11-16, saat memeriksa temuan CodeRabbit kedua di matz/spinel#11961, compiler `81bac3b7e`
+  (sama di branch #11961).
+- Gejala: `class NoMethodError; def self.new(*a, **k) = super; end; p NoMethodError.new("x").message` gagal di C:
+  `unknown type name 'sp_NoMethodError'`. CRuby mencetak `"x"`. Tidak butuh def bersyarat.
+- Dampak: karena ini, baris `reopen_builtin_new` yang disorot CodeRabbit (`builtin_new` harus menang atas `self.new`
+  program) belum bisa dicapai tes mana pun; temuan itu ditolak dengan bukti ini. Setelah K-056 diperbaiki, periksa ulang
+  temuan itu (CRuby memang tidak menjalankan `self.new` program untuk error panggilan gagal).
+- Repro: `repro/k056_reopened_exception_self_new.rb`.
+- Klasifikasi: C compile error (melanggar kontrak "penolakan bernama, bukan error C"). Belum diselidiki.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
