@@ -13,10 +13,13 @@ menghabiskan waktu pada satu hipotesis (aturan ablasi: jangan bangun teori mekan
 |---|---|---|
 | A. Dibanding endpoint ringan di app yang sama | S3 c1, S3 c16, S3 c64, S4 c16 (S2 hanya -16%) | S3 c1 3.999 vs S1 c1 10.253 (-61%); S3 c16 4.809 vs S1 c16 31.108 (-85%); S3 c64 4.349 vs S1 c64 28.466 (-85%); S4 c16 15.874 vs 31.108 (-49%) |
 | B. Dibanding varian 8 proses | S3 c16, S3 c64 | `kilau-puma` 7.221 / 6.691 vs `kilau-spinel` 4.809 / 4.349 (-33% / -35%); S3 c1 dan S4 justru spinel lebih tinggi |
-| C. Di belakang nginx dibanding `-direct` (sesi nginx 2026-11-13, `-O0`/baterai) | S1, S2, S3 c1, S4 | spinel-direct 15.546 / 14.049 / 1.429 / 10.718 vs di belakang nginx 7.237 / 6.748 / 980 / 6.216; S3 c16/c64 hampir tak turun (1.852 -> 1.782, 1.777 -> 1.754) |
+| C. Di belakang nginx dibanding `-direct` (sesi 2026-11-13 `-O0`/baterai di kolom ini; sesi hari ini di paragraf bawah tabel) | S1, S2, S3 c1, S4 | spinel-direct 15.546 / 14.049 / 1.429 / 10.718 vs di belakang nginx 7.237 / 6.748 / 980 / 6.216; S3 c16/c64 hampir tak turun (1.852 -> 1.782, 1.777 -> 1.754) |
 
-Sesi nginx hari ini (`-O2`, AC) belum selesai saat ini; **isi tabel bacaan C dengan datanya** (kolom baru) begitu
-`.finished` ada. Bacaan A sebagian besar wajar (S3 mengolah ~100x lebih banyak baris dan ~6,8 KB HTML); yang perlu
+Sesi nginx hari ini (`-O2`, AC, selesai 23:20 WIB, `bench/results/20261116-2245-servers-nginx-O2-ac`): `kilau-spinel` di belakang
+nginx / `-direct` = S1 0,44x, S2 0,51x, S3 c1 0,74x, S3 c16 0,81x, S3 c64 0,87x, S4 0,64x. Penurunan itu terjadi juga pada
+`kilau-puma` (S3 0,67x / 0,81x / 0,78x; S4 0,88x), jadi sebagian besar adalah biaya nginx berebut CPU di laptop yang sama,
+bukan masalah khas Spinel; kecuali S4 (spinel 0,64x vs puma 0,88x) yang patut diperiksa. Peringkat spinel di S3 c16 dan c64
+sesi ini 5 dan 6 dari 7, sama dengan bacaan B. Bacaan A sebagian besar wajar (S3 mengolah ~100x lebih banyak baris dan ~6,8 KB HTML); yang perlu
 dijelaskan hanya bila angkanya lebih rendah dari kerja ekstra itu.
 
 ## 1. Fakta yang sudah terukur (jangan diukur ulang tanpa alasan)
@@ -76,4 +79,6 @@ Teori yang SUDAH gugur (jangan diulang): regresi upstream compiler (K-045: penye
 
 ## 5. Log
 
-(kosong; isi: `[YYYY-MM-DD HH:MM WIB] percobaan -> angka -> kesimpulan`)
+[2026-11-16 23:25 WIB] Sesi nginx `-O2`/AC selesai dan dicatat di FINDINGS §6; bacaan C diisi (lihat §0). Belum ada ablasi.
+
+(format entri berikutnya: `[YYYY-MM-DD HH:MM WIB] percobaan -> angka -> kesimpulan`)

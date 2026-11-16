@@ -405,6 +405,54 @@ Rasio (req/s): `kilau-spinel` / `rails-puma` = 2,25x (S1 c1), 2,31x (S1 c16), 3,
   yang sama ada di A/B 2026-11-14 (K-045). Satu sesi, belum diulang; p99 `kilau-spinel` S4 c16 10,9 ms (tertinggi di grup
   Kilau tunggal) tidak diselidiki.
 
+### Semua server di belakang nginx, ulang dengan `-O2` dan daya AC (2026-11-16)
+
+Sesi `bench/results/20261116-2245-servers-nginx-O2-ac` (22:29-23:20 WIB; AC, Low Power Mode mati; prosedur sama dengan sesi
+nginx 2026-11-13, spinel `c892caf09` `-O2`, nginx 1.31.8, kilau `eed86df`). 9 app x 6 sel, 54 sel, 0 error, 0 status tak
+terduga. Baris `-direct` tidak lewat nginx. Tambahan baru: `kilau-puma-unix` (Puma lewat Unix socket seperti Pitchfork).
+Angka = req/s, p99 dalam kurung.
+
+| App | S1 c16 | S2 c16 | S3 c1 | S3 c16 | S3 c64 | S4 c16 | RSS (MB) |
+|---|---|---|---|---|---|---|---|
+| kilau-spinel-direct | 34.598 | 26.418 | 3.992 | 4.757 (8 ms) | 3.911 (43 ms) | 15.384 (11 ms) | 16-27 |
+| kilau-spinel | 15.086 | 13.416 | 2.972 | 3.875 (10 ms) | 3.412 (52 ms) | 9.813 (14 ms) | 19-27 |
+| kilau-cruby | 14.782 | 13.529 | 1.199 | 2.907 (10 ms) | 2.525 (37 ms) | 9.472 (4 ms) | 33-62 |
+| kilau-puma-direct | 26.024 | 23.745 | 1.744 | 7.140 (8 ms) | 5.688 (35 ms) | 9.637 (22 ms) | 333-373 |
+| kilau-puma | 13.390 | 11.802 | 1.169 | 5.794 (8 ms) | 4.462 (179 ms) | 8.480 (21 ms) | 335-373 |
+| kilau-puma-unix | 24.598 | 19.274 | 1.648 | 5.569 (10 ms) | 5.705 (139 ms) | 10.062 (21 ms) | 332-372 |
+| kilau-pitchfork | 21.388 | 16.151 | 1.745 | 5.251 (7 ms) | 5.885 (16 ms) | 9.031 (11 ms) | 311-361 |
+| kilau-falcon | 12.749 | 12.250 | 1.105 | 4.379 (12 ms) | 4.448 (42 ms) | 7.336 (20 ms) | 420-471 |
+| rails-puma | 10.529 | 7.506 | 1.096 | 3.793 (13 ms) | 3.789 (191 ms) | 3.714 (19 ms) | 716-888 |
+
+- **Sesi bersih.** Baris `-direct` mengulang sesi tanpa proxy hari ini (`kilau-spinel-direct` S3 c1 3.992 vs 3.999, S3 c16
+  4.757 vs 4.809, S4 15.384 vs 15.874, S2 26.418 vs 26.263; S1 c16 +11%; S3 c64 3.911 vs 4.349, -10%; `kilau-puma-direct`
+  S3 c64 -15%, lainnya dalam ~9%).
+- **Biaya nginx di laptop yang sama (rasio di belakang proxy / `-direct`):** `kilau-spinel` S1 0,44x, S2 0,51x, S3 c1 0,74x,
+  c16 0,81x, c64 0,87x, S4 0,64x; `kilau-puma` S1 0,51x, S2 0,50x, S3 0,67x / 0,81x / 0,78x, S4 0,88x. Endpoint ringan
+  kehilangan sekitar separuh (nginx berebut CPU dengan app dan `oha`); biaya di halaman list lebih kecil. Ini biaya
+  penempatan di satu laptop, bukan ukuran nginx di produksi.
+- **Satu proses Kilau di belakang proxy, rasio terhadap `rails-puma`:** `kilau-spinel` 1,43x (S1), 1,79x (S2), **2,71x
+  (S3 c1)**, 1,02x (S3 c16), **0,90x (S3 c64)**, 2,64x (S4). Terhadap `kilau-cruby`: 1,02x / 0,99x / **2,48x** / 1,33x /
+  1,35x / 1,04x. Jadi keunggulan AOT atas CRuby + YJIT terbukti lagi di S3 (2,48x di c1) dan di sini juga tidak ada di S1,
+  S2, S4 (semua dibatasi nginx). Ini menguatkan bagian `-O2` tanpa proxy di atas dan menggugurkan klaim tabel nginx
+  2026-11-13 bahwa Kilau satu proses "tetap kalah di halaman list" pada c1 (kini 2,71x Rails); pada c16 setara dan pada
+  c64 masih kalah.
+- **Halaman list di c16/c64: server multi-proses di atas.** Peringkat S3 c16: puma 5.794, puma-unix 5.569, pitchfork 5.251,
+  falcon 4.379, **spinel 3.875**, rails 3.793, cruby 2.907. S3 c64: pitchfork 5.885, puma-unix 5.705, puma 4.462, falcon
+  4.448, rails 3.789, **spinel 3.412**, cruby 2.525. `kilau-puma` / `rails-puma`: 1,27x (S1), 1,57x (S2), 1,07x / 1,53x /
+  1,18x (S3 c1/c16/c64), 2,28x (S4).
+- **Pitchfork dan Puma di Unix socket yang sama setara:** Pitchfork / `kilau-puma-unix` = 0,87x S1, 0,84x S2, 1,06x S3 c1,
+  0,94x S3 c16, 1,03x S3 c64, 0,90x S4. Selisih throughput bukan dari Pitchfork. Yang nyata tetap ekor latensi halaman
+  list: p99 S3 c64 16 ms (Pitchfork) vs 139 ms (Puma lewat socket yang sama) vs 179 ms (Puma lewat TCP) vs 191 ms (Rails).
+- **S4 (tulis):** semua varian Kilau 7.300-10.100 req/s di belakang nginx; Rails 3.714 (2,3-2,7x lebih rendah). p99 terbaik
+  `kilau-cruby` 4 ms; `kilau-spinel` 14 ms.
+- **Yang diubah dari 2026-11-13:** dulu S3 c1 satu proses 980 dan c16 1.782 (di bawah Puma), kini 2.972 dan 3.875 dengan
+  rasio terhadap `-direct` yang sama-sama membaik di S3 c1 (0,69x -> 0,74x) dan jauh di S3 c64 (0,99x -> 0,87x); jangan
+  menyimpulkan tren dari rasio itu (dua perubahan sekaligus: `-O0` ke `-O2` dan baterai ke AC).
+- **Batas:** satu sesi, belum diulang tiga kali; oha dan nginx berbagi CPU dengan app; peringkat antar sel yang selisihnya
+  < ~10% (mis. Pitchfork vs Puma di c1) tidak bermakna. Selisih S3 c16/c64 `kilau-spinel` dengan varian multi-proses
+  diselidiki di `docs/CATATAN_S3_S4_SPINEL_TURUN.md`.
+
 ## 7. Batasan pengukuran
 
 - **Satu laptop:** MacBook Air M1, 8 core, 8 GB. oha berjalan di mesin yang sama dan

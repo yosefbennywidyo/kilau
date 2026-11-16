@@ -1,0 +1,24 @@
+[94381] Puma starting in cluster mode...
+[94381] * Puma version: 8.0.2 ("Into the Arena")
+[94381] * Ruby version: ruby 4.0.6 (2026-07-14 revision 03b6d3f889) +PRISM [arm64-darwin23]
+[94381] *  Min threads: 5
+[94381] *  Max threads: 5
+[94381] *  Environment: production
+[94381] *   Master PID: 94381
+[94381] *      Workers: 8
+[94381] *     Restarts: (✔) hot (✖) phased (✖) refork
+[94381] * Preloading application
+[94381] * Listening on http://[::]:5193
+[94381] * Listening on http://127.0.0.1:5193
+[94381] Use Ctrl-C to stop
+[94381] - Worker 0 (PID: 94482) booted in 0.01s, phase: 0
+[94381] - Worker 1 (PID: 94483) booted in 0.01s, phase: 0
+[94381] - Worker 2 (PID: 94484) booted in 0.01s, phase: 0
+[94381] - Worker 3 (PID: 94485) booted in 0.01s, phase: 0
+[94381] - Worker 4 (PID: 94486) booted in 0.01s, phase: 0
+[94381] - Worker 5 (PID: 94487) booted in 0.01s, phase: 0
+[94381] - Worker 6 (PID: 94488) booted in 0.01s, phase: 0
+[94381] - Worker 7 (PID: 94489) booted in 0.0s, phase: 0
+[94381] === puma shutdown: 2026-11-16 23:03:20 +0700 ===
+[94381] - Goodbye!
+[94381] - Gracefully shutting down workers...

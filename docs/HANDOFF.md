@@ -16,7 +16,7 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
 
 **Lanjut dari sini**
 1. Kandidat berikutnya: K-056 (error C, melanggar kontrak penolakan bernama), K-054, K-055, lalu K-047, K-050.
-2. Tabel server diukur ulang `-O2` + AC (22:24 WIB, FINDINGS §6): AOT kini 2,15x CRuby + YJIT di S3 c1; kesimpulan "tak ada keunggulan AOT" gugur. Belum diukur ulang: tabel nginx dan `bench/run.sh` (kilau vs kilau-routes vs rails, c64).
+2. Tabel server diukur ulang `-O2` + AC (22:24 WIB, FINDINGS §6): AOT kini 2,15x CRuby + YJIT di S3 c1; kesimpulan "tak ada keunggulan AOT" gugur. Tabel nginx juga diukur ulang (23:20 WIB; `bench/results/20261116-2245-servers-nginx-O2-ac`, FINDINGS §6): spinel 2,71x Rails di S3 c1 di belakang proxy. Belum diukur ulang: `bench/run.sh` (kilau vs kilau-routes vs rails, c64).
 3. **Catatan investigasi:** `docs/CATATAN_S3_S4_SPINEL_TURUN.md` (S3 c1/c16/c64 dan S4 c16 `kilau-spinel` turun tajam; belum diselidiki, mulai dari ablasi pool SQLite 5 vs 8 worker setelah sesi nginx selesai).
 4. Thread CodeRabbit kedua #11961 (`self.new`) tetap tanpa balasan; kembali setelah K-056.
 5. ~~K-045 diukur~~ 2026-11-16 ~21:50 WIB, `81bac3b7e` vs `c892caf09` (`-O2`, AC): S3, waktu build, ukuran SETARA (rincian di K-045). Sisa K-045 (build/ukuran vs `38dc57dde`) tetap terbuka; belum dibisect.
