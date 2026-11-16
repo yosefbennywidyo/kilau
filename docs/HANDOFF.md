@@ -17,7 +17,7 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
 **Lanjut dari sini**
 1. Kandidat berikutnya: K-056 (error C, melanggar kontrak penolakan bernama), K-054, K-055, lalu K-047, K-050.
 2. Thread CodeRabbit kedua #11961 (`self.new`) tetap tanpa balasan; kembali setelah K-056.
-3. Angka performa/ukuran (K-045) kini sah dibandingkan dengan bump `-O2` sebelumnya; belum diukur.
+3. ~~K-045 diukur~~ 2026-11-16 ~21:50 WIB, `81bac3b7e` vs `c892caf09` (`-O2`, AC): S3, waktu build, ukuran SETARA (rincian di K-045). Sisa K-045 (build/ukuran vs `38dc57dde`) tetap terbuka; belum dibisect.
 
 ## 2026-11-16 ~13:15 WIB -- K-051 merged (#11961); K-053 siap PR; K-054/K-055/K-056 dicatat
 

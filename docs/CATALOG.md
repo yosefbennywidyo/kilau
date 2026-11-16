@@ -10,8 +10,8 @@ exit 0, 35 `ok`, 0 gagal. 49 `repro/*.rb` dibandingkan dengan CRuby 4.0.6 `--ena
 (`k051` dan `k046` dengan argumen): **39 identik**, termasuk `k051` (kini `[NoMethodError, "undefined method 'tag' for
 an instance of Foo"]`, tanpa `own: `) dan `k053` (keduanya tertutup), plus `k032` yang identik karena flag itu (desain).
 10 sisanya: `k003`, `k006`, `k007`, `k015` (repronya sendiri), `k046` (penolakan bernama), dan terbuka: `k047`, `k050`
-(penolakan bernama), `k054`, `k055`, `k056` (error C `unknown type name 'sp_NoMethodError'`). TIDAK diukur: K-045 dan
-`yield-sweep`. Catatan: RAM bebas terbaca ~85-100 MB sebelum run, tetapi build kilau tidak terdampak.
+(penolakan bernama), `k054`, `k055`, `k056` (error C `unknown type name 'sp_NoMethodError'`). TIDAK diukur: K-045
+(diukur setelahnya, lihat entri K-045) dan `yield-sweep`. Catatan: RAM bebas terbaca ~85-100 MB sebelum run, tetapi build kilau tidak terdampak.
 
 **Tambahan 21:26-21:35 WIB, build yang sama dipasang ulang `-O2`** (user `make clean && make install COPT=-O2`): versi tetap
 `+5532 (c892caf09)`; bukti `-O2`: `sp_str_byte_len` tidak lagi menjadi simbol lokal di `sp_str_cold.o` (tinggal di `sp_str.o`
@@ -2550,6 +2550,16 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   28.332 baris / 1,89 MB C melawan 1,64-1,71 dtk dan 40.977 baris / 3,01 MB C. Jadi C yang dihasilkan 1,6x lebih besar,
   emisi 4,5x lebih lama, dan sisanya (kira-kira 2,4 dtk -> 5,4 dtk) adalah `cc`. Compiler terpasang `-O0` memperparah
   emisi (7,8 dtk tercatat 2026-11-12).
+- **Diukur 2026-11-16 ~21:40 WIB, `81bac3b7e` vs `c892caf09`, keduanya `-O2`, AC (Low Power Mode mati)** (`bench/results/20261116-2150-ab-k045-O2/`):
+  tidak ada perbedaan. S3 c1 rata-rata 3.943 (lama) vs 4.002 req/s (baru); c16 4.814 vs 4.772 (selisih <= 1,5%, di dalam
+  derau antar-ulangan, p99 setara). `spin build blog_routes` dari bersih (3x): 6,71 / 6,71 / 6,74 dtk (lama) vs
+  6,71 / 6,69 / 6,69 dtk (baru), binary 1.758.856 vs 1.757.816 byte; `blog`: 6,81 vs 7,86 dtk (satu run), 1.781.192 vs
+  1.780.104 byte. Jadi #11961/#11962 dan commit lain di antaranya tidak menggeser kecepatan, waktu build, maupun ukuran.
+  Catatan pembanding: angka mutlak sekarang (AC) ~2x angka 2026-11-14 (baterai + Low Power Mode, S3 c1 ~1.950-2.030),
+  jadi jangan dibandingkan lintas kondisi daya. Waktu build 6,7 dtk juga di AC dan kedua sisi memakai sccache hanya untuk
+  build compiler, bukan untuk `cc` program (tidak diverifikasi terpisah); dibanding 15,1-17,8 dtk 2026-11-14 (baterai)
+  belum bisa disimpulkan sebagai perbaikan. Ukuran binary tetap 1,76 MB, ~2x `38dc57dde` (0,82-0,86 MB): bagian
+  ukuran/waktu build K-045 tetap terbuka.
 - **Akibat:** semua angka `kilau-spinel` sejak 2026-10-18 (termasuk perbandingan server 2026-11-12/13, FINDINGS §6)
   diukur dengan runtime `-O0` dan perlu diukur ulang setelah compiler dipasang ulang dengan `-O2`.
 - Status: bagian kecepatan terjelaskan (konfigurasi lokal, tidak ada yang perlu diajukan ke upstream); bagian waktu

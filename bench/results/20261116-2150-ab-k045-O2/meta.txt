@@ -1,0 +1,1 @@
+power=Now drawing from 'AC Power' lowpowermode=0

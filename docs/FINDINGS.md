@@ -90,7 +90,7 @@ di kedua engine.
 | K-039 | `Array#rfind` pada receiver yang tipenya baru diketahui saat run | `NoMethodError` / C tidak valid | **diperbaiki upstream** (#11670 + 7 PR tindak lanjut s.d. #11691) |
 | K-040, K-041 | tes `scale-test` upstream buta; kerja kompilasi kuadratik untuk banyak konstanta | bukan bug kebenaran | **diperbaiki upstream oleh pihak lain** (#11481 s.d. #11483) |
 | K-042 s.d. K-044 | `respond_to?(:to_set)`, `method(:to_set)`, dan `size` pada Set dari `to_set` di dalam blok | nilai salah / error | **diperbaiki upstream**: K-042 (#11723), K-044 (#11805), K-043 (#11809 Array/Hash, #11839 Range Integer) |
-| K-045 | halaman list 26-37% lebih lambat, build 4× lebih lama, binary 2,3× lebih besar dibanding compiler September | **performa dan DX** | terbuka; terbukti di compiler, belum dibisect |
+| K-045 | halaman list 26-37% lebih lambat, build 4× lebih lama, binary 2,3× lebih besar dibanding compiler September | **performa dan DX** | kecepatan: penyebab `-O0` lokal, selesai; waktu build/ukuran (1,76 MB vs 0,86 MB): terbuka, tak berubah di `c892caf09` (diukur 2026-11-16) |
 | K-046 | `def` di dalam reopen BERSYARAT kelas builtin dianggap tanpa syarat (`[1, 2].size` → `77` walau syaratnya salah) | **nilai salah diam-diam** | **diperbaiki upstream oleh matz** (issue #11819: `55761e4946`, `abb97b0b6a`, `962bd8d97e`); sisa: tiga bentuk alias/`attr_reader`, lihat katalog |
 | K-047 | Method pada Range String (`.method(:to_a).call` → `[]`); Range Float = C error | **nilai salah diam-diam** / C error | terbuka, belum diajukan |
 | K-048 | `super` tanpa argumen di `initialize(*args)` exception (termasuk subclass `AppError < StandardError`) | **C error mentah** | **diperbaiki upstream oleh matz** (`728e0e567`; PR kita #11906 ditutup) |
