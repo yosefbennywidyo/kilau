@@ -396,7 +396,7 @@ Rasio (req/s): `kilau-spinel` / `rails-puma` = 2,25x (S1 c1), 2,31x (S1 c16), 3,
 - **Halaman list (S3) kini menang di c1, kalah tipis di c16/c64.** Satu proses Kilau 2,46x Rails (8 proses) di c1, tapi
   0,95x di c16 dan 0,71x di c64; `kilau-puma` (8 proses) tetap tertinggi (7.221 / 6.691). Jadi "tidak menskala di satu
   proses" masih benar secara relatif (3.999 ke 4.809 dari c1 ke c16 pada 8 worker), hanya levelnya jauh lebih tinggi.
-  Dugaan kunci global alokator belum dibuktikan dengan profil.
+  Dugaan kunci global alokator belum dibuktikan dengan profil; rencana ablasi di `docs/CATATAN_S3_S4_SPINEL_TURUN.md`.
 - **S1, S2, S4: Kilau-spinel 2,3x / 3,9x / 4,0x Rails** (rasio di sesi yang sama; tabel September di atas: 1,9x / 2,8x /
   2,9x pada c64 dengan compiler lain). Kerangka Kilau tetap lebih cepat dari Rails di server yang sama (`kilau-puma` vs
   `rails-puma`: 2,0x S1, 3,2x S2, 1,4x S3 c16, 2,4x S4).
