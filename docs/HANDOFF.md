@@ -24,7 +24,7 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
   peta kodenya disimpan di branch lokal spinel `local-dev-tools` (`tools/codemap/`, `940f513c2`, jangan di-push).
 
 **Lanjut dari sini**
-1. ~~K-053 PR~~ dibuka sebagai matz/spinel#11962 (rebased `dded46e1a` di atas `2d39a7b3c`); awasi CodeRabbit/matz.
+1. ~~K-053 PR~~ matz/spinel#11962 MERGED 07:33Z (`22a374a5f`); temuan Major CodeRabbit (argumen kedua `respond_to?`) dibantah dengan probe di thread-nya.
 2. Thread CodeRabbit kedua #11961: user memutuskan tidak dibalas (penjelasan sudah di komentar PR; kembali setelah K-056).
 3. Bump compiler kilau berikutnya membawa K-051 (+ K-053 bila sudah merged); jalankan verifikasi penuh seperti bump
    2026-11-16 (catatan: `make clean && make install COPT=-O2`).
