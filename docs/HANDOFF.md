@@ -26,8 +26,9 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
 2. ~~Setelah merged: bump compiler kilau, tandai K-052 selesai di CATALOG.~~ Selesai 09:50 WIB: user memasang
    `81bac3b7e` (`-O2`), kilau 28/28 + test-cruby 29/29 + e2e 35/35, repro 36/45 identik (rincian di bump CATALOG
    2026-11-16), K-052 ditutup di CATALOG/FINDINGS, README menyebut `81bac3b7e`.
-3. Terbuka di katalog: K-047, K-050, K-051 (repro K-051 harus dijalankan DENGAN argumen). Branch spinel lokal
-   `syserr-sysexit-rest-super` dan branch fork (PR + `gate/`) masih ada; tunggu keputusan user.
+3. Terbuka di katalog: K-047, K-050, K-051 (repro K-051 harus dijalankan DENGAN argumen). Branch PR
+   `syserr-sysexit-rest-super` (lokal + fork) dihapus 2026-11-16 (izin user); `gate/syserr-sysexit-rest-super` di fork
+   disimpan sebagai jejak run gate 43783984602.
 
 ## 2026-11-15 ~22:50 WIB -- rantai exception/ivar spinel selesai; K-052 dipilih untuk diperbaiki sesi berikutnya
 
