@@ -2475,7 +2475,8 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `NoMethodError.new("x").message` menjadi `"M: x"`; CRuby `"N: M: x"` (super dari NoMethodError mencapai `initialize`
   NameError milik program, karena NoMethodError < NameError).
 - Repro: `repro/k054_reopen_super_to_reopen_initialize.rb`.
-- Klasifikasi: nilai salah (pesan). Belum diselidiki.
+- Klasifikasi: nilai salah (pesan). Diperbaiki di spinel, branch fork `k054-reopen-super-chain` (commit `1c996e939`, di atas
+  `2b5fcb9ee`); belum di-push, belum ada PR (2026-11-17).
 
 ## K-055: subclass program dari exception builtin menjawab `false` untuk accessor bergerbang induknya
 
@@ -2487,7 +2488,9 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   baris accessor exception; hanya run-time yang tahu kelas gerbang tiap nama. Perbaikan perlu jawaban run-time di
   jalur objek, atau daftar gerbang kedua di compiler (duplikasi, hindari).
 - Repro: `repro/k055_exc_subclass_respond_to_gated_accessor.rb`.
-- Klasifikasi: nilai salah (refleksi). Belum dikerjakan.
+- Klasifikasi: nilai salah (refleksi). Diperbaiki di spinel, branch fork `k055-exc-subclass-respond-to` (commit `6f091b4ea`,
+  di atas `2b5fcb9ee`; satu tabel pemilik di `builtin_names.c`, bukan daftar kedua); gate fork run 44034275236 berjalan,
+  belum ada PR (2026-11-17).
 
 ## K-056: `def self.new` di reopen `NoMethodError` gagal dikompilasi C
 
@@ -2501,6 +2504,16 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   temuan itu (CRuby memang tidak menjalankan `self.new` program untuk error panggilan gagal).
 - Repro: `repro/k056_reopened_exception_self_new.rb`.
 - Klasifikasi: C compile error (melanggar kontrak "penolakan bernama, bukan error C"). Belum diselidiki.
+
+## K-057: builtin exception tanpa reopen sendiri, di bawah builtin ter-reopen, melewati `initialize` reopen itu
+
+- Lapisan: compiler, konstruktor exception builtin yang berada di bawah kelas builtin yang di-reopen.
+- Ditemukan: 2026-11-17, saat memperbaiki K-054, compiler `2b5fcb9ee` (juga di `8a6d3fa76`).
+- Gejala: `class StandardError; def initialize(msg = nil) = super("S[#{msg}]"); end` lalu `ArgumentError.new("a").message`
+  menjadi `"a"`; CRuby `"S[a]"`. Sama untuk `FrozenError.new("f")`. Jalannya bukan lewat `super`, jadi perbaikan K-054
+  (super dari reopen ke reopen di atasnya) tidak menyentuhnya.
+- Repro: `repro/k057_builtin_below_reopen_skips_reopen_initialize.rb` (diukur 2026-11-17: Spinel `"a"`, `"f"`).
+- Klasifikasi: nilai salah (pesan). Belum diselidiki.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 

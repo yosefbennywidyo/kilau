@@ -99,9 +99,10 @@ di kedua engine.
 | K-051 | `NoMethodError#initialize` program dijalankan arm dispatcher def bersyarat; bentuk `(*a, **k)` ditolak | nilai salah (pesan) / penolakan | SELESAI: matz/spinel#11961 (`1dd33c481` + `2d39a7b3c`, 2026-11-16) |
 | K-052 | `super` dengan rest/splat ke subclass `Errno::*`/`SystemExit` ditolak saat kompilasi (CRuby menjalankannya) | penolakan bernama | SELESAI: matz/spinel#11954 (2026-11-16, `81bac3b7e`) |
 | K-053 | `respond_to?` statis untuk 16 accessor exception bergerbang kelas menjawab true di semua kelas exception | nilai salah | SELESAI: matz/spinel#11962 (`22a374a5f`, 2026-11-16) |
-| K-054 | `super` dari `NoMethodError#initialize` reopen melewati `NameError#initialize` reopen | nilai salah | terbuka |
-| K-055 | subclass program dari exception builtin menjawab false untuk accessor bergerbang induknya | nilai salah | terbuka |
+| K-054 | `super` dari `NoMethodError#initialize` reopen melewati `NameError#initialize` reopen | nilai salah | diperbaiki di fork (`1c996e939`), belum PR |
+| K-055 | subclass program dari exception builtin menjawab false untuk accessor bergerbang induknya | nilai salah | diperbaiki di fork (`6f091b4ea`), gate berjalan, belum PR |
 | K-056 | `def self.new` di reopen `NoMethodError` gagal dikompilasi C (`unknown type name sp_NoMethodError`) | C compile error | terbuka |
+| K-057 | builtin exception tanpa reopen sendiri, di bawah builtin ter-reopen, melewati `initialize` reopen itu | nilai salah | terbuka |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa
