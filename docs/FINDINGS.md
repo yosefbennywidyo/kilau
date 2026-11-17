@@ -102,7 +102,8 @@ di kedua engine.
 | K-054 | `super` dari `NoMethodError#initialize` reopen melewati `NameError#initialize` reopen | nilai salah | diperbaiki di fork (`1c996e939`), belum PR |
 | K-055 | subclass program dari exception builtin menjawab false untuk accessor bergerbang induknya | nilai salah | diperbaiki di fork (`6f091b4ea`), gate berjalan, belum PR |
 | K-056 | `def self.new` di reopen `NoMethodError` gagal dikompilasi C (`unknown type name sp_NoMethodError`) | C compile error | terbuka |
-| K-057 | builtin exception tanpa reopen sendiri, di bawah builtin ter-reopen, melewati `initialize` reopen itu | nilai salah | terbuka |
+| K-057 | builtin exception tanpa reopen sendiri, di bawah builtin ter-reopen, melewati `initialize` reopen itu | nilai salah | diperbaiki di branch lokal (`464e2af21`), belum PR |
+| K-058 | error yang dilempar runtime sendiri dan `Errno::*` melewati `initialize` reopen `StandardError` | nilai salah | terbuka |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa

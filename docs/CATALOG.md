@@ -2513,7 +2513,21 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   menjadi `"a"`; CRuby `"S[a]"`. Sama untuk `FrozenError.new("f")`. Jalannya bukan lewat `super`, jadi perbaikan K-054
   (super dari reopen ke reopen di atasnya) tidak menyentuhnya.
 - Repro: `repro/k057_builtin_below_reopen_skips_reopen_initialize.rb` (diukur 2026-11-17: Spinel `"a"`, `"f"`).
-- Klasifikasi: nilai salah (pesan). Belum diselidiki.
+- Klasifikasi: nilai salah (pesan). Diperbaiki di spinel, branch `k057-builtin-below-reopen-initialize` (commit `464e2af21`,
+  ditumpuk di atas K-054 `1c996e939`): `.new`, `raise Cls`, `raise Cls, msg` dan `raise "msg"` menjalankan `initialize` reopening
+  di atasnya; belum di-push, belum ada PR (2026-11-17). Sisanya: K-058.
+
+## K-058: error yang dilempar runtime sendiri dan `Errno::*` melewati `initialize` reopen `StandardError`
+
+- Lapisan: compiler/runtime spinel, konstruksi exception.
+- Ditemukan: 2026-11-17, saat memperbaiki K-057 (compiler `2b5fcb9ee` + K-054).
+- Gejala: dengan `class StandardError; def initialize(msg = nil) = super("S[#{msg}]"); end`, `[1].fetch(9)` dirangkum
+  `"index 9 outside of array bounds: -1...1"` (CRuby `"S[index 9 ...]"`: CRuby membangun error runtime lewat `initialize`
+  hasil reopen), dan `Errno::ENOENT.new("x")` menjadi `"No such file or directory - x"` (CRuby `"S[No such file or directory - x]"`).
+- Sebab (dugaan): error runtime dibangun langsung oleh runtime C (`sp_raise_cls`) tanpa memanggil initialize program;
+  famili `Errno::*` terbuka, jadi `builtin_ancestor_at` tidak punya rantai statis untuk ditelusuri.
+- Repro: `repro/k058_runtime_raised_and_errno_skip_reopen_initialize.rb`.
+- Klasifikasi: nilai salah (pesan). Belum diselidiki; kemungkinan besar perlu jawaban run-time, bukan perbaikan statis.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
