@@ -3,6 +3,14 @@
 Entri terbaru di atas. Entri lama (2026-09-28 s.d. 2026-11-14) dihapus pada 2026-11-15 karena isinya sudah tertutup
 atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`git show 59e79ef:docs/HANDOFF.md`).
 
+## 2026-11-17 ~10:45 WIB -- bump `8a6d3fa76` terverifikasi; tak ada perubahan status K-xxx
+
+**Status**
+- User `git pull` + `make install COPT=-O2`; compiler terpasang `2026.10.25+5778 (8a6d3fa76)` (-O2).
+- Kilau: `make test` 28/28 (0 `(cached)`), `test-cruby` 29/29, `e2e` blog exit 0 (35 `ok`). Repro 49 berkas: 39 identik,
+  10 beda dengan daftar yang sama seperti bump 2026-11-16 (`k003/k006/k007/k015`, `k046`, `k050`, `k047`, `k054`, `k055`, `k056`).
+- Terbuka di katalog: K-047, K-050, K-054, K-055, K-056 (tak berubah). Benchmark tak diukur ulang.
+
 ## 2026-11-16 ~21:35 WIB -- bump `c892caf09` terverifikasi; K-051 dan K-053 tertutup di kilau
 
 **Status**

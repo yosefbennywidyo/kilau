@@ -1,5 +1,7 @@
 # Katalog batas AOT
 
+**Bump 2026-11-17 (~10:45 WIB)** (user `git pull` + `make install COPT=-O2`): compiler terpasang sekarang `2026.10.25+5778 (8a6d3fa76)`, naik dari `+5532 (c892caf09)`; membawa PR upstream #12031-#12034 dan lainnya, tanpa PR kilau baru. Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), 0 `(cached)`, exit 0; `make test-cruby` 29/29; `make e2e` blog (blog dan blog_routes) exit 0, 35 `ok`. 49 `repro/*.rb` dibandingkan dengan CRuby 4.0.6 `--enable-frozen-string-literal` (berkas yang membaca `ARGV` dijalankan dengan satu argumen): **39 identik, 10 beda**, daftar yang sama dengan bump `c892caf09`: `k003`, `k006`, `k007`, `k015` (repronya sendiri), `k046`, `k050` (penolakan bernama), dan terbuka `k047`, `k054`, `k055`, `k056`. Tidak ada K-xxx yang tertutup atau terbuka oleh bump ini. TIDAK diukur: benchmark dan `yield-sweep`.
+
 **Bump 2026-11-16 (malam)** (user `git pull` + `make install`, diverifikasi 21:13-21:25 WIB): compiler terpasang sekarang
 `2026.10.25+5532 (c892caf09)`, naik dari `+5429 (81bac3b7e)`; membawa K-051 (#11961, `1dd33c481` + `2d39a7b3c`) dan
 K-053 (#11962, `22a374a5f`). Build pertama ini **`-O0`** (lalu dipasang ulang `-O2`, lihat tambahan di bawah): `libspinel_rt.a` masih memuat simbol lokal
