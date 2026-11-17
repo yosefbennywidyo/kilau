@@ -9,11 +9,12 @@ atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`
 - K-054 matz/spinel#12058 dan K-055 matz/spinel#12061 MERGED 2026-11-17 10:19Z, termasuk commit lanjutan dari temuan
   CodeRabbit (`68783a916`, `87852a2e3`); keduanya temuan nyata dan sudah dibalas lewat satu komentar PR (bukan di thread).
 - K-056 matz/spinel#12065 (penolakan bernama, dua commit: kode dan `refusals.expected`) dan K-057 matz/spinel#12068
-  (satu commit, dari `origin/master` `f2fa1e366`) terbuka. Gate fork K-056 run 44058073109 dan K-057 run 44061558907,
+  (dari `origin/master` `f2fa1e366`; commit `e9c8db479` + commit lanjutan `d9dbccd70` untuk 3 temuan CodeRabbit, semuanya nyata,
+  dua regresi dari commit pertama) terbuka. Gate fork K-056 run 44058073109 dan K-057 run 44061558907,
   masing-masing 23/23.
 - Compiler terpasang kilau MASIH `8a6d3fa76`: tidak memuat K-054..K-057. Bump berikutnya akan mengubah repro `k054`
   (dan `k055`, `k057`, `k056` jadi penolakan bernama); ukur ulang 49+ repro setelah `git pull` + `make install COPT=-O2`.
-- Terbuka di katalog: K-047, K-050, K-058 (error runtime dan `Errno::*` melewati initialize reopen), K-059 (initialize
+- Terbuka di katalog: K-047, K-050, K-058 (error runtime, `Errno::*` dan kelas dengan argumen sendiri melewati initialize reopen), K-059 (initialize
   reopen yang memakai block param-nya gagal C; baru, repro `repro/k059_*`).
 
 **Langkah berikutnya**

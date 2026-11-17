@@ -102,8 +102,8 @@ di kedua engine.
 | K-054 | `super` dari `NoMethodError#initialize` reopen melewati `NameError#initialize` reopen | nilai salah | SELESAI: matz/spinel#12058 (2026-11-17, `1c996e939` + `68783a916`) |
 | K-055 | subclass program dari exception builtin menjawab false untuk accessor bergerbang induknya | nilai salah | SELESAI: matz/spinel#12061 (2026-11-17, `f2fa1e366`) |
 | K-056 | `def self.new` di reopen `NoMethodError` gagal dikompilasi C (`unknown type name sp_NoMethodError`) | C compile error | PR terbuka: matz/spinel#12065 |
-| K-057 | builtin exception tanpa reopen sendiri, di bawah builtin ter-reopen, melewati `initialize` reopen itu | nilai salah | PR terbuka: matz/spinel#12068 |
-| K-058 | error yang dilempar runtime sendiri dan `Errno::*` melewati `initialize` reopen `StandardError` | nilai salah | terbuka |
+| K-057 | builtin exception tanpa reopen sendiri, di bawah builtin ter-reopen, melewati `initialize` reopen itu | nilai salah | PR terbuka: matz/spinel#12068 (+ commit lanjutan `d9dbccd70`: 3 temuan CodeRabbit, 2 regresi) |
+| K-058 | error runtime, `Errno::*` dan kelas dengan argumen sendiri (NameError name, KeyError key:) melewati `initialize` reopen `StandardError` | nilai salah | terbuka |
 | K-059 | `initialize` reopen builtin exception yang memakai parameter block-nya gagal dikompilasi C (`sp_IndexError_initialize` tak dideklarasikan) | C compile error | terbuka |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
