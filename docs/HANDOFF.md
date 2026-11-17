@@ -3,6 +3,26 @@
 Entri terbaru di atas. Entri lama (2026-09-28 s.d. 2026-11-14) dihapus pada 2026-11-15 karena isinya sudah tertutup
 atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`git show 59e79ef:docs/HANDOFF.md`).
 
+## 2026-11-17 ~18:00 WIB -- K-054 dan K-055 merged, K-056 dan K-057 PR terbuka
+
+**Status**
+- K-054 matz/spinel#12058 dan K-055 matz/spinel#12061 MERGED 2026-11-17 10:19Z, termasuk commit lanjutan dari temuan
+  CodeRabbit (`68783a916`, `87852a2e3`); keduanya temuan nyata dan sudah dibalas lewat satu komentar PR (bukan di thread).
+- K-056 matz/spinel#12065 (penolakan bernama, dua commit: kode dan `refusals.expected`) dan K-057 matz/spinel#12068
+  (satu commit, dari `origin/master` `f2fa1e366`) terbuka. Gate fork K-056 run 44058073109 dan K-057 run 44061558907,
+  masing-masing 23/23.
+- Compiler terpasang kilau MASIH `8a6d3fa76`: tidak memuat K-054..K-057. Bump berikutnya akan mengubah repro `k054`
+  (dan `k055`, `k057`, `k056` jadi penolakan bernama); ukur ulang 49+ repro setelah `git pull` + `make install COPT=-O2`.
+- Terbuka di katalog: K-047, K-050, K-058 (error runtime dan `Errno::*` melewati initialize reopen), K-059 (initialize
+  reopen yang memakai block param-nya gagal C; baru, repro `repro/k059_*`).
+
+**Langkah berikutnya**
+1. Pantau komentar CodeRabbit dan matz di #12065 dan #12068 (balas lewat komentar PR, bukan di thread).
+2. Setelah keduanya merged: bump compiler, jalankan `make test` / `test-cruby` / `e2e` / repro, perbarui `CATALOG`.
+3. Pilih berikutnya: K-058 atau K-059 (K-059 kecil, seperti K-056 dengan penolakan bernama atau perbaikan penuh).
+4. 30 alert Dependabot di `bench/rails_blog` (29) dan `bench/servers` (1) belum diputuskan (diamkan atau naikkan lockfile).
+5. Commit lokal kilau `b98d403` dan setelahnya belum di-push (push terakhir `6b24f51`).
+
 ## 2026-11-17 ~10:45 WIB -- bump `8a6d3fa76` terverifikasi; tak ada perubahan status K-xxx
 
 **Status**

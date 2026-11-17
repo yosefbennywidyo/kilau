@@ -2475,8 +2475,10 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   `NoMethodError.new("x").message` menjadi `"M: x"`; CRuby `"N: M: x"` (super dari NoMethodError mencapai `initialize`
   NameError milik program, karena NoMethodError < NameError).
 - Repro: `repro/k054_reopen_super_to_reopen_initialize.rb`.
-- Klasifikasi: nilai salah (pesan). Diperbaiki di spinel, branch fork `k054-reopen-super-chain` (commit `1c996e939`, di atas
-  `2b5fcb9ee`); belum di-push, belum ada PR (2026-11-17).
+- Klasifikasi: nilai salah (pesan). SELESAI upstream: matz/spinel#12058, commit pertama `1c996e939` merged 2026-11-17
+  10:19Z (`d6a4f9954`) dan commit lanjutan `68783a916` (dua temuan CodeRabbit, terbukti nyata: batas delapan reopening
+  di `exc_reopen_definers`, dan parameter block `&blk` pada initialize di atasnya) lewat merge kedua `802c1de3d`.
+  Belum ada di compiler terpasang kilau (`8a6d3fa76`); repro `k054` berubah setelah bump berikutnya.
 
 ## K-055: subclass program dari exception builtin menjawab `false` untuk accessor bergerbang induknya
 
@@ -2488,9 +2490,10 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   baris accessor exception; hanya run-time yang tahu kelas gerbang tiap nama. Perbaikan perlu jawaban run-time di
   jalur objek, atau daftar gerbang kedua di compiler (duplikasi, hindari).
 - Repro: `repro/k055_exc_subclass_respond_to_gated_accessor.rb`.
-- Klasifikasi: nilai salah (refleksi). Diperbaiki di spinel, branch fork `k055-exc-subclass-respond-to` (commit `6f091b4ea`,
-  di atas `2b5fcb9ee`; satu tabel pemilik di `builtin_names.c`, bukan daftar kedua); gate fork run 44034275236 berjalan,
-  belum ada PR (2026-11-17).
+- Klasifikasi: nilai salah (refleksi). SELESAI upstream: matz/spinel#12061, `f2fa1e366` (2026-11-17 10:19Z), termasuk
+  commit lanjutan `87852a2e3` (temuan CodeRabbit nyata: `private :key`/`protected :key` pada subclass harus menjawab
+  false). Satu tabel pemilik di `builtin_names.c` (`gated_exception_accessor_owners`), bukan daftar kedua di compiler.
+  Belum ada di compiler terpasang kilau (`8a6d3fa76`).
 
 ## K-056: `def self.new` di reopen `NoMethodError` gagal dikompilasi C
 
@@ -2503,7 +2506,10 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   program) belum bisa dicapai tes mana pun; temuan itu ditolak dengan bukti ini. Setelah K-056 diperbaiki, periksa ulang
   temuan itu (CRuby memang tidak menjalankan `self.new` program untuk error panggilan gagal).
 - Repro: `repro/k056_reopened_exception_self_new.rb`.
-- Klasifikasi: C compile error (melanggar kontrak "penolakan bernama, bukan error C"). Belum diselidiki.
+- Klasifikasi: C compile error (melanggar kontrak "penolakan bernama, bukan error C"). PR terbuka: matz/spinel#12065
+  (2026-11-17): penolakan bernama `super in self.new of a Struct, Data, exception or native class` untuk reopen builtin
+  exception, tiga tes di `test/reject/` dan catatan di `test/collect/refusals.expected` (gate pertama gagal di
+  `props` sebelum catatan itu ada). Menjalankan `self.new` program untuk reopen tidak dikerjakan.
 
 ## K-057: builtin exception tanpa reopen sendiri, di bawah builtin ter-reopen, melewati `initialize` reopen itu
 
@@ -2513,9 +2519,8 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   menjadi `"a"`; CRuby `"S[a]"`. Sama untuk `FrozenError.new("f")`. Jalannya bukan lewat `super`, jadi perbaikan K-054
   (super dari reopen ke reopen di atasnya) tidak menyentuhnya.
 - Repro: `repro/k057_builtin_below_reopen_skips_reopen_initialize.rb` (diukur 2026-11-17: Spinel `"a"`, `"f"`).
-- Klasifikasi: nilai salah (pesan). Diperbaiki di spinel, branch `k057-builtin-below-reopen-initialize` (commit `464e2af21`,
-  ditumpuk di atas K-054 `1c996e939`): `.new`, `raise Cls`, `raise Cls, msg` dan `raise "msg"` menjalankan `initialize` reopening
-  di atasnya; belum di-push, belum ada PR (2026-11-17). Sisanya: K-058.
+- Klasifikasi: nilai salah (pesan). PR terbuka: matz/spinel#12068 (2026-11-17): `.new` dan tiga bentuk `raise` menjalankan
+  `initialize` reopening di atasnya lewat `exc_reopen_initialize_above`. Sisanya: K-058.
 
 ## K-058: error yang dilempar runtime sendiri dan `Errno::*` melewati `initialize` reopen `StandardError`
 
@@ -2528,6 +2533,19 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   famili `Errno::*` terbuka, jadi `builtin_ancestor_at` tidak punya rantai statis untuk ditelusuri.
 - Repro: `repro/k058_runtime_raised_and_errno_skip_reopen_initialize.rb`.
 - Klasifikasi: nilai salah (pesan). Belum diselidiki; kemungkinan besar perlu jawaban run-time, bukan perbaikan statis.
+
+## K-059: `initialize` reopen builtin exception yang memakai parameter block-nya gagal dikompilasi C
+
+- Lapisan: compiler, konstruktor exception builtin yang dibuka ulang.
+- Ditemukan: 2026-11-17, saat menguji perbaikan K-054 (compiler `2b5fcb9ee`); sama di `8a6d3fa76` (terpasang), jadi bukan
+  akibat perbaikan K-054..K-057.
+- Gejala: `class IndexError; def initialize(m = nil, &blk); x = blk.nil?; super("I:" + m.to_s); end; end` lalu
+  `IndexError.new("k")` gagal di C: `call to undeclared function 'sp_IndexError_initialize'`. CRuby `"I:k"`. Tanpa memakai
+  `blk` di badan, program yang sama dibangun (parameter `&blk` yang hanya dilewatkan tidak memicunya).
+- Sebab (dugaan): initialize yang memakai block parameter-nya dipancarkan sebagai klon bentuk-proc dengan nama lain,
+  sedangkan pemanggil memakai `mc_method` dengan nama biasa.
+- Repro: `repro/k059_reopened_builtin_initialize_uses_block_param.rb` (diukur 2026-11-17: C compile error).
+- Klasifikasi: C compile error (melanggar kontrak "penolakan bernama, bukan error C"). Belum diselidiki.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
