@@ -1,5 +1,7 @@
 # Katalog batas AOT
 
+**Bump 2026-11-18 (~12:10 WIB)** (user `git pull` + rebuild; diverifikasi dari `spin clean`, AC): compiler terpasang sekarang `2026.10.25+6092 (a2aa05227)`, naik dari `+5778 (8a6d3fa76)`; membawa K-054 (#12058), K-055 (#12061), K-056 (#12065) dan K-057 (#12068), semuanya MERGED 2026-11-17. Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), 0 `(cached)`, exit 0 (±4 mnt 45 dtk); `make test-cruby` 29/29; `make e2e` (di `examples/blog`) blog dan blog_routes exit 0, 35 `ok`. 52 `repro/*.rb` dibandingkan dengan CRuby 4.0.6 `--enable-frozen-string-literal` (berkas yang membaca `ARGV` dijalankan dengan satu argumen): **42 identik, 10 beda**. Berubah oleh bump ini: `k054`, `k055`, `k057` kini identik dengan CRuby; `k056` kini penolakan bernama (`unsupported super in self.new of a Struct, Data, exception or native class`). Beda yang tersisa: `k003`, `k006`, `k007`, `k015` (repronya sendiri), `k046`, `k050` (penolakan bernama), dan terbuka `k047`, `k058`, `k059` (k059 masih error C `sp_IndexError_initialize`). Repro bertambah dari 49 ke 52 karena `k057`..`k059`. TIDAK diukur: benchmark dan `yield-sweep`.
+
 **Bump 2026-11-17 (~10:45 WIB)** (user `git pull` + `make install COPT=-O2`): compiler terpasang sekarang `2026.10.25+5778 (8a6d3fa76)`, naik dari `+5532 (c892caf09)`; membawa PR upstream #12031-#12034 dan lainnya, tanpa PR kilau baru. Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), 0 `(cached)`, exit 0; `make test-cruby` 29/29; `make e2e` blog (blog dan blog_routes) exit 0, 35 `ok`. 49 `repro/*.rb` dibandingkan dengan CRuby 4.0.6 `--enable-frozen-string-literal` (berkas yang membaca `ARGV` dijalankan dengan satu argumen): **39 identik, 10 beda**, daftar yang sama dengan bump `c892caf09`: `k003`, `k006`, `k007`, `k015` (repronya sendiri), `k046`, `k050` (penolakan bernama), dan terbuka `k047`, `k054`, `k055`, `k056`. Tidak ada K-xxx yang tertutup atau terbuka oleh bump ini. TIDAK diukur: benchmark dan `yield-sweep`.
 
 **Bump 2026-11-16 (malam)** (user `git pull` + `make install`, diverifikasi 21:13-21:25 WIB): compiler terpasang sekarang
@@ -2506,7 +2508,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   program) belum bisa dicapai tes mana pun; temuan itu ditolak dengan bukti ini. Setelah K-056 diperbaiki, periksa ulang
   temuan itu (CRuby memang tidak menjalankan `self.new` program untuk error panggilan gagal).
 - Repro: `repro/k056_reopened_exception_self_new.rb`.
-- Klasifikasi: C compile error (melanggar kontrak "penolakan bernama, bukan error C"). PR terbuka: matz/spinel#12065
+- Klasifikasi: C compile error (melanggar kontrak "penolakan bernama, bukan error C"). SELESAI upstream: matz/spinel#12065 (MERGED 2026-11-17 12:06Z)
   (2026-11-17): penolakan bernama `super in self.new of a Struct, Data, exception or native class` untuk reopen builtin
   exception, tiga tes di `test/reject/` dan catatan di `test/collect/refusals.expected` (gate pertama gagal di
   `props` sebelum catatan itu ada). Menjalankan `self.new` program untuk reopen tidak dikerjakan.
@@ -2519,7 +2521,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   menjadi `"a"`; CRuby `"S[a]"`. Sama untuk `FrozenError.new("f")`. Jalannya bukan lewat `super`, jadi perbaikan K-054
   (super dari reopen ke reopen di atasnya) tidak menyentuhnya.
 - Repro: `repro/k057_builtin_below_reopen_skips_reopen_initialize.rb` (diukur 2026-11-17: Spinel `"a"`, `"f"`).
-- Klasifikasi: nilai salah (pesan). PR terbuka: matz/spinel#12068 (2026-11-17): `.new` dan tiga bentuk `raise` menjalankan
+- Klasifikasi: nilai salah (pesan). SELESAI upstream: matz/spinel#12068 (MERGED 2026-11-17 12:59Z): `.new` dan tiga bentuk `raise` menjalankan
   `initialize` reopening di atasnya lewat `exc_reopen_initialize_above`. Commit pertama `e9c8db479`; CodeRabbit memberi tiga
   temuan, SEMUANYA nyata (diuji terhadap CRuby), dan dua adalah REGRESI dari commit pertama: (1) default yang membaca `self`
   (`msg = self.class.name`) gagal dikompilasi C; (2) `NameError.new("n", :field)` melempar ArgumentError dan
