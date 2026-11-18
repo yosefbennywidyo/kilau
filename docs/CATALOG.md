@@ -2545,7 +2545,19 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Sebab (dugaan): error runtime dibangun langsung oleh runtime C (`sp_raise_cls`) tanpa memanggil initialize program;
   famili `Errno::*` terbuka, jadi `builtin_ancestor_at` tidak punya rantai statis untuk ditelusuri.
 - Repro: `repro/k058_runtime_raised_and_errno_skip_reopen_initialize.rb`.
-- Klasifikasi: nilai salah (pesan). Belum diselidiki; kemungkinan besar perlu jawaban run-time, bukan perbaikan statis.
+- Klasifikasi: nilai salah (pesan). DIPECAH TIGA BENTUK (diselidiki 2026-11-18):
+  - **Bentuk 1, error yang dilempar runtime** (`[1].fetch(9)`, `1/0`, `Integer("zz")`, `Enumerator#next`, `File.open`): SELESAI upstream,
+    matz/spinel#12116 (MERGED 2026-11-18 12:05Z, `ead198371`, termasuk commit lanjutan `d6f93c318`). Dugaan di atas benar: perlu jawaban
+    run-time. Runtime memanggil hook `sp_user_exc_reinit` yang dibuat codegen; hook menjalankan `initialize` reopen terdekat (menurut
+    garis turunan) pada exception buatan runtime. Probe CRuby 4.0.6: SEMUA pelempar runtime menjalankannya KECUALI `NameError`/
+    `NoMethodError` dan `KeyError` (pesan polos); `FrozenError` menjalankannya tetapi CRuby memberi pesan TANPA `inspect` receiver
+    (`S[can't modify frozen String: ]`), punya kita menyertakannya (batas yang diketahui). `raise` tulisan program tetap memakai versi
+    `initialize` per situs (`sp_raise_cls_u`). Tindak lanjut review: matz/spinel#12122 (OPEN: cek alokasi + tes pakai `Dir.mktmpdir`).
+    Repro `repro/k058_*` baris 1 seharusnya identik setelah bump (BELUM diverifikasi; kompiler terpasang `a2aa05227` tak memuatnya).
+  - **Bentuk 2, `Errno::ENOENT.new("x")`** (jalur konstruksi compiler, bukan runtime): TERBUKA, belum dikerjakan. Pesan sekarang
+    `"No such file or directory - x"`, CRuby `"S[No such file or directory - x]"` (diukur ulang di cabang #12116).
+  - **Bentuk 3, `NameError.new("n", :field)` / `KeyError.new("k", receiver: 1, key: :kk)`**: TERBUKA. Atribut benar, pesan `"n"` / `"k"`,
+    CRuby `"S[n]"` / `"S[k]"`; jalur native membaca argumen sendiri dan reopening di atasnya sengaja dilewati (#12068).
 
 ## K-059: `initialize` reopen builtin exception yang memakai parameter block-nya gagal dikompilasi C
 
@@ -2558,7 +2570,16 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
 - Sebab (dugaan): initialize yang memakai block parameter-nya dipancarkan sebagai klon bentuk-proc dengan nama lain,
   sedangkan pemanggil memakai `mc_method` dengan nama biasa.
 - Repro: `repro/k059_reopened_builtin_initialize_uses_block_param.rb` (diukur 2026-11-17: C compile error).
-- Klasifikasi: C compile error (melanggar kontrak "penolakan bernama, bukan error C"). Belum diselidiki.
+- Klasifikasi: C compile error (melanggar kontrak "penolakan bernama, bukan error C"). SELESAI upstream: matz/spinel#12111
+  (lihat di bawah). Sebab sebenarnya BUKAN dugaan di atas: `initialize` yang memakai `blk.nil?`, `block_given?` atau `yield` adalah
+  *yielder* (`yields = 1`), jadi tak punya fungsi C sendiri; klon proc-form-nya hanya dibuat untuk kelas exception milik program
+  (`exc_init`), bukan untuk reopen builtin, sedangkan jalur konstruktor reopen (`emit_exc_reopen_construct_as`) dan `super` antar-reopen
+  memanggil fungsi biasa. `blk.call` tidak kena (bukan yielder). Perbaikan: klon dibuat juga untuk reopen, kedua jalur memanggil klon;
+  tes `exc_reopen_initialize_block_param`; satu tes lama (`exception_builtin_below_reopen_initialize_guards`) yang mencatat batas lama
+  diperbarui. MERGED 2026-11-18 08:08Z sebagai matz/spinel#12111 (`b170b41c9`); temuan CodeRabbit pasca-merge (super terencana ke
+  initialize yang yield) ditolak dengan bukti: ~10 bentuk `super` dan 24 tes reopen tak pernah mencapai jalur yang disebutnya. Repro
+  `repro/k059_*` identik dengan CRuby setelah kompiler terpasang di-bump (BELUM diverifikasi di kilau; kompiler terpasang `a2aa05227`
+  tak memuatnya).
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 

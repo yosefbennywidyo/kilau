@@ -3,6 +3,23 @@
 Entri terbaru di atas. Entri lama (2026-09-28 s.d. 2026-11-14) dihapus pada 2026-11-15 karena isinya sudah tertutup
 atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`git show 59e79ef:docs/HANDOFF.md`).
 
+## 2026-11-19 ~00:30 WIB -- K-059 dan K-058 bentuk 1 merged upstream; tindak lanjut #12122 terbuka
+
+**Status**
+- K-059 matz/spinel#12111 MERGED 2026-11-18 08:08Z. K-058 bentuk 1 matz/spinel#12116 MERGED 12:05Z (kedua commitnya, `94da7f36e` dan
+  `d6f93c318`, masuk). Tindak lanjut review matz/spinel#12122 OPEN (CodeRabbit bersih, Merge Risk Minimal; gate fork 23/23 hijau).
+- Kompiler terpasang kilau MASIH `2026.10.25+6092 (a2aa05227)` (-O2, diverifikasi 2026-11-18 12:10 WIB: make test 28/28, test-cruby 29/29,
+  e2e 35 ok, repro 42/52). Belum memuat K-059/K-058; BELUM diverifikasi ulang di kilau.
+- Terbuka di katalog: K-058 bentuk 2 (`Errno::*.new`) dan 3 (NameError/KeyError dengan argumen tambahan), K-047, K-050. Tak ada kode
+  kilau yang berubah dalam rangkaian ini.
+
+**Langkah berikutnya**
+1. Setelah #12122 merged: `git pull`, `make clean && make install COPT=-O2`, jalankan `make test` / `make test-cruby` /
+   `cd examples/blog && make e2e` / semua `repro/*.rb` vs CRuby 4.0.6 (`--enable-frozen-string-literal`, berkas ber-ARGV diberi satu
+   argumen). Harapan: `k059` dan baris 1 `k058` identik; baris `Errno`/`NameError`/`KeyError` `k058` tetap beda.
+2. Perbarui CATALOG (bump), tutup K-059, tandai K-058 bentuk 1 terverifikasi.
+3. Pilih berikutnya: K-058 bentuk 2/3, K-047, K-050, atau keputusan 30 alert Dependabot (`bench/rails_blog` 29, `bench/servers` 1).
+
 ## 2026-11-18 ~12:15 WIB -- bump `a2aa05227` terverifikasi; K-054..K-057 tertutup di kilau
 
 **Status**
