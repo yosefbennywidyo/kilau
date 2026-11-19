@@ -1,5 +1,7 @@
 # Katalog batas AOT
 
+**Bump 2026-11-19 (~10:10 WIB)** (user `git pull` + `make install`; diverifikasi dari `spin clean`, AC): compiler terpasang sekarang `2026.10.25+6441 (b98b368a1)`, naik dari `+6092 (a2aa05227)`; membawa K-058 bentuk 1 (#12116) dan tindak lanjutnya #12122, K-059 (#12111). Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), exit 0; `make test-cruby` 29/29; `make e2e` (di `examples/blog`) exit 0, 35 `ok`. 52 `repro/*.rb` vs CRuby 4.0.6 `--enable-frozen-string-literal`: **43 identik, 9 beda** (sebelumnya 42/10). Berubah: `k059` kini identik. Beda tersisa: `k003`, `k006`, `k007`, `k015`, `k046` (sebab sendiri/by design), `k047`, `k050` (penolakan bernama), `k056` (penolakan bernama), `k058` (hanya baris `Errno::ENOENT.new`, `NameError.new` dan `KeyError.new`, yaitu bentuk 2/3; baris runtime-raised kini identik).
+
 **Bump 2026-11-18 (~12:10 WIB)** (user `git pull` + rebuild; diverifikasi dari `spin clean`, AC): compiler terpasang sekarang `2026.10.25+6092 (a2aa05227)`, naik dari `+5778 (8a6d3fa76)`; membawa K-054 (#12058), K-055 (#12061), K-056 (#12065) dan K-057 (#12068), semuanya MERGED 2026-11-17. Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), 0 `(cached)`, exit 0 (±4 mnt 45 dtk); `make test-cruby` 29/29; `make e2e` (di `examples/blog`) blog dan blog_routes exit 0, 35 `ok`. 52 `repro/*.rb` dibandingkan dengan CRuby 4.0.6 `--enable-frozen-string-literal` (berkas yang membaca `ARGV` dijalankan dengan satu argumen): **42 identik, 10 beda**. Berubah oleh bump ini: `k054`, `k055`, `k057` kini identik dengan CRuby; `k056` kini penolakan bernama (`unsupported super in self.new of a Struct, Data, exception or native class`). Beda yang tersisa: `k003`, `k006`, `k007`, `k015` (repronya sendiri), `k046`, `k050` (penolakan bernama), dan terbuka `k047`, `k058`, `k059` (k059 masih error C `sp_IndexError_initialize`). Repro bertambah dari 49 ke 52 karena `k057`..`k059`. TIDAK diukur: benchmark dan `yield-sweep`.
 
 **Bump 2026-11-17 (~10:45 WIB)** (user `git pull` + `make install COPT=-O2`): compiler terpasang sekarang `2026.10.25+5778 (8a6d3fa76)`, naik dari `+5532 (c892caf09)`; membawa PR upstream #12031-#12034 dan lainnya, tanpa PR kilau baru. Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), 0 `(cached)`, exit 0; `make test-cruby` 29/29; `make e2e` blog (blog dan blog_routes) exit 0, 35 `ok`. 49 `repro/*.rb` dibandingkan dengan CRuby 4.0.6 `--enable-frozen-string-literal` (berkas yang membaca `ARGV` dijalankan dengan satu argumen): **39 identik, 10 beda**, daftar yang sama dengan bump `c892caf09`: `k003`, `k006`, `k007`, `k015` (repronya sendiri), `k046`, `k050` (penolakan bernama), dan terbuka `k047`, `k054`, `k055`, `k056`. Tidak ada K-xxx yang tertutup atau terbuka oleh bump ini. TIDAK diukur: benchmark dan `yield-sweep`.
@@ -2552,8 +2554,8 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     garis turunan) pada exception buatan runtime. Probe CRuby 4.0.6: SEMUA pelempar runtime menjalankannya KECUALI `NameError`/
     `NoMethodError` dan `KeyError` (pesan polos); `FrozenError` menjalankannya tetapi CRuby memberi pesan TANPA `inspect` receiver
     (`S[can't modify frozen String: ]`), punya kita menyertakannya (batas yang diketahui). `raise` tulisan program tetap memakai versi
-    `initialize` per situs (`sp_raise_cls_u`). Tindak lanjut review: matz/spinel#12122 (OPEN: cek alokasi + tes pakai `Dir.mktmpdir`).
-    Repro `repro/k058_*` baris 1 seharusnya identik setelah bump (BELUM diverifikasi; kompiler terpasang `a2aa05227` tak memuatnya).
+    `initialize` per situs (`sp_raise_cls_u`). Tindak lanjut review: matz/spinel#12122 (MERGED 2026-11-18 14:03Z: cek alokasi + tes pakai `Dir.mktmpdir`).
+    Diverifikasi 2026-11-19 pada kompiler terpasang `b98b368a1`: baris runtime-raised `repro/k058_*` identik; hanya bentuk 2/3 yang masih beda.
   - **Bentuk 2, `Errno::ENOENT.new("x")`** (jalur konstruksi compiler, bukan runtime): TERBUKA, belum dikerjakan. Pesan sekarang
     `"No such file or directory - x"`, CRuby `"S[No such file or directory - x]"` (diukur ulang di cabang #12116).
   - **Bentuk 3, `NameError.new("n", :field)` / `KeyError.new("k", receiver: 1, key: :kk)`**: TERBUKA. Atribut benar, pesan `"n"` / `"k"`,
@@ -2578,8 +2580,7 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   tes `exc_reopen_initialize_block_param`; satu tes lama (`exception_builtin_below_reopen_initialize_guards`) yang mencatat batas lama
   diperbarui. MERGED 2026-11-18 08:08Z sebagai matz/spinel#12111 (`b170b41c9`); temuan CodeRabbit pasca-merge (super terencana ke
   initialize yang yield) ditolak dengan bukti: ~10 bentuk `super` dan 24 tes reopen tak pernah mencapai jalur yang disebutnya. Repro
-  `repro/k059_*` identik dengan CRuby setelah kompiler terpasang di-bump (BELUM diverifikasi di kilau; kompiler terpasang `a2aa05227`
-  tak memuatnya).
+  `repro/k059_*` identik dengan CRuby, DIVERIFIKASI 2026-11-19 di kilau pada kompiler terpasang `b98b368a1`. TERTUTUP.
 
 ## K-045: halaman list (S3) 26-37% lebih lambat, build 4x lebih lama dan binary 2,3x lebih besar pada compiler `d1878a068` dibanding `38dc57dde`
 
