@@ -17,6 +17,12 @@ class EchoHooks < Kilau::Hooks
     echo = Kilau::Routes.new.prefix("echo")
     echo = echo.add("/", Kilau::Controller.get { |app_context, request| Kilau::Format.text("q=#{request.query("q")} agent=#{request.header("user-agent")} env=#{app_context.environment}") })
     echo = echo.add("/", Kilau::Controller.post { |app_context, request| Kilau::Format.text("name=#{request.form("item")["name"]}", status: 201) })
+    echo = echo.add("/cookies", Kilau::Controller.get { |app_context, request|
+      response = Kilau::Format.text("c")
+      response.set_header("set-cookie", "own=1; Path=/")
+      response.add_set_cookie("extra=2; Path=/")
+      response
+    })
     echo = echo.add("/go", Kilau::Controller.get { |app_context, request| Kilau::Format.redirect("/echo") })
     Kilau::AppRoutes.with_default_routes.add(echo)
   end
@@ -66,6 +72,11 @@ T.check("a verb the path does not route is 405 with Allow") { status == 405 && h
 
 status, headers, body = app.call({ "REQUEST_METHOD" => "GET", "PATH_INFO" => "/_ping", "QUERY_STRING" => "" })
 T.check("a request without rack.input is served") { status == 200 && body == ["{\"ok\":true}"] }
+
+status, headers, body = app.call(env("GET", "/echo/cookies"))
+T.check("a handler's own set-cookie header survives next to the added lines") do
+  headers["set-cookie"] == ["own=1; Path=/", "extra=2; Path=/"]
+end
 
 T.check("one process builds the dispatcher once") { hooks.built == 1 }
 
