@@ -1,0 +1,22 @@
+ok COOKIE names the session cookie
+ok a new session is empty and unchanged
+ok []= stores and marks changed
+ok to_cookie_value round-trips through load
+ok load alone does not mark changed
+ok the cookie value is hex.hex
+ok delete removes the key and marks changed
+ok reset empties and marks changed
+ok a different secret does not open the cookie
+ok one payload character changed gives an empty session
+ok one hmac character changed gives an empty session
+ok a truncated cookie gives an empty session
+ok a truncated payload gives an empty session
+ok a non-hex cookie gives an empty session
+ok a cookie without a dot gives an empty session
+ok a nil cookie gives an empty session
+ok an empty cookie gives an empty session
+ok an empty mac gives an empty session
+ok extra dots give an empty session
+ok a missing payload with a valid-length mac gives an empty session
+ok a forged payload signed with another secret is refused
+ok a verified but malformed payload gives an empty session
