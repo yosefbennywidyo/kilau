@@ -47,6 +47,9 @@ end
 def cookie_pair(response) = response.set_cookies[0].split(";")[0]
 
 # --- wrap decisions ---
+# An exported KILAU_SESSION_SECRET would reach Guard.wrap through Config#key?
+# and turn the "not configured" cases below into configured ones.
+ENV.delete("KILAU_SESSION_SECRET")
 stub = CountingStub.new
 T.check("wrap returns the dispatcher itself when sessions are not configured") do
   Kilau::Session::Guard.wrap(stub, context_for("app:\n  name: x\n", "test")).equal?(stub)
