@@ -15,5 +15,13 @@ guest = Kilau::Page.for(request)
 T.check("Page.for(request).layout is web") { guest.layout == "web" }
 T.check("Page.for defaults to a guest") { !guest.signed_in? && guest.user_email == "" }
 T.check("Page.for carries the session's CSRF token") { !guest.token.empty? && guest.token == Kilau::Csrf.token(request.session) }
+bare = Kilau::Request.new("GET", "/", "HTTP/1.1", {}, "")
+message = ""
+begin
+  Kilau::Page.for(bare)
+rescue ArgumentError => e
+  message = e.message
+end
+T.check("Page.for without sessions says so instead of a nil error") { message.include?("needs sessions") }
 member = Kilau::Page.for(request, "m@x.test")
 T.check("Page.for takes the email it is given") { member.signed_in? && member.user_email == "m@x.test" && member.token == guest.token }

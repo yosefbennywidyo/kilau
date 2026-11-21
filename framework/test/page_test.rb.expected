@@ -7,4 +7,5 @@ ok a layout can be named
 ok Page.for(request).layout is web
 ok Page.for defaults to a guest
 ok Page.for carries the session's CSRF token
+ok Page.for without sessions says so instead of a nil error
 ok Page.for takes the email it is given

@@ -18,6 +18,12 @@ module Kilau
     # The token is read from request.session at the call, never through a
     # local the caller writes to afterwards (Spinel's inference does not
     # converge for that shape).
-    def self.for(request, user_email = "") = new(user_email, Csrf.token(request.session), "web")
+    #
+    # It needs sessions: with none configured (Session::Guard leaves the
+    # dispatcher bare) request.session is nil, and the CSRF token has no home.
+    def self.for(request, user_email = "")
+      raise ArgumentError, "Page.for needs sessions (set session.secret or session.enabled)" if request.session.nil?
+      new(user_email, Csrf.token(request.session), "web")
+    end
   end
 end
