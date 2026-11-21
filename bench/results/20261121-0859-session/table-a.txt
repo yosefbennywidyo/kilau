@@ -1,0 +1,11 @@
+== (a) GET /posts (100 posts), best of 3 x 10s, rows interleaved
+  rep 1 starts at load 7.64 7.29 6.61
+  rep 2 starts at load 9.61 7.84 6.86
+  rep 3 starts at load 9.81 8.06 7.00
+row                      conc     req/s    p50 ms    p99 ms    median  all reps (req/s)
+no cookie                c1      1232.0      0.71      1.76    1226.6  [1204.9 1226.6 1232.0]  200:12322
+valid session cookie     c1      1200.7      0.72      2.09    1166.7  [1166.6 1166.7 1200.7]  200:12009
+tampered cookie          c1      1173.4      0.74      2.19    1171.6  [1171.6 1173.4 1169.6]  200:11737
+no cookie                c16     2402.1      6.09     18.65    2060.0  [2040.6 2060.0 2402.1]  200:24017
+valid session cookie     c16     2404.4      5.69     21.52    1984.0  [1956.9 1984.0 2404.4]  200:24034
+tampered cookie          c16     2539.2      5.99     14.82    2119.7  [2119.7 2085.0 2539.2]  200:25382

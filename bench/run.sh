@@ -17,6 +17,12 @@
 # (seconds), OUT (results directory). Run bench/check_bodies.sh first; this script
 # runs it and stops if the apps disagree.
 set -u
+# STOP: this harness is not valid on this branch. The blog now requires a
+# login for S4 and its pages carry a nav, so the Kilau/Rails comparison of
+# bodies and S4 no longer holds. Adapt the harness first (a follow-up task);
+# the results of the previous slice remain valid for commit 1a91c13.
+echo "bench: not valid on this branch: the blog now requires a login for S4 and its pages carry a nav, so the Kilau/Rails comparison is not valid; adapt the harness first (results of the previous slice remain valid for commit 1a91c13)" >&2
+exit 1
 source "$(dirname "$0")/lib.sh"
 # An interrupted or failing session must not leave an app on the port.
 trap stop_app EXIT

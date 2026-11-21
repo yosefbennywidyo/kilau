@@ -32,6 +32,16 @@ module Kilau
       request = Request.new(verb, target(env), env["SERVER_PROTOCOL"] || "HTTP/1.1", headers(env), body(env))
       response = dispatcher.call(request)
       out = response.headers.dup
+      # Set-Cookie is kept apart from headers (one line per cookie). Rack 3
+      # takes an Array value for "set-cookie"; a Rack 2 server expects the
+      # lines joined with "\n" instead, and a gem-free adapter cannot tell
+      # which it runs under, so older servers need `lines.join("\n")` here.
+      # A handler may also have set a "set-cookie" header of its own; keep it ahead of the
+      # session's lines instead of replacing it.
+      unless response.set_cookies.empty?
+        own = out["set-cookie"]
+        out["set-cookie"] = own.nil? ? response.set_cookies.dup : [own] + response.set_cookies
+      end
       out["content-length"] = response.body.bytesize.to_s
       [response.status, out, verb == "HEAD" ? [] : [response.body]]
     end
@@ -48,7 +58,7 @@ module Kilau
           environment = ENV.fetch("KILAU_ENV", "development")
           config = Config.load("#{@config_dir}/#{environment}.yaml")
           pool = Sqlite::Pool.new(config.string("database.path"), config.int("database.pool"))
-          @dispatcher = @hooks.dispatcher(AppContext.new(pool, config, environment))
+          @dispatcher = @hooks.serving_dispatcher(AppContext.new(pool, config, environment))
           @pid = Process.pid
         end
       end

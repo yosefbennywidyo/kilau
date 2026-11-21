@@ -1,9 +1,9 @@
-{#- args: post -#}
+{#- args: post, page -#}
 {% extends "layout.html" %}
 {% block title %}Edit post{% endblock %}
 {% block content %}
 <h1>Edit post</h1>
-<form method="post" action="/posts/{{ post.id }}"><input type="hidden" name="_method" value="patch">
+<form method="post" action="/posts/{{ post.id }}"><input type="hidden" name="_method" value="patch"><input type="hidden" name="authenticity_token" value="{{ page.token }}">
 {% include "posts/_form.html" %}
 </form>
 {% endblock %}

@@ -61,3 +61,17 @@ T.check("load of a missing file names the path") { getter_error { Kilau::Config.
 
 ENV["KILAU_SERVER_PORT"] = "4000"
 T.check("KILAU_SERVER_PORT overrides server.port") { config.int("server.port") == 4000 }
+T.check("an empty environment variable is no override: not a key, and it leaves the file's value") do
+  ENV["KILAU_SESSION_SECRET"] = ""
+  ENV["KILAU_SERVER_PORT"] = ""
+  seen = !config.key?("session.secret") && config.int("server.port") == 3000
+  ENV.delete("KILAU_SESSION_SECRET")
+  ENV["KILAU_SERVER_PORT"] = "4000"
+  seen
+end
+T.check("key? counts an environment override the file lacks") do
+  ENV["KILAU_SESSION_SECRET"] = "from-env"
+  seen = config.key?("session.secret") && config.string("session.secret") == "from-env"
+  ENV.delete("KILAU_SESSION_SECRET")
+  seen && !config.key?("session.secret")
+end

@@ -1,5 +1,9 @@
 # Katalog batas AOT
 
+**Bump 2026-11-21 (~13:11 WIB)** (user `git pull` master + `make install`; diverifikasi dari `spin clean` per paket, di baterai): compiler terpasang sekarang `2026.10.25+7123 (b1354828a)`, naik dari `+6753 (1296acff9)`; membawa K-058 bentuk 3 (#12237), K-061 (#12225), K-064 (#12235) dan tindak lanjut #12333. Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), 0 `(cached)`, exit 0, 66 dtk; `make test-cruby` exit 0; `make e2e` exit 0, 35 `ok`. 52 `repro/*.rb` vs CRuby 4.0.6: **44 identik, 8 beda**; `k058` identik penuh. Beda tersisa: `k003`, `k006`, `k007`, `k015`, `k046`, `k047` (segfault exit 139, akar masalah di entri K-047), `k050`, `k056`. TIDAK diukur: benchmark dan `yield-sweep`. Belum di master: `bbdfdd021` (nil ke parameter String).
+
+**Bump 2026-11-20 (~15:39 WIB)** (user `git pull` master + `make install`; diverifikasi dari `spin clean` per paket, AC): compiler terpasang sekarang `2026.10.25+6753 (1296acff9)`, naik dari `+6441 (b98b368a1)`; membawa K-058 bentuk 2 (#12210, MERGED 2026-11-20 08:11Z oleh matz, termasuk `d4d8d22d1`). Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), 0 `(cached)`, exit 0, 62 dtk; `make test-cruby` 29/29; `make e2e` (di `examples/blog`) exit 0, 35 `ok`. 52 `repro/*.rb` vs CRuby 4.0.6 `--enable-frozen-string-literal` (berkas ber-ARGV diberi satu argumen): **43 identik, 9 beda**, set yang sama dengan bump sebelumnya. `k058` kini beda HANYA di dua baris bentuk 3 (`NameError.new("n", :field)` -> `"n"` vs CRuby `"S[n]"`; `KeyError.new("k", ...)` -> `"k"` vs `"S[k]"`): baris `Errno::ENOENT.new` (bentuk 2) sekarang identik. Beda lain tak berubah: `k003`, `k006`, `k007`, `k015` (repro sendiri; `k015` gagal build karena `migration/migrator.rb` tak termuat), `k046` (build gagal), `k047` (segfault, exit 139; terbuka), `k050`, `k056` (penolakan bernama). TIDAK diukur: benchmark dan `yield-sweep`. Perbaikan lokal yang belum di master dan tak terpasang: shape 3 (`bb5ef3458`), K-061 (#12225 OPEN), K-064 (cabang `k064-reopen-systemcallerror-init`).
+
 **Bump 2026-11-19 (~10:10 WIB)** (user `git pull` + `make install`; diverifikasi dari `spin clean`, AC): compiler terpasang sekarang `2026.10.25+6441 (b98b368a1)`, naik dari `+6092 (a2aa05227)`; membawa K-058 bentuk 1 (#12116) dan tindak lanjutnya #12122, K-059 (#12111). Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), exit 0; `make test-cruby` 29/29; `make e2e` (di `examples/blog`) exit 0, 35 `ok`. 52 `repro/*.rb` vs CRuby 4.0.6 `--enable-frozen-string-literal`: **43 identik, 9 beda** (sebelumnya 42/10). Berubah: `k059` kini identik. Beda tersisa: `k003`, `k006`, `k007`, `k015`, `k046` (sebab sendiri/by design), `k047`, `k050` (penolakan bernama), `k056` (penolakan bernama), `k058` (hanya baris `Errno::ENOENT.new`, `NameError.new` dan `KeyError.new`, yaitu bentuk 2/3; baris runtime-raised kini identik).
 
 **Bump 2026-11-18 (~12:10 WIB)** (user `git pull` + rebuild; diverifikasi dari `spin clean`, AC): compiler terpasang sekarang `2026.10.25+6092 (a2aa05227)`, naik dari `+5778 (8a6d3fa76)`; membawa K-054 (#12058), K-055 (#12061), K-056 (#12065) dan K-057 (#12068), semuanya MERGED 2026-11-17. Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), 0 `(cached)`, exit 0 (±4 mnt 45 dtk); `make test-cruby` 29/29; `make e2e` (di `examples/blog`) blog dan blog_routes exit 0, 35 `ok`. 52 `repro/*.rb` dibandingkan dengan CRuby 4.0.6 `--enable-frozen-string-literal` (berkas yang membaca `ARGV` dijalankan dengan satu argumen): **42 identik, 10 beda**. Berubah oleh bump ini: `k054`, `k055`, `k057` kini identik dengan CRuby; `k056` kini penolakan bernama (`unsupported super in self.new of a Struct, Data, exception or native class`). Beda yang tersisa: `k003`, `k006`, `k007`, `k015` (repronya sendiri), `k046`, `k050` (penolakan bernama), dan terbuka `k047`, `k058`, `k059` (k059 masih error C `sp_IndexError_initialize`). Repro bertambah dari 49 ke 52 karena `k057`..`k059`. TIDAK diukur: benchmark dan `yield-sweep`.
@@ -268,6 +272,12 @@ Tidak ada regresi baru di luar K-017.
 | R4 | `buf << ...` di template tetap di jalur string buffer? | **terjawab: ya, buffernya** (2026-09-29 ~09:32 WIB) | Setiap `buf << ...` hasil `kilau gen templates` di-compile menjadi `sp_String_append_bin` ke satu `sp_String` yang bisa diubah (append in-place, satu salinan saat return); tak ada `templates.rb` di `--warn-widen` untuk tool/test/template_runtime_test.rb, dan `Templates.items_list` bertanda `(sp_StrArray *, const char *)`. Di blog, *nilai* yang masuk ke template ikut boxed bila pemanggilnya handler: parameter `posts_list`/`posts_show`/`posts_edit` = `sp_RbVal` ("never bound"), sedangkan `posts_new`/`posts__form` tetap `sp_Post *`. Penyebabnya K-012 (dan K-008 untuk `Post.all`), bukan template; fallback dispatch tanpa proc di Rencana 4 akan ikut menyempitkan template. |
 | R5 | FFI menangani `SQLITE_TRANSIENT` dan salinan `column_text`? | **terjawab: ya** (2026-09-28, sebelum 16:19 WIB) | `bind_text(stmt, i, s, -1, -1)` = SQLITE_TRANSIENT lewat integer literal sebagai `:ptr`; teks yang dibaca di blok `query` selamat setelah `finalize` + `GC.start` (tes `text read in a block outlives the statement`, teks Unicode dan 10 KB); out-param `sqlite3**`/`sqlite3_stmt**` lewat wrapper C `ffi_source`. Biaya: handle/statement berjalan di jalur boxed (K-006). |
 | R6 | Green thread + FFI `blocking: true` + pool tahan konkurensi? | **terjawab: ya** (2026-09-29 12:36 WIB) | Sesi benchmark `bench/results/20260929-1108` (urutan selang-seling, `SPINEL_WORKERS=8`, pool 5, WAL): di c64, `kilau` melayani S1 17.128, S2 16.339, S3 2.530, dan S4 8.815 req/s (p99 4,65 / 6,08 / 85,72 / 51,66 ms), dan `kilau-routes` 17.156 / 16.389 / 3.304 / 8.818 req/s. Di semua 24 sel Kilau (72 run terukur + 24 pemanasan): 0 status selain 200/303, 0 error selain batas waktu oha, dan 0 `busy`/`locked` di log app. S4 c64 berarti ~8.800 INSERT/dtk dari 64 koneksi lewat 5 koneksi SQLite. Sebagai pembanding, Rails (8 worker × 5 thread) menjawab satu `500` `SQLite3::BusyException` di pemanasan S4 c16 dan c64. Sebelumnya: 50 thread × insert di framework/test/db_pool_test.rb dan 200 request/32 koneksi di `make e2e`. Lihat `bench/RESULTS.md`. |
+| R7 | Respons dengan beberapa header bernama sama (`Set-Cookie`)? | **terjawab: ya** (2026-11-21 ~15:35 WIB) | `Response#add_set_cookie` menyimpan baris `Set-Cookie` di array `@set_cookies` terpisah dari `@headers` (`Hash[String,String]`, satu nilai per nama) dan `to_http` mengeluarkannya berurutan sebelum `content-length`. Tes `cookie_test.rb`: `two Set-Cookie lines come out in order before content-length`, `a Set-Cookie line with CR or LF is refused`; di kawat: `make e2e` memeriksa `the session cookie is HttpOnly` pada cookie jar curl (35 `ok` per jalan, 3 jalan). `spinel --warn-widen` pada `cookie_test.rb` dan `session_guard_test.rb` (2026-11-21): tidak ada peringatan yang menyebut `cookie.rb`, `add_set_cookie`, `set_cookies` atau `Request#cookie`; satu-satunya peringatan di `response.rb` adalah parameter `status`/`body` `Response#initialize` yang sudah lama (K-012). Batas: `set_header("set-cookie", ...)` tetap bisa dipakai berdampingan; dibiarkan. |
+| R8 | HMAC-SHA256 dan PBKDF2 lewat paket `openssl` Spinel: benar, dan berapa biayanya? | **terjawab: benar di kedua runtime; HMAC 2,7-2,9x lebih CEPAT dari CRuby, PBKDF2 7,6-8,4x lebih LAMBAT** (2026-11-21 ~15:53 WIB) | Benar: vektor RFC 7914 dan satu digest dengan sandi multibyte (`pässwörd日本`, 1000 iterasi, dibuat CRuby) lulus di `password_test.rb` pada Spinel dan CRuby; `session_test.rb` (27 cek) idem. HMAC-SHA256 hexdigest 64 B, 20.000 panggilan, terbaik dari 3, dua putaran berselang-seling (beban mesin 3,5-5; keadaan daya tidak tercatat di berkas yang disimpan): Spinel 1,15 / 1,39 us, CRuby 3,13 / 4,04 us (rasio per putaran 2,72x dan 2,91x). PBKDF2-HMAC-SHA256 600.000 iterasi (`bench/password_cost.rb`, terbaik dari 3, dua putaran): Spinel 643,5 / 684,5 ms, CRuby 77,0 / 87,9 ms: rasio 8,4x dan 7,8x, dihitung per putaran menurut urutan (643,5/77,0 dan 684,5/87,9; kedua runtime tidak dijalankan berselang-seling pada PBKDF2). Tugas 4 (laporan tugas, bukan berkas yang dikomit): 100k 105,8 vs 13,7 ms, 300k 332,3 vs 41,8, 600k 642,3 vs 85,0 (7,6x). Jadi PBKDF2 7,6-8,4x lebih lambat. Penyebab selisih (terkonfirmasi dengan membaca sumber `/usr/local/lib/spinel/packages/openssl/openssl/kdf.rb:45-71`): `OpenSSL::PKCS5.pbkdf2_hmac` di Spinel adalah loop Ruby, `(iterations - 1).times` memanggil `HMAC.digest` lalu meng-XOR hasilnya byte demi byte (`t[k] = t[k] ^ u.getbyte(k)`); CRuby memakai `PKCS5_PBKDF2_HMAC` native libssl. Konsekuensi: `Kilau::Password::DEFAULT_ITERATIONS` = 600.000 (~0,65 dtk CPU satu worker per login/daftar). Biaya login diukur di `bench/session_cost.sh`: lihat R11-nya di bawah (tabel biaya login) dan K-068 untuk satu divergensi HMAC (kunci `nil`). |
+| R9 | Angka acak aman (`SecureRandom`) dari 8 worker thread? | **terjawab: ya** (2026-11-21 ~16:00 WIB) | Tes `eight threads draw eight distinct tokens` (`session_guard_test.rb`) lulus di Spinel dan CRuby. Di bawah beban: `bench/session_cost.sh` dengan `SPINEL_WORKERS=8` memberi 0 status selain 200 pada ribuan `GET /posts` dengan cookie sesi (c16, tiap run) dan hanya 303 pada login c8 (token CSRF dibaca dari sesi di tiap request). Batas: itu menunjukkan tidak ada crash/status salah, bukan bukti statistik keacakan; ketidakunikan antar-thread hanya diuji untuk 8 token dalam satu tes. |
+| R10 | Status per-permintaan yang bertipe (`Hash[String,String]`) tanpa melebar ke poly? | **terjawab: tidak untuk isi sesi; biayanya kecil** (2026-11-21 ~15:20 WIB) | `spinel --warn-widen` (`+7123`): isi `Session` (`[]` key dan return, `[]=` key dan value, `replace`) dan return `Form.decode` melebar ke `Hash[untyped,untyped]`; `Guard#wrap/#initialize/#call` dan `Csrf.safe_verb?` melebar karena dispatcher dan `Request#request_method` sudah untyped (K-012, duck typing). Ablasi (K-069): mengganti nama `[]`/`[]=` menjadi `get`/`set` menghapus 6 dari 7 peringatan di `session.rb` dan peringatan return `Form.decode`; konstruksi bertipe di `Form.decode` (`out = {"" => ""}; out.clear`) tidak mengubah apa pun. Jadi mengganti nama keduanya menghilangkannya, sedangkan `out = {}` bukan penyebabnya; mekanismenya belum terbukti (K-069; `repro/k069_session_widen.sh`). Biaya terukur: `GET /posts` dengan cookie sesi vs tanpa, c1, sesi 4 (satu-satunya yang berkas mentahnya dikomit, `bench/results/20261121-0859-session`): 1.232,0 / 1.200,7 / 1.173,4 req/s (tanpa / valid / rusak; valid -2,5%, rusak -4,8%). Dua sesi awal (skrip versi lama, tanpa berkas mentah tersimpan) menunjukkan urutan yang sama; angkanya ada di bagian tabel. c16: dalam derau. Satu masalah lain di K-067 (non-konvergensi). |
+| R11 | Pembandingan waktu-konstan dan tidak membocorkan pengguna? | **terjawab: ya, sejauh yang bisa diukur** (2026-11-21 ~16:04 WIB) | MAC sesi dan token CSRF dibandingkan dengan `OpenSSL.fixed_length_secure_compare` setelah panjang diperiksa sama (tes `a wrong token of the same length is 403`, `a token of another length is 403`, `a tampered session cookie loses the token, so the POST is 403`, `a forged payload signed with another secret is refused`). Login email tak dikenal menjalankan satu PBKDF2 terhadap `dummy_digest`; jawaban untuk email tak dikenal dan sandi salah identik (422 `email atau sandi salah`). Waktu, 7 putaran berselang-seling `curl time_total` (`bench/session_cost.sh` bagian c, putaran terakhir, beban mesin ~9): email tak dikenal 1,06-1,14 s (satu pencilan 2,68 s di putaran pertama), sandi salah 1,13-1,19 s, sandi benar 1,08-1,17 s: tak terbedakan di derau itu. Ini bukan uji statistik serangan waktu. Pendaftaran sengaja membocorkan "email sudah terdaftar". |
+| R12 | Biaya kompilasi dan ukuran binary yang naik (kaitan K-045)? | **terjawab untuk ukuran: +13,7%; waktu build belum terselesaikan** (2026-11-21 ~15:45 WIB) | Garis dasar `1a91c13` (worktree sementara, dibangun dengan cara yang sama: `spin clean`, `kilau gen templates` + `gen routes`, lalu waktu `spin build blog`, compiler `+7123`, `-O2` bawaan; keadaan daya tidak dicatat): `build/bin/blog` **1.797.656 B** (dasar) vs **2.043.064 B** (sekarang): +245.408 B, +13,7%, sama persis di semua build (deterministik). Sumber: 23 berkas, +619/-19 baris Ruby di `framework/kilau`, `examples/blog/src`, `tool`; templat hasil generate 356 -> 537 baris. Waktu `spin build blog`, wall (`user` nyaris sama), SATU mesin yang dipakai bersama pekerjaan lain (load average 4,8-6,2): sekarang 19,4 / 19,2 / 20,0, 20,4 / 19,4 / 20,5 s vs dasar 14,0 / 14,2 / 14,6, 14,3 / 14,7 / 14,8 s (rasio 1,32-1,42, enam pasang berselang-seling); urutan dibalik: 20,2 vs 14,7, 15,8 vs 14,5, 12,7 vs 11,0 s (rasio 1,38, 1,09, 1,16). Urutan pertama, tidak berselang-seling: sekarang 12,2 / 12,1 / 10,2 s vs dasar 15,4 / 14,1 / 13,9 s (sekarang LEBIH cepat). Mutlak berubah 10 -> 20 s untuk kode yang sama antar menit, jadi hanya pasangan berselang-seling yang berarti dan itu pun rentang 1,09-1,42x: **belum ada angka waktu yang bisa dipercaya**; ulangi di mesin diam. Catatan: `spinel` terpasang dibangun dari checkout yang `config.mk`-nya masih `COPT=-O0 -g0` (K-045); fungsi daun `sp_str_byte_len` di `libspinel_rt.a` terpasang tanpa tumpahan stack (tampak optimal), tetapi biner `spinel` itu sendiri tidak diperiksa. |
 
 ## K-001: `Time.parse` tidak tersedia, dan gagal diam-diam saat compile
 - Lapisan: model
@@ -2352,7 +2362,16 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   sendiri (kelas builtin untuk gerbang wrapper: `bcls` hanya memetakan `TY_RANGE` ke "Range").
 - Repro: `repro/k047_method_obj_string_range_wrong_value.rb` (bentuk a; bentuk b ada di gejala).
 - Klasifikasi: (a) nilai salah diam-diam, kategori terburuk, tetapi bentuknya langka; (b) C error mentah.
-- Status: dicatat; belum diperbaiki; belum diajukan ke upstream.
+- Akar masalah (diukur 2026-11-20 ~17:00 WIB, master `1296acff9`; repro itu kini segfault exit 139, bukan `[]`):
+  1. `desugar_builtin_method_obj` (`src/analyze.c`) membuat wrapper `def __bam_N(__bam_r) = __bam_r.to_a`, parameter bertipe String Range.
+  2. `desugar_str_range_methods` lalu mengganti receiver `r.method(:to_a)` dengan `r.to_a` (Array), sebab `method`/`public_method` tidak ada di
+     `range_native` dan sengaja keluar dari `range_object_face` (`is_object_receiver_handoff`, `src/builtin_names.c`, untuk to_enum/instance_eval).
+  3. Codegen mengikat `self` Method ke pointer Array, tetapi thunk `sp___bam_N` menerima `sp_StrRange` by value: `.call` meneruskan pointer
+     ke parameter struct, `sp_srange_to_a` membaca alamat 0x3 (EXC_BAD_ACCESS). Compiler lama membaca sampah yang sama dan menjawab `[]`.
+  Cakupan: Range String `to_a`, `include?`, `first`, `min`, `each_slice` crash atau sampah; `size` nil kebetulan; Range Float `include?` C error; Range Integer benar.
+  Arah perbaikan (belum dikerjakan): pass `desugar_str_range_methods` membiarkan `method`/`public_method`, dan StrRange dibawa lewat slot self
+  (holder PolyArray seperti jalur `bam_poly`); minimal: penolakan bernama, bukan crash.
+- Status: akar masalah diketahui; belum diperbaiki; belum diajukan ke upstream.
 
 ## K-048: `super` tanpa argumen di `initialize` exception yang punya parameter rest -> C error mentah
 
@@ -2556,10 +2575,84 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     (`S[can't modify frozen String: ]`), punya kita menyertakannya (batas yang diketahui). `raise` tulisan program tetap memakai versi
     `initialize` per situs (`sp_raise_cls_u`). Tindak lanjut review: matz/spinel#12122 (MERGED 2026-11-18 14:03Z: cek alokasi + tes pakai `Dir.mktmpdir`).
     Diverifikasi 2026-11-19 pada kompiler terpasang `b98b368a1`: baris runtime-raised `repro/k058_*` identik; hanya bentuk 2/3 yang masih beda.
-  - **Bentuk 2, `Errno::ENOENT.new("x")`** (jalur konstruksi compiler, bukan runtime): TERBUKA, belum dikerjakan. Pesan sekarang
-    `"No such file or directory - x"`, CRuby `"S[No such file or directory - x]"` (diukur ulang di cabang #12116).
-  - **Bentuk 3, `NameError.new("n", :field)` / `KeyError.new("k", receiver: 1, key: :kk)`**: TERBUKA. Atribut benar, pesan `"n"` / `"k"`,
-    CRuby `"S[n]"` / `"S[k]"`; jalur native membaca argumen sendiri dan reopening di atasnya sengaja dilewati (#12068).
+  - **Bentuk 2, `Errno::ENOENT.new("x")`** (jalur konstruksi compiler, bukan runtime): DIPERBAIKI di fork, cabang `k058-syserr-reopen-initialize`
+    (`935bf3ace`, di-push 2026-11-20); PR matz/spinel#12210 dibuka 2026-11-20 setelah gate fork 22/22 hijau (run 44676476543, base `7e9948d6e`; merge ke master terbaru bersih, 387 tes terkait lulus di tree gabungan). Sebab sebenarnya: `syserr_initialize` CRuby membangun pesan errno lalu memanggil
+    `super` dengannya, jadi reopen di atas `SystemCallError` berjalan pada pesan JADI, apa pun argumen panggilannya. Empat jalur melewatinya:
+    arm `.new` constant-path langsung ke builder syserr; `raise Errno::X, "m"` memakai nama tanpa kualifikasi sehingga pencarian reopen tak
+    pernah ditanya; `SystemCallError.new("x")` menjalankan reopen pada "x" mentah (`S[x]`, CRuby `S[unknown error - x]`); class dalam variabel
+    (`k = Errno::EPIPE; k.new`) dibangun di fallback dinamis runtime tanpa hook. Reopen `SystemCallError`/kelas `Errno` itu sendiri tetap seperti
+    semula. Tes `exc_syserr_construct_reopen_initialize`; 387 tes exc/exception/reinit/errno/syserr/raise lulus; GC stress identik.
+  - **Bentuk 3, `NameError.new("n", :field)` / `KeyError.new("k", receiver: 1, key: :kk)`** (juga `NoMethodError.new(m, name, args)`,
+    `FrozenError.new("f", receiver:)`, `SystemExit.new(3, "bye")` dan bentuk `raise`-nya): DIPERBAIKI di fork, cabang `k058-shape3-name-key-reopen`
+    (`4d7fc7b9d`, kini di-rebase ke master `1296acff9` setelah #12210 merged = `bb5ef3458`, build+882 tes terkait lulus+`check-range` bersih, belum di-push; semula ditumpuk di atas #12210; di-push ke fork 2026-11-20 dan dibuka sebagai PR fork yosefbennywidyo/spinel#51 dengan base `k058-syserr-reopen-initialize`; BELUM ada PR upstream, gate fork belum dijalankan). `initialize` bawaan kelas-kelas itu membaca argumennya sendiri lalu memanggil
+    `super` dengan pesan saja, jadi reopen `StandardError`/`Exception` berjalan pada pesan itu sementara name/key/receiver/status tetap tercatat.
+    Konstruksi native dipertahankan dan reopen dijalankan sesudahnya (pembungkus yang sama dengan bentuk 2). Reopen kelas itu sendiri, atau kelas
+    di antaranya dan `StandardError` (reopen `NameError` di bawah `NoMethodError`), mendapat argumen lain dari CRuby, jadi dibiarkan seperti semula.
+    Tes `exc_native_args_construct_reopen_initialize`; 531 tes terkait lulus; GC stress identik; `check-range` bersih tanpa pertumbuhan fungsi.
+
+## K-060: `class Errno::ENOENT; def initialize ...; end; end` (reopen kelas Errno itu sendiri) gagal dikompilasi C
+
+- Lapisan: compiler, reopen builtin exception di famili `Errno::*`.
+- Ditemukan: 2026-11-20 ~11:40 WIB, saat memperbaiki K-058 bentuk 2 (compiler `7e9948d6e`); sama pada kompiler terpasang, jadi bukan akibat perbaikan itu.
+- Gejala: `class Errno::ENOENT; def initialize(m = nil) = super("E[#{m}]"); end` lalu `Errno::ENOENT.new("a")` gagal di C:
+  `use of undeclared identifier 'sp_2_pool_count'` / `'sp_2_pool_max'` (makro `SP_POOL_DEFINE`). CRuby `"No such file or directory - E[a]"`.
+- Klasifikasi: C compile error (melanggar kontrak "penolakan bernama, bukan error C"). BELUM diselidiki. Reopen `StandardError` di atasnya sehat.
+- Repro: lihat gejala; belum ada berkas `repro/`.
+
+## K-061: `KeyError.new("k", **kw)` tidak mencatat `key`/`receiver` dari hash keyword dinamis
+
+- Lapisan: compiler, konstruksi exception native. Ditemukan 2026-11-20 saat bentuk 3 K-058 (master `7e9948d6e`+#12210).
+- Gejala: `kw = {receiver: 3, key: :q}; x = KeyError.new("kw", **kw); x.key` -> ArgumentError "no key is available" (CRuby `:q`, `x.receiver` 3).
+  Juga `**{key: :lit}`, `NameError.new("n", :f, **h)`, `NoMethodError.new(m, name, args, **h)` dan `FrozenError.new("f", **h)` (receiver hilang).
+  Dengan keyword literal benar. Tanpa reopen apa pun, jadi bukan akibat K-058.
+- Sebab: arm compile-time untuk kelas-kelas ini hanya membaca keyword literal `key:`/`receiver:`; hash dengan elemen `**h` jatuh ke konstruktor pesan biasa.
+- Perbaikan (fork, cabang `k061-keyerror-kwsplat`, `98f34d781`, dari master `d309cbff1`, di-push 2026-11-20; PR matz/spinel#12225 dibuka 2026-11-20 setelah gate fork 22/22 hijau, run 44692393077, base `d309cbff1`; merge ke master `e3f10570c` bersih, 615 tes terkait lulus di tree gabungan):
+  panggilan seperti itu mengambil jalur `.new(*args)` yang sudah ada (run time mengumpulkan argumen dan membaca hash keyword seperti initialize,
+  termasuk ArgumentError untuk keyword tak dikenal). Kondisinya ada di helper `exc_new_args_at_run_time` supaya `emit_new_call_arms` tak bertambah.
+  Subclass dan `super(msg, **o)` sudah lewat jalur itu. Tes `exc_kwsplat_attrs_construct`; 617 tes terkait lulus; `check-range` bersih.
+- Catatan interaksi: dengan reopen `StandardError#initialize`, `KeyError.new("a", **kw).message` baru benar (`S[a]`) setelah shape 3 (#51) bergabung dengan ini.
+
+## K-062: `NoMatchingPatternKeyError#key` tidak ada saat runtime
+
+- Lapisan: compiler/runtime. Ditemukan 2026-11-20. `NoMatchingPatternKeyError.new("nm", matchee: {a: 1}, key: :b).key` -> NoMethodError
+  "undefined method 'key'" saat runtime (CRuby `:b`); `#matchee` ditolak bernama saat kompilasi. Belum diselidiki: refusal bernama vs implementasi.
+
+## K-063: `UncaughtThrowError.new(tag, value, fmt)` tidak memformat pesan
+
+- Lapisan: compiler, konstruksi exception native. Ditemukan 2026-11-20. `UncaughtThrowError.new(:t, 1, "tag %p").message` -> `"t"` (CRuby
+  `"tag :t"`). Tanpa reopen apa pun. Belum diselidiki.
+
+## K-064: reopen `SystemCallError#initialize` itu sendiri gagal dikompilasi C (PR matz/spinel#12235 OPEN, gate fork 23/23 hijau, run 44699756156)
+
+- Lapisan: compiler, analisis keterjangkauan. Ditemukan 2026-11-20 lewat temuan CodeRabbit di #12210; ada sebelum #12210.
+- Gejala: `class SystemCallError; def initialize(m = nil) = super("SCE[#{m}]"); end` (bahkan hanya itu + `p 1`) -> C: `call to undeclared function
+  'sp_SystemCallError_initialize'`. Juga `LoadError`, `NoMemoryError`, `SystemStackError` (4 kelas; diukur dengan menjalankan semua kelas Exception CRuby).
+- AKAR MASALAH (diukur dengan instrumentasi sementara, bukan dugaan): loop emisi (codegen.c) melewati scope yang `reachable=0`; scope
+  `SystemCallError#initialize` memang `reachable=0`, sedangkan `IOError#initialize` `reachable=1`. Di analyze.c `cr_live_reach_as` menahan method
+  instance akar (initialize) selama `held_i[k]` (kelas dianggap tak pernah dibangun), dan `cr_live_start` hanya membuka kelas yang bukan
+  `cr_live_gated`. `cr_live_gated` mengecualikan kelas ber-`is_builtin_const`, diisi dari `is_builtin_class_name(name)`; keempat kelas itu hanya
+  exception (bukan nama kelas builtin), jadi `gated=1` dan initialize-nya tak dijangkau, sementara dispatcher hook `sp_user_exc_reinit`
+  memanggilnya. Reopen `StandardError`/`KeyError`/`IOError`/dll tak terkena karena nama kelas builtin.
+- Perbaikan: `cr_live_runtime_built` (analyze.c): kelas exception builtin tak ditahan karena runtime membangunnya tanpa `new` di program.
+  Cabang `k064-reopen-systemcallerror-init` (`a809c6fab`, satu commit di atas master `e3f10570c`, bebas dari #12210). Tes
+  `exc_reopen_unbuilt_exception_initialize` (4 error C tanpa perbaikan, PASS dengan); 906 tes terkait lulus; `check-range` bersih. Di-push ke fork 2026-11-20; gate fork `gate/k064-reopen-systemcallerror-init` (`902e9277d`) run 44699756156 dimulai setelah fork dipastikan kosong (0 run aktif); PR upstream belum dibuka.
+- Sisa yang TERUKUR dan terpisah:
+  - `class Errno::ENOENT` (reopen kelas Errno itu sendiri, K-060): tabel kelas menyimpannya dengan nama daun `ENOENT`, jadi `emit_class_new`
+    (`is_builtin_reopen(nama)`) memperlakukannya sebagai kelas program: struct `sp_ENOENT` + `SP_POOL_DEFINE(ENOENT)` -> `sp_2_pool_count`.
+    `excf_fill` (`is_exc_name(nama daun)`) juga tak mengenalinya sebagai reopen. Akarnya nama daun vs nama berkualifikasi; belum diperbaiki.
+  - K-066: setelah K-064 terkompilasi, `Errno::ENOENT.new("x")` dan `raise Errno::EPIPE, "z"` tetap tak menjalankan reopen `SystemCallError`
+    (`"No such file or directory - x"`, CRuby `"SCE[x]"`: CRuby menjalankan reopen itu pada argumen mentah dan `super` menimpa pesan errno).
+    Di kode #12210 `exc_builtin_reopen_initialize` mengembalikan -1 untuk famili syserr dan `syserr_reinit_initialize` menolak pemilik syserr; ini
+    persis temuan CodeRabbit nomor 2: reopen milik famili syserr harus lewat jalur argumen mentah, hanya reopen DI ATAS `SystemCallError` lewat
+    pesan jadi. Perlu cabang yang ditumpuk di #12210.
+  - `File.open` pada path tak ada: CRuby memanggil `initialize(path, "rb_sysopen")` (dua argumen terpisah); hook kita memberi pesan jadi. Beda dan tak terkait K-064.
+
+## K-065: block konstruktor tidak diteruskan ke `initialize(&blk)` reopen pada konstruksi `Errno::*`
+
+- Lapisan: compiler. Ditemukan 2026-11-20 lewat temuan CodeRabbit di #12210; sama sebelum #12210 (reopen tak berjalan di jalur ini, jadi tak terlihat).
+- Gejala: `class StandardError; def initialize(m = nil, &blk) = (@b = blk; super("S[#{m}]")); end` lalu `Errno::ENOENT.new("x") { :ok }.b` -> nil
+  (CRuby `Proc`); `ArgumentError.new("y") { :ok }.b` benar (Proc). Pembungkus `syserr_reinit_*` memanggil `emit_reinit_init_text`, yang menambah `NULL`
+  untuk `&blk`; perlu `emit_ctor_block_slot` milik panggilan. Belum diperbaiki.
 
 ## K-059: `initialize` reopen builtin exception yang memakai parameter block-nya gagal dikompilasi C
 
@@ -2650,3 +2743,83 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   build/ukuran masih terbuka. Langkah berikut: user memasang ulang spinel tanpa `COPT=-O0` (atau `make install COPT=-O2`),
   lalu ukur ulang S3 dan tabel server.
 
+
+## K-067: variabel lokal yang menunjuk atribut objek, dioper ke fungsi yang memanggil `[]=` padanya, lalu ditulis lagi: "type inference did not converge in 128 rounds"
+
+- Lapisan: compiler (inferensi tipe). Ditemukan 2026-11-21 saat Tugas 3 irisan kedua (sesi/CSRF), dibuat ulang di compiler `2026.10.25+7123 (b1354828a)` pada 2026-11-21 ~15:30 WIB.
+- Gejala: `repro/k067_local_attr_index_assign_no_converge.rb` (program murni Ruby, 21 baris, tanpa kode Kilau) mencetak
+  `spinel: warning: type inference did not converge in 128 rounds; the output may be built from unsettled types (please report this program)`.
+  Binary tetap terbentuk dan mencetak `1`, sama dengan CRuby; yang rusak adalah jaminan tipenya (keluaran dibangun dari tipe yang belum stabil), jadi program yang lebih besar bisa salah diam-diam.
+- Bentuk pemicu: `jar = r.session` (atribut objek) -> `tok(jar)` (fungsi yang melakukan `s["csrf"] = ...` pada argumennya) -> `jar["user"] = "7"` (tulis lagi lewat variabel lokal).
+- Ablasi yang dijalankan (satu detail dilepas, sisanya sama; 2026-11-21 ~15:30 WIB):
+  - `r.session` dipakai langsung, tanpa variabel lokal (`repro/k067b_attr_index_assign_direct_converges.rb`): konvergen, tanpa peringatan.
+  - memanggil `jar.put("user", "7")` dengan `def put` menggantikan `def []=` (kedua tempat): konvergen. **Nama `[]=` ikut menentukan**; ini ablasi yang paling informatif.
+  - tanpa pemanggilan `tok(jar)`: konvergen. Tanpa tulis kedua `jar["user"] = ...`: konvergen. `tok` diganti tulis `jar["csrf"] = "abc"` langsung (tanpa fungsi): konvergen. Jadi ketiganya (lokal, fungsi, tulis kedua) perlu.
+  - Dilaporkan Tugas 3 (tidak diulang di sini): menulis SEBELUM memanggil fungsi juga gagal; ivar awal non-nil juga gagal.
+- Akar masalah: **belum ditemukan**. Yang terbukti hanya syarat di atas. Belum dibaca/diinstrumentasi `analyze_infer*.c` untuk menemukan slot mana yang tak berhenti bergeser.
+- Klasifikasi: bug compiler (peringatan non-konvergensi; hasil tetap benar pada repro). Belum ada issue/PR di spinel; kandidat perbaikan (pengguna memutuskan).
+- Dampak di Kilau dan solusi: handler dan `Page.for` memanggil `request.session[...]` langsung, tidak pernah mengikatnya ke variabel lokal yang kemudian ditulis; stub di `framework/test/session_guard_test.rb` menjelaskannya. `make test` memuat tak satu pun peringatan ini.
+
+## K-068: `OpenSSL::HMAC` dengan kunci `nil` (lewat parameter) atau data `nil` tidak raise di Spinel; CRuby raise TypeError
+
+- Lapisan: paket `openssl` Spinel (`/usr/local/lib/spinel/packages/openssl/openssl/digest.rb`, `HMAC.hexdigest` / `HMAC.digest`). Ditemukan 2026-11-21 saat Tugas 2; diukur ulang ~15:35 WIB di `+7123`.
+- Gejala (`repro/k068_hmac_nil_key_does_not_raise.rb`; keluaran CRuby 4.0.6 vs Spinel):
+  - `mac(nil, "x")` lewat parameter yang juga menerima String: CRuby `TypeError`; Spinel `4cbc9609...` (HMAC kunci kosong).
+  - `HMAC.hexdigest("SHA256", "k", nil)`: CRuby `TypeError`; Spinel `8bb990c4...` (HMAC data kosong).
+  - Pemanggilan dengan `nil` literal sebagai kunci: berbeda menurut program. Di program yang parameternya hanya pernah menerima `nil` Spinel raise `TypeError` seperti CRuby (diukur di skrip uji sementara); di `repro/k068...rb` (parameter juga menerima String) ia mengembalikan digest kunci kosong. Perilakunya bergantung pada tipe yang disimpulkan, bukan satu aturan.
+- Akar masalah (terukur sebagian): `HMAC.hexdigest` meneruskan `key`/`data` langsung ke `Crypto.hmac_sha256_hex(key, data)` tanpa pemeriksaan nil, dan digest yang keluar sama dengan digest string kosong, jadi `nil` dibaca sebagai `""`. Bagian runtime/FFI di bawahnya tidak dibaca.
+- Klasifikasi: divergensi perilaku dengan CRuby di paket stdlib; berbahaya untuk kunci (rahasia kosong menandatangani diam-diam).
+- Dampak di Kilau: `Kilau::Session#initialize` raise `ArgumentError` untuk rahasia `nil` atau kosong (tes `nil secret raises` di `framework/test/session_test.rb`), sehingga perilaku sama di kedua runtime. `Password` memvalidasi `nil`/kosong sebelum PBKDF2.
+
+## K-069: method `[]` / `[]=` buatan sendiri (`Kilau::Session`) melebar ke untyped; mengganti nama keduanya menghapus pelebaran itu
+
+- Lapisan: inferensi tipe compiler; pengamatan kinerja, BUKAN bug kebenaran (semua tes lulus). Jawaban untuk R10, lihat di tabel.
+- Ditemukan: 2026-11-21 saat Tugas 2; ablasi dijalankan ~15:20 WIB di `+7123` (salinan sementara `framework/`, program uji `Session.new` -> `[]=` -> `[]` -> `to_cookie_value` -> `Session.load`).
+- Pengukuran (`spinel --warn-widen`, jumlah peringatan yang menyebut `session/session.rb`; `http/form.rb` dihitung terpisah):
+  - dasar: 7 peringatan di `session.rb` (`[]` key dan return, `[]=` key dan value, `delete` key, `replace` data dan return) dan 3 di `form.rb` (return `decode`, param `encode`/`unescape`).
+  - `[]` dan `[]=` diganti nama `get`/`set`: 1 peringatan di `session.rb` (`delete` key), 2 di `form.rb`; **return `Form.decode` tidak lagi melebar**, dan `replace` tidak lagi melebar.
+  - hanya `[]` diganti: 6 di `session.rb` (`[]=` key dan value dan `replace` tetap). Hanya `[]=` diganti: 5 (`[]` dan `replace` tetap).
+  - `Form.decode` dengan konstruksi bertipe (`out = {"" => ""}; out.clear`): TIDAK ada perubahan (7 dan 3 peringatan; return `decode` tetap Hash[untyped, untyped]). Teori "akarnya `out = {}`" (Tugas 2) gugur.
+  - `delete` tetap melebar walau `[]`/`[]=` diganti nama; nama `delete` mungkin ikut slot dengan `Hash#delete`, tidak diuji.
+- Catatan kompiler pada baseline menyebut `route_trie.rb:36` dan `uri.rb` sebagai sumber nilai yang masuk ke slot `[]=` (`passed 'segment' is untyped`): pemanggil `[]=` lain di program ikut membentuk slot method bernama `[]=` milik `Session`. Pembuktian itu belum ada: upaya membuat repro kecil dua kelas dengan `[]=` yang saling melebarkan (2026-11-21) TIDAK menghasilkan pelebaran lintas-kelas, jadi tidak ada repro minimal; `repro/k069_session_widen.sh` hanya driver non-minimal.
+- Repro: `repro/k069_session_widen.sh` (skrip shell, bukan `.rb`, supaya tak ikut perbandingan `repro/*.rb`; bukan repro minimal karena seluruh kerangka dianalisis). Ia menghitung peringatan yang menyebut `session.rb` pada `framework/test/session_test.rb`, lalu pada salinan sementara dengan `[]`/`[]=` diganti `get`/`set` (beserta pemanggil di tes), dan menghapus salinannya. Keluaran terukur 2026-11-21 ~21:19 WIB, `+7123`, dengan skrip yang kini menulis ulang SEMUA titik panggil Session dan berhenti bila ada yang terlewat: **original: 9 peringatan** (`secret` pada `load`, `verified_hex` dan `initialize`; `key` pada `reserved?`; `[]` key dan return; `[]=` key dan value; return `replace`), **renamed: 3** (hanya ketiga `secret`, yang tidak ada hubungannya dengan `[]`/`[]=`). Jadi mengganti nama menghilangkan 6 dari 9. Angka sebelumnya di entri ini (6 menjadi 0, diukur 2026-11-21 ~16:25 WIB) tidak valid dua kali: tes sesi waktu itu lebih pendek, dan skrip lama tidak menulis ulang semua pemanggil (mis. `Kilau::Session.load(...)["k"]`, `rs[...]`, `other[...]`), sehingga bandingannya tidak setara; ulasan CodeRabbit pada PR #3 menunjuknya. (Hitungan 7 di atas memakai program uji lain, yang juga memanggil `delete`.)
+- Akar masalah: terukur hanya sampai "mengganti nama `[]`/`[]=` menghilangkan peringatan"; mekanisme penggabungan tidak terbukti. Biaya: lihat R10.
+- Klasifikasi: batas inferensi (kinerja). Kilau tidak mengubah nama `[]`/`[]=` karena `session["user_id"]` adalah API Rails-like yang dituju.
+
+## Irisan kedua (sesi, CSRF, autentikasi): fakta desain dan tabel pengukuran
+
+Fakta desain yang harus diketahui pengguna kerangka ini (diperiksa terhadap kode dan `make e2e`, 2026-11-21):
+
+- **Sesi = cookie bertanda tangan, tanpa penyimpanan di server.** Isinya `<hex(Form.encode)>.<hex HMAC-SHA256>` dengan nama `kilau_session`, `Path=/; HttpOnly; SameSite=Lax; Max-Age=1209600` (14 hari). Konsekuensi: **keluar (`POST /logout`) hanya mengosongkan salinan di klien.** Cookie lama yang disalin sebelum keluar tetap sah selama umurnya: server memaksa umur mutlak 14 hari sejak tulis terakhir (payload memuat waktu terbit `_iat`, kunci cadangan yang tak bisa dibaca/ditulis kode aplikasi; cookie lebih tua dari `Session::MAX_AGE`, bertanggal lebih dari 60 dtk di depan, atau tanpa stempel dimuat sebagai sesi kosong; stempel diperbarui tiap cookie ditulis ulang, jadi hanya berubah bila sesi berubah). Tak ada pencabutan, tak ada penghitung sisi server, dan **tak ada rotasi kunci**: mengganti rahasia mengeluarkan semua orang. Menutupnya butuh penyimpanan sesi di server (di luar irisan ini). Isi cookie TIDAK dienkripsi, hanya ditandatangani: jangan simpan rahasia di sesi (hanya `user_id` dan token CSRF).
+- **`Kilau::Session::Guard` membungkus dispatcher apa pun** (`Guard.wrap(dispatcher, app_context)`), jadi dispatcher hasil `kilau gen routes` tidak berubah. Opt-in: aktif bila konfigurasi punya `session.secret` atau `session.enabled`. Tanpa rahasia, hanya lingkungan bernama persis `development` (satu peringatan stderr) dan `test` (diam) memakai kunci bawaan; SEMUA nama lain (`production`, `staging`, `Production`, ...) menolak boot dengan `Config::Error` (itu untuk biner Spinel; di bawah `Kilau::RackApp`, hanya CRuby, aplikasi dibangun pada request pertama, jadi rahasia yang hilang baru menimbulkan `Config::Error` di sana dan server Rack menjawab 500, bukan gagal boot), dan di luar keduanya rahasia minimal 32 byte (`openssl rand -hex 32`). `KILAU_SESSION_SECRET` menimpa berkas (`make e2e` menjalankan satu putaran dengan itu: tanpa peringatan).
+- **Pemeriksaan CSRF terjadi sebelum routing**: `PUT /posts` tanpa token menjawab 403, bukan 405. Verb yang diperiksa adalah verb kawat (mengganti dengan `_method` tidak menghindarinya). Token ada di sesi (`csrf`) dan dikirim sebagai kolom form `authenticity_token`.
+- **Templat menerima satu argumen `page`** (`Kilau::Page`: `user_email`, `token`, `layout`), bukan dua string, karena argumen layout harus ada di setiap templat yang meng-extend-nya. `Page.for(request)` memanggil `Csrf.token(request.session)` langsung (K-067).
+- **Pemilihan layout per platform** (`web`/`app`/`android`/`ios`) belum ada; `Page#layout` selalu `"web"`. Rancangan dan hasil spike ada di `docs/HANDOFF.md`.
+- `require_login` hanya memeriksa `session["user_id"]` tak kosong: user yang dihapus dari DB dengan cookie hidup tetap lolos (belum ada penghapusan user). Pendaftaran terbuka dan membocorkan "email sudah terdaftar" (sengaja); login tidak.
+
+Tabel pengukuran (`bench/session_cost.sh`; blog `-O2` bawaan, 8 worker (`SPINEL_WORKERS=8`), pool 5, `KILAU_ENV=production`, `GET /posts` dengan 100 post; oha 10 dtk x 3 ulangan, terbaik dari tiga, req/s; p50/p99 ms dari ulangan terbaik). Compiler `2026.10.25+7123 (b1354828a)`. **Mesin dipakai bersama pekerjaan lain (load average 4-9) selama sesi 2-4, jadi bandingkan baris hanya di dalam satu sesi dan dengan hati-hati.** Daya: hanya sesi 4 tercatat di berkas yang disimpan (`bench/results/20261121-0859-session/meta.txt`: baterai, 78% di awal dan 77% di akhir, Low Power Mode mati); keadaan daya sesi lain tidak tercatat di berkas yang disimpan. **Hanya sesi 4 punya berkas mentah yang dikomit; sesi 1-3 (dan pengukuran jumlah worker) berasal dari versi skrip yang lebih lama dan hanya ada di prosa ini dan di laporan tugas, jadi kesimpulan bertumpu pada sesi 4.**
+
+| Sesi | beban awal | cookie | c1 req/s (p50/p99) | c16 req/s (p50/p99) |
+|---|---|---|---|---|
+| 1 (skrip lama, tanpa berkas tersimpan; beban tak dicatat) | - | tanpa | 2.570,7 (0,37/0,56) | 2.830,9 (5,45/12,40) |
+| | | valid | 2.478,7 (0,39/0,55) | 2.686,2 (5,16/18,95) |
+| | | rusak | 2.347,0 (0,41/0,61) | 2.844,7 (5,35/12,77) |
+| 2 (skrip lama, tanpa berkas tersimpan; beban ~6) | 5,9 | tanpa | 1.376,4 (0,68/1,30) | 2.255,0 (4,70/37,13) |
+| | | valid | 1.349,7 (0,70/1,24) | 2.072,9 (5,28/38,14) |
+| | | rusak | 1.340,9 (0,69/1,26) | 2.181,8 (5,48/34,57) |
+| 4 (berkas dikomit; baris berselang-seling, beban awal ~7,5) | 7,6 | tanpa | 1.232,0 (0,71/1,76) | 2.402,1 (6,09/18,65) |
+| | | valid | 1.200,7 (0,72/2,09) | 2.404,4 (5,69/21,52) |
+| | | rusak | 1.173,4 (0,74/2,19) | 2.539,2 (5,99/14,82) |
+
+Sesi 3 (urut per baris, beban ~7) dibuang: ulangan baris pertama jatuh 2.302 -> 1.614 -> 1.352 di tengah jalan (beban berubah). Pembacaan: di c1 urutan tanpa cookie > cookie valid > cookie rusak muncul di semua sesi, dengan selisih valid 1,9-3,6% dan rusak 2,6-8,7% di bawah tanpa cookie (sesi 4, yang dikomit: valid 2,5%, rusak 4,8%); di c16 selisihnya di dalam derau antar-ulangan (satu ulangan c16 sampai 20% di atas lainnya dalam sesi 4). Cookie rusak sedikit lebih lambat dari valid di c1 (dugaan, tidak diuji: sesi baru + token baru + `Set-Cookie`). Satu HMAC verifikasi ~1-1,4 us (R8), jadi biaya sesi yang terukur lebih besar dari HMAC itu sendiri; sumbernya tidak dipisahkan (pencarian email user di DB untuk nav, decode form, token).
+
+Biaya login (`POST /login`, token dan sandi benar), per sesi (jumlah ulangan: 3; hanya sesi 4 berkas dikomit):
+
+| Sesi | 5 login berurutan (curl, dtk) | oha c1 login/s (3 ulangan) | oha c8 login/s (3 ulangan) |
+|---|---|---|---|
+| 1 (tanpa berkas) | 0,750-0,765 | 1,4 [1,4 1,4 1,4] | 4,2 [3,9 3,6 4,2], p50 1.762 ms, p99 3.563 ms |
+| 2 (tanpa berkas) | 1,029-1,051 | 1,1 [1,0 1,1 1,0] | 4,4 [3,7 4,4 4,0] |
+| 3 (tanpa berkas) | 1,171-1,213 | 1,1 [0,9 1,0 1,1] | 4,5 [3,6 4,5 4,0] |
+| 4 (dikomit) | 0,856-0,868 | 1,1 [1,1 0,9 0,8] | 2,8 [2,7 2,8 2,8], p50 2.856 ms, p99 5.829 ms |
+
+Jawaban untuk pertanyaan "8 worker, ~640 ms PBKDF2 per login": **satu proses menopang jauh di bawah 8/0,64 = 12,5 login/dtk**: 2,8 login/dtk di sesi 4 (satu-satunya yang berkas mentahnya dikomit, mesin dibebani, load average ~8) dan 4,2-4,5 di sesi 1-3 (tanpa berkas tersimpan; sekitar 3x satu worker). Pengukuran tambahan tanpa berkas tersimpan (urut, beban tak dicatat, ulangan 3) mengubah `SPINEL_WORKERS`: 1 worker 1,6 login/s di c8 (c1 1,5), 4 worker 3,0 (c1 1,5), 8 worker 4,4 (c1 1,5). Naiknya tidak linear; penyebabnya (jumlah core efektif, kunci GC/alokator, thread Spinel) TIDAK diuji. Satu login memakai ~0,64 dtk CPU untuk PBKDF2 saja (R8) dan 0,86 dtk di sesi 4 (dikomit, mesin dibebani; sesi lama tanpa berkas: 0,75-1,2 dtk); selama itu worker yang melayaninya tidak melayani request lain di thread itu. Pelajaran: jangan taruh login di proses yang sama dengan halaman latensi-rendah tanpa membatasi laju, atau turunkan `DEFAULT_ITERATIONS`.

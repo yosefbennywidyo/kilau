@@ -1,0 +1,26 @@
+ok normalize_email strips and downcases
+ok a plain address is valid
+ok an empty address is not valid
+ok no @ is not valid
+ok two @ are not valid
+ok an empty local part is not valid
+ok an empty domain is not valid
+ok whitespace inside is not valid
+ok 254 characters is valid, 255 is not
+ok a valid registration returns the user and no errors
+ok the email is stored normalized
+ok the digest is a pbkdf2 digest, not the password
+ok find_by_email finds it
+ok find_by_email of another address is nil
+ok authenticate? accepts the password
+ok authenticate? refuses another
+ok the same address in other case and spacing is refused
+ok the database refuses a duplicate that slipped past the lookup
+ok create works for a new address
+ok an invalid email and a short password are both reported
+ok seven characters are too short
+ok eight characters pass
+ok the minimum counts characters, not bytes
+ok eight multibyte characters pass
+ok a password over the byte cap is refused
+ok it is refused before any row is written

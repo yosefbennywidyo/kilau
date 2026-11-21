@@ -1,0 +1,11 @@
+ok a page keeps the email and the token
+ok the layout defaults to web
+ok Page.new(a, b).layout is web
+ok a page with an email is signed in
+ok a page with an empty email is a guest
+ok a layout can be named
+ok Page.for(request).layout is web
+ok Page.for defaults to a guest
+ok Page.for carries the session's CSRF token
+ok Page.for without sessions says so instead of a nil error
+ok Page.for takes the email it is given

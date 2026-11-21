@@ -137,6 +137,10 @@ T.check("the 404 page escapes the path") { client.get("/<script>").body.include?
 T.check("broken percent-encoding in a form is 400") { client.post("/notes", { "raw" => "x" }).status == 303 && client.get("/notes?q=%zz").status == 400 }
 missing = client.get("/crash/missing")
 T.check("a raised NotFound is 404 with its message escaped") { missing.status == 404 && missing.body.include?("no such &lt;note&gt;") }
+T.check("a raised Forbidden reaches the wire as 403 Forbidden") do
+  forbidden = Kilau::Dispatcher.new(Kilau::AppRoutes.new.add(Kilau::Routes.new.prefix("x").add("/", NotesController.get { |c, r| raise Kilau::Error::Forbidden })), app_context).call(Kilau::Request.new("GET", "/x", "HTTP/1.1", {}, ""))
+  forbidden.status == 403 && forbidden.to_http(false).start_with?("HTTP/1.1 403 Forbidden\r\n") && forbidden.body.include?("forbidden")
+end
 T.check("a raised Unauthorized is 401") { client.get("/crash/private").status == 401 }
 crashed = client.get("/crash")
 T.check("an unexpected exception is 500 without its message") { crashed.status == 500 && !crashed.body.include?("boom") }

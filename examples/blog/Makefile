@@ -48,3 +48,7 @@ e2e: all
 	  KILAU_DATABASE_PATH=$(E2E_DB) ./build/bin/$$bin db migrate || exit 1; \
 	  echo "== $$bin"; BIN=$$bin ./e2e.sh $(E2E_DB) || exit 1; \
 	done
+	rm -f $(E2E_DB) $(E2E_DB)-wal $(E2E_DB)-shm
+	KILAU_DATABASE_PATH=$(E2E_DB) ./build/bin/blog db migrate
+	echo "== blog with KILAU_SESSION_SECRET set (the env override, no warning)"; \
+	KILAU_SESSION_SECRET=$$(LC_ALL=C tr -dc 'a-f0-9' < /dev/urandom | head -c 64) BIN=blog ./e2e.sh $(E2E_DB)

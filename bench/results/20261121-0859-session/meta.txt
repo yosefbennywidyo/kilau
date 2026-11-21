@@ -1,0 +1,21 @@
+note: edited after the run (battery id and process names removed); the section headers differ from what session_cost.sh writes today
+date: 2026-11-21T08:59:25Z
+spinel: spinel 2026.10.25+7123 (b1354828a) [apple clang 21.0.0 (cc)]
+build: 2043064 bytes, built with the spin default (no -O flag from spin; compiler default optimization)
+workers: 8 (SPINEL_WORKERS), pool 5, WAL, KILAU_ENV=production, request log off
+oha: oha 1.16.0  duration 10s x 3 reps, best by req/s
+--- pmset -g batt (start)
+Now drawing from 'Battery Power'
+	78%; discharging; 3:23 remaining present: true
+--- lowpowermode
+ lowpowermode         0
+--- load average at start
+7.53 7.25 6.59
+valid cookie: 223 bytes; tampered differs in the last char
+--- pmset -g batt (end)
+Now drawing from 'Battery Power'
+	77%; discharging; 3:15 remaining present: true
+--- load average at end
+8.32 8.13 7.20
+--- server log lines (not request lines)
+1

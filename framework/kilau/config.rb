@@ -104,7 +104,11 @@ module Kilau
       @source = source
     end
 
-    def key?(path) = @values.key?(path)
+    # An environment override counts: KILAU_SESSION_SECRET is a key even when
+    # the file has none.
+    # An empty variable (a templated deploy that leaves it blank) is no override at all,
+    # here and in lookup, so it can neither make a key exist nor blank a value from the file.
+    def key?(path) = @values.key?(path) || !env_override(path).nil?
 
     def string(path) = lookup(path)
 
@@ -128,13 +132,18 @@ module Kilau
     def env_name(path) = "KILAU_" + path.upcase.tr(".", "_")
 
     def lookup(path)
-      from_env = ENV[env_name(path)]
+      from_env = env_override(path)
       return from_env unless from_env.nil?
       value = @values[path]
       raise Error, "#{@source}: missing key #{path}" if value.nil?
       value
     end
 
-    def quoted_in_file?(path) = ENV[env_name(path)].nil? && @quoted.key?(path)
+    def env_override(path)
+      value = ENV[env_name(path)]
+      value.nil? || value.empty? ? nil : value
+    end
+
+    def quoted_in_file?(path) = env_override(path).nil? && @quoted.key?(path)
   end
 end

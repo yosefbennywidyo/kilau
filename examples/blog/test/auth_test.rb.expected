@@ -1,0 +1,47 @@
+ok the sign-in form renders with a token and sets the session cookie
+ok the sign-up form renders with a token
+ok a guest's pages offer sign in and sign up
+ok a valid sign-up redirects to the posts
+ok the sign-up logs the user in
+ok the sign-up replaces the session: new cookie and new token (no fixation)
+ok the nav shows the signed-in email
+ok the nav offers sign out, not sign in
+ok a duplicate address in other case and spacing is a 422, not a 500
+ok the refused sign-up does not log in
+ok an invalid address is a 422
+ok seven characters are refused
+ok the refused address stays free
+ok eight characters pass
+ok a 1025-byte password is a 422, refused before hashing
+ok the sign-up form never echoes the password
+ok a sign-up without a token is a 403
+ok a wrong password is a 422 with the one message
+ok an unknown address is the same 422 and message
+ok the two responses are identical apart from the echoed address
+ok neither response logs in
+ok the form never echoes the password
+ok a sign-in without a token is a 403
+ok the right password redirects to the posts
+ok the user is logged in after it
+ok the session cookie changes at login (no fixation)
+ok the CSRF token changes at login
+ok a sign-out without a token is a 403 and keeps the session
+ok sign-out redirects to the root
+ok sign-out empties the session
+ok the old token is dead after sign-out
+ok a guest's new form is a redirect to /login
+ok a guest's edit form is a redirect to /login
+ok a guest's POST /posts is a redirect to /login
+ok a guest's PATCH is a redirect to /login, before any lookup
+ok a guest's DELETE is a redirect to /login, before any lookup
+ok a POST without a token is a 403, not a redirect
+ok nothing was written by a guest
+ok a signed-in user can create a post
+ok a guest can read the list
+ok a guest can read a post
+ok every form on every page carries the token
+ok an address with an HTML-special character signs up
+ok it is escaped in the nav
+ok a tag-shaped address signs up
+ok it is escaped in the nav and never raw
+ok a re-rendered sign-up escapes what was typed

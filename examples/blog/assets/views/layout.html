@@ -1,8 +1,16 @@
-{#- args: -#}
+{#- args: page -#}
 <!doctype html>
 <html lang="id">
 <head><meta charset="utf-8"><title>{% block title %}Kilau{% endblock %} · Kilau</title></head>
 <body>
+<nav>
+{% if page.signed_in? %}
+<span class="user">{{ page.user_email }}</span>
+<form method="post" action="/logout"><input type="hidden" name="authenticity_token" value="{{ page.token }}"><button>Sign out</button></form>
+{% else %}
+<a href="/login">Sign in</a> <a href="/signup">Sign up</a>
+{% endif %}
+</nav>
 {% block content %}{% endblock %}
 </body>
 </html>

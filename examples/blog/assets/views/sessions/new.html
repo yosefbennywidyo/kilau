@@ -1,0 +1,19 @@
+{#- args: email, errors, page -#}
+{% extends "layout.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<h1>Sign in</h1>
+{% if !errors.empty? %}
+<ul class="errors">
+{% for error in errors %}
+<li>{{ error }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+<form method="post" action="/login"><input type="hidden" name="authenticity_token" value="{{ page.token }}">
+<p><label>Email <input name="email" type="email" value="{{ email }}"></label></p>
+<p><label>Password <input name="password" type="password"></label></p>
+<button>Sign in</button>
+</form>
+<p><a href="/signup">Create an account</a></p>
+{% endblock %}

@@ -21,5 +21,9 @@ module Kilau
     class Unauthorized < Error
       def initialize(message = "unauthorized") = super(401, message)
     end
+
+    class Forbidden < Error
+      def initialize(message = "forbidden") = super(403, message)
+    end
   end
 end

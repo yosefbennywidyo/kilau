@@ -1,0 +1,3 @@
+ok a second row with the same value is refused by the database
+ok a different value is accepted
+ok the index is reported as unique

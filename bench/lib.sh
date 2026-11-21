@@ -9,6 +9,10 @@ CORES=${CORES:-$(sysctl -n hw.ncpu)}
 POOL=${POOL:-5}
 SEED_DB=${SEED_DB:-/tmp/kilau-bench-seed.sqlite3}
 APP_PID=""
+# The Kilau apps sign sessions and refuse to boot in production without a
+# secret of at least 32 bytes: one random key per script run.
+KILAU_SESSION_SECRET=${KILAU_SESSION_SECRET:-$(openssl rand -hex 32)}
+export KILAU_SESSION_SECRET
 
 # A migrated database with the 100 posts of bench/seed.sql.
 make_seed_db() {
@@ -32,7 +36,7 @@ start_app() {
       [ "$app" = kilau-routes ] && bin=blog_routes
       # The binary reads config/<KILAU_ENV>.yaml from the app directory.
       (cd "$BLOG" && exec env KILAU_ENV=production KILAU_DATABASE_PATH="$db" KILAU_SERVER_PORT="$port" \
-        KILAU_DATABASE_POOL="$POOL" KILAU_LOGGER_REQUESTS=false SPINEL_WORKERS="$CORES" \
+        KILAU_DATABASE_POOL="$POOL" KILAU_LOGGER_REQUESTS=false KILAU_SESSION_SECRET="$KILAU_SESSION_SECRET" SPINEL_WORKERS="$CORES" \
         "./build/bin/$bin" start) > "$log" 2>&1 &
       APP_PID=$!
       ;;

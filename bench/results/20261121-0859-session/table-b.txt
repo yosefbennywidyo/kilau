@@ -1,0 +1,13 @@
+== (b) POST /login, valid token and credentials
+sequential curl, 5 logins (seconds, status):
+  0.867629 s  303
+  0.855742 s  303
+  0.867245 s  303
+  0.855699 s  303
+  0.855592 s  303
+  rep 1 starts at load 8.82 8.06 7.08
+  rep 2 starts at load 8.75 8.08 7.11
+  rep 3 starts at load 9.07 8.19 7.17
+row                      conc   login/s    p50 ms    p99 ms    median  all reps (login/s)
+login                    c1         1.1    959.60   1612.71       0.9  [1.1 0.9 0.8]  303:10
+login                    c8         2.8   2855.52   5828.94       2.8  [2.7 2.8 2.8]  303:20

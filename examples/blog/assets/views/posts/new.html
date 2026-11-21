@@ -1,9 +1,9 @@
-{#- args: post -#}
+{#- args: post, page -#}
 {% extends "layout.html" %}
 {% block title %}New post{% endblock %}
 {% block content %}
 <h1>New post</h1>
-<form method="post" action="/posts">
+<form method="post" action="/posts"><input type="hidden" name="authenticity_token" value="{{ page.token }}">
 {% include "posts/_form.html" %}
 </form>
 {% endblock %}

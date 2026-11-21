@@ -21,5 +21,11 @@ module Kilau
     # built with `kilau gen routes` overrides it with the generated
     # dispatcher, which calls each handler without a stored proc (K-012).
     def dispatcher(app_context) = Dispatcher.new(routes, app_context)
+
+    # What an entry point (HTTP::Server, Testing::Client, RackApp) calls: the
+    # dispatcher inside the session guard, which is the dispatcher itself when
+    # the app has no sessions. One composition point, so a new entry point
+    # cannot forget the guard and serve an app without CSRF checks or cookies.
+    def serving_dispatcher(app_context) = Session::Guard.wrap(dispatcher(app_context), app_context)
   end
 end

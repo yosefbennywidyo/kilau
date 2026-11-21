@@ -2,10 +2,13 @@
 <html lang="id">
 <head><meta charset="utf-8"><title>&lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt; &amp; &quot;q&quot; · Kilau</title></head>
 <body>
+<nav>
+<a href="/login">Sign in</a> <a href="/signup">Sign up</a>
+</nav>
 <h1>&lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt; &amp; &quot;q&quot;</h1>
 <p>&lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt; &amp; &quot;q&quot;</p>
 <p><a href="/posts/7/edit">Edit</a></p>
-<form method="post" action="/posts/7"><input type="hidden" name="_method" value="delete"><button>Delete</button></form>
+<form method="post" action="/posts/7"><input type="hidden" name="_method" value="delete"><input type="hidden" name="authenticity_token" value="tok123"><button>Delete</button></form>
 <p><a href="/posts">All posts</a></p>
 
 </body>
@@ -20,8 +23,11 @@ ok edit posts to the post with a patch override
 <html lang="id">
 <head><meta charset="utf-8"><title>New post · Kilau</title></head>
 <body>
+<nav>
+<a href="/login">Sign in</a> <a href="/signup">Sign up</a>
+</nav>
 <h1>New post</h1>
-<form method="post" action="/posts">
+<form method="post" action="/posts"><input type="hidden" name="authenticity_token" value="tok123">
 <ul class="errors">
 <li>title minimal 2 karakter</li>
 <li>content wajib diisi</li>
@@ -36,3 +42,13 @@ ok edit posts to the post with a patch override
 ok errors are listed, escaped
 ok the typed value survives, escaped
 ok a valid form lists no errors
+ok edit carries the token after the method override
+ok the delete form carries the token
+ok the new form carries the token
+ok the sign-in form carries the token
+ok the sign-up form carries the token
+ok a guest's nav links to sign in and sign up
+ok a signed-in nav shows the email escaped
+ok a signed-in nav has a sign-out form with the token
+ok a hostile email is escaped in the nav
+ok the sign-in form echoes the typed email escaped, never a password
