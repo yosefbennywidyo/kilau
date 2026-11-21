@@ -183,14 +183,16 @@ A blog binary takes about 16 s to build on `d1878a068`.
 
 ## Status
 
-Research code. It is not production-ready: there is no TLS, CSRF protection,
-sessions or authentication, and several Spinel limits are worked around rather
-than fixed (see `docs/CATALOG.md`). The first vertical slice is finished: the
-route-quality work (plan 5) is done except for optional sugar, and nearly every
-compiler limit the catalog records has been fixed upstream. The next steps are in
-`docs/HANDOFF.md` and `docs/FINDINGS.md` §8: finding why the list page lost ground
-to Rails, why builds became slower, and whether to start a second slice (sessions,
-CSRF, authentication).
+Research code. It is not production-ready: there is no TLS, sessions are signed
+cookies with no server-side store (signing out clears only the browser's copy),
+and several Spinel limits are worked around rather than fixed (see
+`docs/CATALOG.md`). The first vertical slice is finished: the route-quality work
+(plan 5) is done except for optional sugar, and nearly every compiler limit the
+catalog records has been fixed upstream. The second slice (signed-cookie sessions,
+CSRF protection and password sign-in, with the blog's sign-up, sign-in and
+sign-out) is finished too; its answers are R7 to R12 in `docs/CATALOG.md`. The
+next steps are in `docs/HANDOFF.md` and `docs/FINDINGS.md` §8: finding why the list
+page lost ground to Rails and why builds became slower.
 
 ## License
 

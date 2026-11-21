@@ -497,12 +497,19 @@ sudah selesai; riwayatnya ada di `docs/HANDOFF.md`.
    menunjukkan kunci mana yang menahan 8 worker (lihat §6, bagian server). Sementara
    itu, pilihan yang sudah terukur untuk beban semacam ini adalah beberapa proses:
    kode Kilau di CRuby di belakang Puma mengalahkan Rails di semua skenario.
-4. **Irisan vertikal kedua**, bila proyek dilanjutkan: fitur dari non-goal spec §6.5
-   (kandidat: session/cookie, CSRF, autentikasi) untuk menguji batas AOT yang belum
-   tersentuh blog CRUD. Butuh spec baru dan keputusan pengguna.
+4. ~~**Irisan vertikal kedua**~~ Selesai 2026-11-21: sesi cookie bertanda tangan, CSRF dan sign-up/sign-in/sign-out di blog.
+   Ringkasan di §9; jawaban R7-R12 dan K-067..K-069 di `docs/CATALOG.md`.
 5. **Benchmark k6 dari mesin terpisah** (alur multi-langkah, model terbuka dengan
    laju tetap, `thresholds` sebagai gerbang regresi). Tetap berlaku dari versi
    September; sesi ini menunjukkan lagi bahwa angka lintas-sesi di satu laptop tidak
    bisa dibandingkan. (`bench/run.sh` sudah mencatat sumber daya dan Low Power Mode
    ke `meta.txt` sejak `27ba1a6`; diperiksa 2026-11-21, terisi di hasil 2026-11-16.)
 6. ~~K-042 ke upstream~~ selesai: diperbaiki lewat matz/spinel#11723 (2026-11-13).
+
+## 9. Irisan vertikal kedua: sesi, CSRF, autentikasi (2026-11-21)
+
+- Ditulis: 2026-11-21 ~16:05 WIB, branch `irisan-2-sesi-auth`, compiler `2026.10.25+7123 (b1354828a)`, CRuby 4.0.6. Bukti dan angka lengkap: `docs/CATALOG.md` (R7-R12, K-067..K-069, bagian "Irisan kedua").
+- **Yang jalan** (tes lulus di Spinel dan CRuby; `make e2e` 35 `ok` untuk `blog`, `blog_routes`, dan `blog` dengan `KILAU_SESSION_SECRET`): `Kilau::Cookie`, `Response#add_set_cookie` (beberapa `Set-Cookie`), sesi cookie bertanda tangan HMAC-SHA256, CSRF (`authenticity_token`, dibandingkan waktu-konstan), `Guard` sebagai pembungkus dispatcher mana pun, `Kilau::Password` (PBKDF2-HMAC-SHA256, 600.000 iterasi, salt per sandi), tabel `users` dengan indeks unik, `/signup`, `/login`, `/logout`, dan pembuatan/ubah/hapus post di balik login. Semua tanpa fitur templat baru: templat menerima satu objek `page`.
+- **Batas compiler yang ketemu**: K-067 (inferensi tidak konvergen untuk variabel lokal yang menunjuk atribut, dioper ke fungsi yang `[]=` lalu ditulis lagi; diakali dengan tidak mengikat `request.session` ke lokal), K-068 (`OpenSSL::HMAC` dengan `nil` tidak raise; dijaga di `Session#initialize`), K-069 (method `[]`/`[]=` buatan melebar ke untyped; mengganti namanya menghapus peringatan, `out = {}` di `Form.decode` bukan penyebabnya; mekanisme belum terbukti, `repro/k069_session_widen.sh`). Ketiganya perilaku benar atau terjaga; tak ada yang menghalangi fitur.
+- **Biaya**: `GET /posts` di c1, sesi 4 (satu-satunya yang berkas mentahnya dikomit, `bench/results/20261121-0859-session`; mesin dibebani pekerjaan lain, load average ~8): tanpa cookie 1.232 req/s, cookie valid 1.201 (-2,5%), cookie rusak 1.173 (-4,8%); dua sesi awal dari skrip lama (tanpa berkas tersimpan) menunjukkan urutan yang sama (valid -1,9..-3,6%, rusak -2,6..-8,7%); di c16 di dalam derau. HMAC di Spinel 2,7-2,9x lebih cepat dari CRuby, tetapi PBKDF2 7,6-8,4x lebih lambat (643-685 vs 77-88 ms per 600k iterasi; penyebab: `kdf.rb` Spinel adalah loop Ruby, CRuby memakai libssl native). Satu login ~0,86 dtk (sesi 4, dikomit; sesi lama tanpa berkas tersimpan: 0,75-1,2 dtk); satu proses 8 worker menopang 2,8 login/dtk di sesi 4 (dikomit) dan 4,2-4,5 di sesi 1-3 (tanpa berkas tersimpan). Binary blog +13,7% (1.797.656 -> 2.043.064 B); waktu build belum terselesaikan (rasio 1,09-1,42x di mesin yang dibebani pekerjaan lain, lihat R12).
+- **Desain yang harus diketahui**: sesi tanpa penyimpanan server; keluar hanya mengosongkan salinan klien dan cookie yang disalin tetap sah sampai Max-Age 14 hari habis. Layout per platform belum ada (tugas lanjutan di `docs/HANDOFF.md`).
