@@ -6,3 +6,6 @@ database:
   pool: 4
 logger:
   requests: true
+# The secret comes from KILAU_SESSION_SECRET; production refuses to boot without it.
+session:
+  enabled: true

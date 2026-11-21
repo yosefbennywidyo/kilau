@@ -1,3 +1,6 @@
+ok a guest is sent to the sign-in form from /posts/new
+ok signing up logs in
+ok the signed-in user gets a token
 ok the root redirects to the post list
 ok an empty list renders
 ok the new form renders

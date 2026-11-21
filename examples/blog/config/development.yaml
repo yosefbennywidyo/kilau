@@ -6,3 +6,5 @@ database:
   pool: 4
 logger:
   requests: true
+session:
+  enabled: true
