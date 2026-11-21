@@ -4,7 +4,7 @@ module Kilau
     # urlencoded, and PATCH/DELETE go as POST + _method.
     class Client
       def initialize(hooks, app_context)
-        @dispatcher = Session::Guard.wrap(hooks.dispatcher(app_context), app_context)
+        @dispatcher = hooks.serving_dispatcher(app_context)
         @cookies = {}
       end
 

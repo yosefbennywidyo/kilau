@@ -88,3 +88,39 @@ answer = reader.read
 Process.wait(pid)
 T.check("a forked child builds its own dispatcher") { answer == "200 2" }
 T.check("the parent keeps the one it had") { hooks.built == 1 }
+
+# --- sessions through the Rack adapter: the guard must be in the chain and
+# the Set-Cookie lines must reach the server (they live apart from headers).
+class SessionHooks < Kilau::Hooks
+  def routes
+    things = Kilau::Routes.new.prefix("things")
+    things = things.add("/form", Kilau::Controller.get { |app_context, request| Kilau::Format.text(Kilau::Csrf.token(request.session)) })
+    things = things.add("/", Kilau::Controller.post { |app_context, request| Kilau::Format.text("created", status: 201) })
+    Kilau::AppRoutes.new.add(things)
+  end
+end
+
+sdir = "/tmp/kilau-rack-session-test"
+Dir.mkdir(sdir) unless File.directory?(sdir)
+File.write(sdir + "/development.yaml", "server:\n  host: \"127.0.0.1\"\n  port: 0\ndatabase:\n  path: #{db_path}\n  pool: 2\nlogger:\n  requests: false\nsession:\n  secret: rack-session-test-secret\n")
+sapp = Kilau::RackApp.new(SessionHooks.new, sdir)
+
+form_status, form_headers, form_body = sapp.call(env("GET", "/things/form"))
+set_cookie = form_headers["set-cookie"]
+T.check("a GET that mints a token answers a set-cookie header as an Array of lines") do
+  form_status == 200 && set_cookie.is_a?(Array) && set_cookie.size == 1 && set_cookie[0].start_with?("kilau_session=")
+end
+token = form_body[0]
+cookie_pair = set_cookie[0].split(";")[0]
+
+status, headers, body = sapp.call(env("POST", "/things", "", "HTTP_COOKIE" => cookie_pair))
+T.check("a POST without a token is 403") { status == 403 && !headers.key?("set-cookie") }
+
+post_form = Kilau::Form.encode("authenticity_token" => token)
+post_env = env("POST", "/things", "", "HTTP_COOKIE" => cookie_pair, "CONTENT_TYPE" => "application/x-www-form-urlencoded",
+               "CONTENT_LENGTH" => post_form.bytesize.to_s, "rack.input" => StringIO.new(post_form))
+status, headers, body = sapp.call(post_env)
+T.check("a POST with the page's token and the response's cookie succeeds") { status == 201 && body == ["created"] }
+
+status, headers, body = sapp.call(env("GET", "/things/form", "", "HTTP_COOKIE" => cookie_pair))
+T.check("a GET that changes nothing sets no cookie") { status == 200 && !headers.key?("set-cookie") && body == [token] }
