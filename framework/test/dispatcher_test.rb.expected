@@ -46,5 +46,6 @@ ok an unknown path is 404
 ok the 404 page escapes the path
 ok broken percent-encoding in a form is 400
 ok a raised NotFound is 404 with its message escaped
+ok a raised Forbidden reaches the wire as 403 Forbidden
 ok a raised Unauthorized is 401
 ok an unexpected exception is 500 without its message

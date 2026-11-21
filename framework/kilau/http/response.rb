@@ -9,7 +9,7 @@ module Kilau
       503 => "Service Unavailable"
     }
 
-    attr_reader :status, :headers, :body
+    attr_reader :status, :headers, :body, :set_cookies
 
     def initialize(status, content_type, body)
       @status = status

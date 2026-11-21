@@ -1,0 +1,51 @@
+ok wrap returns the dispatcher itself when sessions are not configured
+ok wrap returns the dispatcher itself in production when sessions are not configured
+ok wrap returns the dispatcher itself when session.enabled is false
+ok a secret in the file turns sessions on
+ok session.enabled in test uses the built-in key silently
+ok session.enabled in production without a secret raises Config::Error
+ok an empty secret raises Config::Error
+ok production accepts the secret from the environment
+ok an empty secret from the environment raises Config::Error
+ok a GET that makes a token sets one session cookie
+ok the session cookie carries HttpOnly, SameSite and Max-Age, not Secure
+ok a GET that does not change the session sets no cookie
+ok the same session gets the same token again
+ok a POST without a token is 403 and never reaches the dispatcher
+ok a refusal carries no session cookie
+ok a POST with the right token passes
+ok another session's token is 403
+ok a POST without a session cookie is 403 even with a token
+ok a wrong token of the same length is 403
+ok a token of another length is 403
+ok an empty token is 403
+ok a tampered session cookie loses the token, so the POST is 403
+ok _method=patch without a token is 403
+ok _method=delete without a token is 403
+ok _method=patch with the token passes
+ok a direct PATCH verb without a token is 403
+ok a direct DELETE verb without a token is 403
+ok a direct PUT verb with the token passes
+ok GET, HEAD and OPTIONS need no token
+ok a malformed percent-encoded form is a 400, not a crash
+ok a malformed form on HEAD-less POST does not reach the dispatcher
+ok a HEAD request that sets the session keeps the cookie and drops the body
+ok a session value set by the handler comes back with the cookie
+ok the guard wraps a second dispatcher class
+ok over the real Dispatcher a GET form sets the cookie
+ok over the real Dispatcher a POST without a token is 403
+ok over the real Dispatcher a POST with the token is created
+ok over the real Dispatcher _method=patch needs and accepts the token
+ok over the real Dispatcher _method=delete needs and accepts the token
+ok over the real Dispatcher a Forbidden is 403 Forbidden
+ok Csrf.token is stable within a session and 64 hex characters
+ok two sessions get different tokens
+ok Csrf.verify? is false without a session
+ok eight threads draw eight distinct tokens
+ok the client refuses a POST before it has a token
+ok the client sends its cookie back, so the token verifies
+ok the client patches and deletes with the token
+ok the client refuses a DELETE without a token
+ok a second client has its own jar, so the first token fails there
+ok the client keeps a plain cookie and a later Max-Age=0 deletes it
+ok the client exposes the response's set-cookie lines

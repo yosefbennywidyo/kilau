@@ -39,7 +39,7 @@ module Kilau
       pool = Sqlite::Pool.new(config.string("database.path"), config.int("database.pool"))
       app_context = AppContext.new(pool, config, environment)
       host = config.string("server.host")
-      dispatcher = hooks.dispatcher(app_context)
+      dispatcher = Session::Guard.wrap(hooks.dispatcher(app_context), app_context)
       server = HTTP::Server.new(dispatcher, host, config.int("server.port"), config.bool("logger.requests"))
       port = server.listen
       puts "kilau: listening on http://#{host}:#{port} (#{environment})"

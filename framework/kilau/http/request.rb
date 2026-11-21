@@ -4,7 +4,7 @@ module Kilau
   # request_method, not method: a `method` reader would shadow Object#method.
   class Request
     attr_reader :request_method, :path, :query_string, :http_version, :headers, :body
-    attr_accessor :path_params
+    attr_accessor :path_params, :session
 
     def initialize(request_method, target, http_version, headers, body)
       @request_method = request_method
@@ -18,6 +18,7 @@ module Kilau
       @form_values = nil
       @query_values = nil
       @cookie_values = nil
+      @session = nil
     end
 
     def header(name) = @headers[name.downcase]

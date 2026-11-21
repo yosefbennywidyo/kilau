@@ -104,7 +104,9 @@ module Kilau
       @source = source
     end
 
-    def key?(path) = @values.key?(path)
+    # An environment override counts: KILAU_SESSION_SECRET is a key even when
+    # the file has none.
+    def key?(path) = @values.key?(path) || !ENV[env_name(path)].nil?
 
     def string(path) = lookup(path)
 
