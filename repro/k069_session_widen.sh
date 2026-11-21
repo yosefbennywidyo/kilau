@@ -24,9 +24,20 @@ ruby -e '
   File.write(f, File.read(f).sub("def [](key)", "def get(key)").sub("def []=(key, value)", "def set(key, value)"))
   t = "#{ARGV[0]}/test/session_test.rb"
   src = File.read(t)
-  src = src.gsub(/^(\s*)(s|vs|ks|forged)\["([^"]*)"\] = (.+)$/) { "#{$1}#{$2}.set(\"#{$3}\", #{$4})" }
-  src = src.gsub(/\b(s|back|fresh)\["([^"]*)"\]/) { "#{$1}.get(\"#{$2}\")" }
-  src = src.gsub(/(Kilau::Session\.load\(ks\.to_cookie_value, SECRET\))\["([^"]*)"\]/) { "#{$1}.get(\"#{$2}\")" }
+  # Every Session call site: a local that holds a Session, or a Kilau::Session.load(...) result
+  # (one level of nested parentheses in its arguments). Unrelated String/Hash indexing, which
+  # never has a string-literal key on these receivers, is left alone.
+  recv = /(?:\b(?:s|vs|ks|forged|back|fresh|rs|other)\b|Kilau::Session\.load\((?:[^()]|\([^()]*\))*\))/
+  val  = /"(?:[^"\\]|\\.)*"|[\w.]+/
+  src = src.gsub(/(#{recv})\["((?:[^"\\]|\\.)*)"\] = (#{val})/) { "#{$1}.set(\"#{$2}\", #{$3})" }
+  src = src.gsub(/(#{recv})\["((?:[^"\\]|\\.)*)"\]/) { "#{$1}.get(\"#{$2}\")" }
   File.write(t, src)
-' "$TMP/fw"
+  # The comparison is only valid if no call site was missed: report any string-literal index
+  # that is still on a Session receiver, and stop (exit 3) when there is one.
+  left = src.lines.each_with_index.select { |l, _| l =~ /(#{recv})\["/ }
+  unless left.empty?
+    left.each { |l, i| warn "missed call site, line #{i + 1}: #{l.strip}" }
+    exit 3
+  end
+' "$TMP/fw" || { echo "rewrite incomplete: the comparison would not be valid" >&2; exit 1; }
 count "$TMP/fw" renamed

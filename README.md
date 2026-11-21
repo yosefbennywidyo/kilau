@@ -173,7 +173,9 @@ What to configure:
 
 - Set `KILAU_SESSION_SECRET` in production, generated with `openssl rand -hex 32`
   (at least 32 bytes). Outside the environments named `development` and `test`
-  the binary refuses to boot without one.
+  the binary refuses to boot without one. Under a Rack server (`Kilau::RackApp`,
+  CRuby only) nothing fails at boot: the app is built on the first request, so
+  the missing secret raises `Config::Error` there and the server answers 500.
 - Set `session.secure: true` when the app is served over HTTPS, so the browser
   sends the cookie only on HTTPS.
 - Put a reverse proxy in front: the built-in server has no TLS.
