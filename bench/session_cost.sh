@@ -20,19 +20,22 @@ OUT=${1:-$HERE/results/$STAMP-session}
 DURATION=${DURATION:-10}
 REPS=${REPS:-3}
 WORKERS=${SPINEL_WORKERS:-8}
-DB=/tmp/kilau-session-bench.sqlite3
-LOG=/tmp/kilau-session-bench.log
-JAR=/tmp/kilau-session-bench.jar
+# One private directory per invocation: two runs at once never share the database,
+# the server log, the cookie jar or the raw oha output, and cleanup removes only this one.
+WORK=$(mktemp -d /tmp/kilau-session-bench.XXXXXX)
+DB=$WORK/db.sqlite3
+LOG=$WORK/server.log
+JAR=$WORK/cookies.jar
 SECRET=$(LC_ALL=C tr -dc 'a-f0-9' < /dev/urandom | head -c 64)
 EMAIL=bench@example.com
 PASSWORD=benchmark-pass-1
 mkdir -p "$OUT"
-RAW=$(mktemp -d /tmp/kilau-session-raw.XXXXXX)   # oha JSON, too big to keep
+RAW=$WORK/raw   # oha JSON, too big to keep
+mkdir -p "$RAW"
 PID=""
 cleanup() {
   [ -n "$PID" ] && kill "$PID" 2>/dev/null && wait "$PID" 2>/dev/null
-  rm -f "$DB" "$DB-wal" "$DB-shm" "$JAR"
-  rm -rf "${RAW:?}"
+  rm -rf "${WORK:?}"
 }
 trap cleanup EXIT
 
@@ -84,6 +87,10 @@ oha_args() {
   esac
 }
 
+# A failed measurement must fail the run, but measure runs inside `{ ... } | tee`,
+# a subshell, so a variable would not survive it: the marker is a file.
+fail() { echo "MEASUREMENT FAILED: $*" >&2; : > "$WORK/failed"; }
+
 # measure UNIT ROWSPEC...  where ROWSPEC is "row|concurrency". The rows run
 # round-robin inside each repetition (row1, row2, ..., row1, row2, ...), so a
 # drift in the machine's load hits every row alike instead of the last one.
@@ -93,14 +100,15 @@ measure() {
   local spec row conc rep f n=0
   for spec in "$@"; do   # warm-up, discarded
     row=${spec%|*}; conc=${spec#*|}; oha_args "$row"
-    oha --no-tui -z 2s -c "$conc" "${ARGS[@]}" > /dev/null 2>&1
+    oha --no-tui -z 2s -c "$conc" "${ARGS[@]}" > /dev/null 2>&1 || fail "warm-up oha failed: $unit $row c$conc"
   done
   for rep in $(seq "$REPS"); do
     echo "  rep $rep starts at load $(uptime | sed 's/.*averages: //')" >&2
     n=0
     for spec in "$@"; do
       n=$((n + 1)); row=${spec%|*}; conc=${spec#*|}; oha_args "$row"
-      oha --no-tui -z "${DURATION}s" -c "$conc" --output-format json "${ARGS[@]}" > "$RAW/$unit-$n-$rep.json" 2>/dev/null
+      oha --no-tui -z "${DURATION}s" -c "$conc" --output-format json "${ARGS[@]}" > "$RAW/$unit-$n-$rep.json" 2>/dev/null \
+        || fail "oha failed: $unit $row c$conc rep $rep"
     done
   done
   printf "%-24s %-4s %9s  %8s  %8s  %8s  %s\n" "row" "conc" "$unit/s" "p50 ms" "p99 ms" "median" "all reps ($unit/s)"
@@ -113,7 +121,8 @@ measure() {
       b = js[rates.index(rates.max)]; l = b["latencyPercentiles"]
       codes = b["statusCodeDistribution"].map { |k, v| "#{k}:#{v}" }.join(" ")
       printf("%-24s %-4s %9.1f  %8.2f  %8.2f  %8.1f  [%s]  %s\n", ARGV[0], ARGV[1], rates.max, l["p50"] * 1000, l["p99"] * 1000,
-             rates.sort[rates.size / 2], rates.map { |x| x.round(1) }.join(" "), codes)' "$row" "c$conc" x "$RAW"/$unit-$n-*.json
+             rates.sort[rates.size / 2], rates.map { |x| x.round(1) }.join(" "), codes)' "$row" "c$conc" x "$RAW"/$unit-$n-*.json \
+      || fail "result parser failed: $unit $row c$conc"
   done
 }
 
@@ -148,3 +157,5 @@ LOGIN_BODY="authenticity_token=$TOKEN&email=bench%40example.com&password=$PASSWO
 } | tee "$OUT/table-c.txt"
 
 { echo "--- power source and battery state (end)"; pmset -g batt | sed -n '1p;2s/^ -InternalBattery-[0-9]* (id=[0-9]*)//p'; echo "--- load average at end"; uptime | sed 's/.*averages: //'; echo "--- server log lines (not request lines)"; grep -vc '^$' "$LOG"; } >> "$OUT/meta.txt"
+
+[ ! -e "$WORK/failed" ] || { echo "the run is incomplete: a measurement failed (see MEASUREMENT FAILED above)" >&2; exit 1; }
