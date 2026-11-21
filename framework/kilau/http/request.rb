@@ -17,6 +17,7 @@ module Kilau
       @path_params = {}
       @form_values = nil
       @query_values = nil
+      @cookie_values = nil
     end
 
     def header(name) = @headers[name.downcase]
@@ -29,6 +30,9 @@ module Kilau
       end
       raw.to_i
     end
+
+    # The named cookie from the request's cookie header, or nil.
+    def cookie(name) = cookie_values[name]
 
     def query(name) = query_values[name]
     def form_value(name) = form_values[name]
@@ -59,6 +63,11 @@ module Kilau
         @form_values = type.start_with?("application/x-www-form-urlencoded") ? Form.decode(@body) : {}
       end
       @form_values
+    end
+
+    def cookie_values
+      @cookie_values = Cookie.parse(header("cookie").to_s) if @cookie_values.nil?
+      @cookie_values
     end
 
     def query_values
