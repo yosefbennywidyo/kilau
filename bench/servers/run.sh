@@ -105,12 +105,12 @@ start_server() {
     rails-puma) start_app rails "$port" "$db" "$log" ;;
     kilau-cruby)
       (cd "$BLOG" && exec env KILAU_ENV=production KILAU_DATABASE_PATH="$db" KILAU_SERVER_PORT="$port" \
-        KILAU_DATABASE_POOL="$POOL" KILAU_LOGGER_REQUESTS=false BUNDLE_GEMFILE="$HERE/Gemfile" \
+        KILAU_DATABASE_POOL="$POOL" KILAU_LOGGER_REQUESTS=false KILAU_SESSION_SECRET="$KILAU_SESSION_SECRET" BUNDLE_GEMFILE="$HERE/Gemfile" \
         bundle exec ruby --yjit -I "$SQLITE_LIB" -I "$BENCH/../framework" bin/blog_routes.rb start) > "$log" 2>&1 &
       APP_PID=$! ;;
     kilau-puma|kilau-pitchfork|kilau-falcon)
       (cd "$HERE" && export KILAU_ENV=production KILAU_DATABASE_PATH="$db" KILAU_DATABASE_POOL="$POOL" \
-        KILAU_LOGGER_REQUESTS=false KILAU_SQLITE_LIB="$SQLITE_LIB" PORT="$port" WEB_CONCURRENCY="$CORES" RUBYOPT=--yjit
+        KILAU_LOGGER_REQUESTS=false KILAU_SESSION_SECRET="$KILAU_SESSION_SECRET" KILAU_SQLITE_LIB="$SQLITE_LIB" PORT="$port" WEB_CONCURRENCY="$CORES" RUBYOPT=--yjit
         [ -n "$listen" ] && export LISTEN="$listen"
         case $app in
           kilau-puma) exec bundle exec puma -C puma.rb config.ru ;;

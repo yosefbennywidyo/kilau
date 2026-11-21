@@ -1,7 +1,8 @@
 # Standalone: times one Kilau::Password.digest at three iteration counts,
 # best of three, in milliseconds. Not a test, not in the make targets.
 #   CRuby:  ruby $(spin flags includes) bench/password_cost.rb
-#   Spinel: build with -O2 (see the task report) and run the binary.
+#   Spinel: (cd framework && spinel $(spin flags) ../bench/password_cost.rb -o /tmp/password_cost) && /tmp/password_cost
+#           (spinel's default optimization level, -O2)
 require "kilau"
 
 def now_ms

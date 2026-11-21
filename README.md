@@ -163,6 +163,38 @@ one session, so close pairs are not settled. `docs/FINDINGS.md` §6 has the full
 tables, the ranks for latency, memory and start-up, and the session that was thrown
 away.
 
+## Sessions and sign-in: what to configure, what it does not do
+
+Sessions are a signed cookie, CSRF protection checks every unsafe request, and
+the blog has sign-up, sign-in and sign-out. They are on when the config has
+`session.secret` or `session.enabled`, or when `KILAU_SESSION_SECRET` is set.
+
+What to configure:
+
+- Set `KILAU_SESSION_SECRET` in production, generated with `openssl rand -hex 32`
+  (at least 32 bytes). Outside the environments named `development` and `test`
+  the binary refuses to boot without one.
+- Set `session.secure: true` when the app is served over HTTPS, so the browser
+  sends the cookie only on HTTPS.
+- Put a reverse proxy in front: the built-in server has no TLS.
+
+What it does not do:
+
+- There is no server-side session store. Signing out clears only the client's
+  copy, and a copied cookie stays valid for the absolute 14-day lifetime the
+  server enforces from the last time the cookie was written.
+- There is no key rotation: changing the secret signs everyone out.
+- There is no rate limiting. One sign-in or sign-up costs about 0.65 s of PBKDF2
+  CPU on one worker (0.86 s wall per sign-in in the committed session-4
+  measurement), so it is a cheap way to exhaust the workers.
+- Sign-up tells whether an email is registered, by message and by timing. That is
+  a conscious trade for open sign-up.
+- A POST that is not form-urlencoded is always 403.
+- An exported `KILAU_SESSION_SECRET` turns sessions on, and with them the CSRF
+  check, for every Kilau app started in that shell.
+- All apps share the development key, and browsers do not scope cookies by port,
+  so a development cookie from one app on localhost is accepted by another.
+
 ## Benchmark
 
 ```sh
@@ -178,6 +210,10 @@ laptop on AC with Low Power Mode off for the whole session (`pmset -g batt`,
 `pmset -g | grep lowpowermode`): on battery in Low Power Mode every app measured
 25-35% slower. `SCENARIOS=s3 bench/run.sh` runs one scenario (about 19 minutes).
 A blog binary takes about 16 s to build on `d1878a068`.
+On this branch the blog needs a login for S4 and its pages carry a nav, so the
+Kilau/Rails comparison is not valid: `bench/check_bodies.sh` and `bench/run.sh`
+stop at the start, and adapting the harness is a follow-up. The results of the
+previous slice remain valid for commit `1a91c13`.
 `bench/servers/run.sh` compares HTTP servers (`bench/servers/README.md`);
 `PROXY=nginx` puts nginx in front of each.
 

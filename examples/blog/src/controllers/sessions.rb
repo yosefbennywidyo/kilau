@@ -9,14 +9,17 @@ class SessionsController < Kilau::Controller
   def self.new_form(app_context, request) = Kilau::Format.render(Views::Sessions.new_form("", [], PageHelper.for(app_context, request)))
 
   # An unknown email and a wrong password answer identically, in body and in
-  # cost: the unknown email still pays for one PBKDF2 against a dummy digest.
+  # cost. There is ONE verify? call whatever the user: an unknown email is
+  # checked against a dummy digest, so the PBKDF2 always runs and the
+  # response time does not tell whether the address exists. verify? comes
+  # first in the && so no later edit can make it conditional on the user.
   def self.create(app_context, request)
     email = User.normalize_email(request.form_value("email").to_s)
     password = request.form_value("password").to_s
     user = User.find_by_email(app_context.db, email)
-    if user.nil?
-      Kilau::Password.verify?(password, Kilau::Password.dummy_digest)
-    elsif user.authenticate?(password)
+    digest = user.nil? ? Kilau::Password.dummy_digest : user.password_digest
+    ok = Kilau::Password.verify?(password, digest) && !user.nil?
+    if ok
       # A fresh session before the login is stored, so a session id planted
       # beforehand is worthless (session fixation).
       request.session.reset
