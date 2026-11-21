@@ -86,6 +86,11 @@ T.check("nothing verifies against dummy_digest") do
   r1 == false && r2 == false && r3 == false && r4 == false
 end
 
+# A digest with a byte that is not valid UTF-8 is refused, not raised on (CRuby's Regexp raises on it).
+broken = "pbkdf2$sha256$1$00112233445566778899aabbccddeeff$" + ("0" * 63) + "\xff"
+T.check("verify? is false for a digest with invalid UTF-8") { P.verify?("pw", broken) == false }
+T.check("verify? still accepts a valid digest after the encoding check") { P.verify?("pw", P.digest("pw", 10)) }
+
 # RFC 7914 section 11: PBKDF2-HMAC-SHA-256, P="passwd", S="salt", c=1, dkLen=64.
 rfc = OpenSSL::PKCS5.pbkdf2_hmac("passwd", "salt", 1, 64, "sha256").unpack1("H*")
 T.check("RFC 7914 vector") do

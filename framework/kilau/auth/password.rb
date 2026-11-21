@@ -53,7 +53,9 @@ module Kilau
     def self.verify?(plain, digest)
       return false unless plain.is_a?(String) && digest.is_a?(String)
       return false if plain.empty? || plain.bytesize > MAX_BYTES
-      return false unless digest.match?(SHAPE)
+      # A String with a broken encoding makes Regexp raise ArgumentError under CRuby; a stored
+      # digest like that is simply not one of ours.
+      return false unless digest.valid_encoding? && digest.match?(SHAPE)
       parts = digest.split("$", -1)
       iterations = parts[2].to_i
       salt = [parts[3]].pack("H*")
