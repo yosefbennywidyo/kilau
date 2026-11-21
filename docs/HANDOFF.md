@@ -3,6 +3,12 @@
 Entri terbaru di atas. Entri lama (2026-09-28 s.d. 2026-11-14) dihapus pada 2026-11-15 karena isinya sudah tertutup
 atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`git show 59e79ef:docs/HANDOFF.md`).
 
+## 2026-11-21 ~14:16 WIB -- irisan vertikal kedua dirancang dan direncanakan; spike layout per platform
+
+- Rancangan (sesi cookie bertanda tangan, CSRF, autentikasi PBKDF2; `/signup` terbuka; non-goal §6.5 spec asli diubah) dan rencana 6 task disetujui/ditulis di `docs/superpowers/specs/2026-11-21-kilau-irisan-2-sesi-auth-design.md` dan `.../plans/2026-11-21-kilau-irisan-2-sesi-auth.md` (kedua folder di-`.gitignore`, hanya lokal). Belum ada kode; cara eksekusi (subagent-driven atau native) menunggu pilihan pengguna.
+- Temuan dari kode generator template: argumen layout wajib ada di setiap template yang meng-extend-nya, include meneruskan argumen dengan nama, `{ }` di-escape bawaan. Karena itu template menerima satu objek `page` (`Kilau::Page`), bukan dua argumen string. Sesi dan CSRF dipasang sebagai pembungkus di luar dispatcher (blog memakai dispatcher hasil `kilau gen routes`, jadi kode generator tidak disentuh).
+- Spike layout per platform (web, app, android, ios), sekali pakai, tanpa mengubah repo: memilih layout di baris penutup hasil generate (`case page.layout`) berbiaya hampir nol (40 halaman, 4 layout, Spinel `+7123`, baterai, terbaik dari 3: 2,49 dtk dan 602.640 B, dibanding 2,51 dtk dan 585.800 B untuk satu layout; tanpa pelebaran tipe; keluaran sama dengan CRuby), sedangkan membuat isi halaman per layout 2,6x lebih lama (6,61 dtk) dan binary +20%. Yang dikerjakan sekarang hanya atribut `Page#layout` (`"web"`); sisanya tugas lanjutan di plan. Belum diukur: throughput render dan generator yang sebenarnya.
+
 ## 2026-11-21 ~13:11 WIB -- bump `b1354828a` terverifikasi di kilau
 
 - Kompiler terpasang `2026.10.25+7123 (b1354828a)` (master: shape 3 #12237, K-061 #12225, K-064 #12235, tindak lanjut #12333). Dari `spin clean` per paket, di baterai: `make test` 28/28 (16 + 8 + 4), 0 `(cached)`, exit 0, 66 dtk; `make test-cruby` exit 0; `make e2e` (blog) exit 0, 35 `ok`. 52 `repro/*.rb` vs CRuby 4.0.6 `--enable-frozen-string-literal`: **44 identik, 8 beda** (naik dari 43/9): `k058` kini identik penuh (bentuk 3 selesai). Beda tersisa: `k003`, `k006`, `k007`, `k015`, `k046`, `k047` (segfault, akar masalah diketahui), `k050`, `k056`. Benchmark dan `yield-sweep` TIDAK diukur.
