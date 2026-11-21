@@ -6,6 +6,8 @@ T.check("parse reads pairs, keeping = inside a value") { jar == { "a" => "1", "b
 T.check("parse of an empty header is empty") { Kilau::Cookie.parse("").empty? }
 T.check("parse skips a piece without =") { Kilau::Cookie.parse("junk").empty? }
 T.check("parse ignores spaces around ;") { Kilau::Cookie.parse("  a=1 ;b=2  ;  c=3") == { "a" => "1", "b" => "2", "c" => "3" } }
+T.check("a repeated name keeps its first value") { Kilau::Cookie.parse("a=1; b=2; a=3") == { "a" => "1", "b" => "2" } }
+T.check("a repeated name keeps its first value even when the first is empty") { Kilau::Cookie.parse("a=; a=3") == { "a" => "" } }
 
 T.check("build writes the fixed attributes and Max-Age") do
   Kilau::Cookie.build("s", "v", 3600, false) == "s=v; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600"

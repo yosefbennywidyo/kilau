@@ -5,7 +5,8 @@ module Kilau
   # <hex(payload)>.<hex(hmac)>, where payload is Form.encode of the content
   # and hmac is HMAC-SHA256 of the hex payload under the app secret. A cookie
   # that fails any check (shape, hex, MAC, payload decoding) loads as an
-  # empty session and never raises: a bad cookie is not an error response.
+  # empty session: a bad COOKIE never raises. A nil or empty secret and a
+  # cookie value that is not a String do raise.
   class Session
     COOKIE = "kilau_session"
 
