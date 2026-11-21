@@ -54,7 +54,7 @@ rm -f "$DB" "$DB-wal" "$DB-shm"
 (cd "$BLOG" && KILAU_ENV=production KILAU_DATABASE_PATH="$DB" ./build/bin/blog db migrate) > /dev/null || exit 1
 sqlite3 "$DB" < "$HERE/seed.sql"
 (cd "$BLOG" && exec env KILAU_ENV=production KILAU_DATABASE_PATH="$DB" KILAU_SERVER_PORT=0 KILAU_DATABASE_POOL=5 \
-  KILAU_LOGGER_REQUESTS=false KILAU_SESSION_SECRET="$SECRET" SPINEL_WORKERS="$WORKERS" ./build/bin/blog start) > "$LOG" 2>&1 &
+  KILAU_LOGGER_REQUESTS=false KILAU_SESSION_SECRET="$SECRET" KILAU_SESSION_SECURE=false SPINEL_WORKERS="$WORKERS" ./build/bin/blog start) > "$LOG" 2>&1 &
 PID=$!
 for _ in $(seq 100); do grep -q "listening on" "$LOG" && break; sleep 0.1; done
 PORT=$(sed -n 's/.*127\.0\.0\.1:\([0-9]*\).*/\1/p' "$LOG" | head -1)

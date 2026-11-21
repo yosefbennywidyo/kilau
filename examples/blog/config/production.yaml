@@ -7,5 +7,8 @@ database:
 logger:
   requests: true
 # The secret comes from KILAU_SESSION_SECRET; production refuses to boot without it.
+# secure: the browser sends the cookie only over HTTPS, so serve the app behind TLS.
+# To try production mode over plain HTTP, set KILAU_SESSION_SECURE=false.
 session:
   enabled: true
+  secure: true

@@ -178,6 +178,13 @@ What to configure:
   the missing secret raises `Config::Error` there and the server answers 500.
 - Set `session.secure: true` when the app is served over HTTPS, so the browser
   sends the cookie only on HTTPS.
+  The blog's `production.yaml` sets it; `KILAU_SESSION_SECURE=false` lets you try
+  production mode over plain HTTP.
+- Every response through the session guard is `Cache-Control: private` unless the
+  handler sets its own, because a page can carry one visitor's token and cookie.
+  A page that renders a form creates a session on its first view (that is where
+  the CSRF token lives), so an anonymous first visit gets a `Set-Cookie`.
+- An empty environment variable (`KILAU_SESSION_SECRET=`) counts as unset.
 - Put a reverse proxy in front: the built-in server has no TLS.
 
 What it does not do:

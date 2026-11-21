@@ -13,6 +13,8 @@ class SessionsController < Kilau::Controller
   # checked against a dummy digest, so the PBKDF2 always runs and the
   # response time does not tell whether the address exists. verify? comes
   # first in the && so no later edit can make it conditional on the user.
+  # (An empty or over-long password is refused before the PBKDF2 for every
+  # user alike, so that shortcut tells nothing about any address.)
   def self.create(app_context, request)
     email = User.normalize_email(request.form_value("email").to_s)
     password = request.form_value("password").to_s
