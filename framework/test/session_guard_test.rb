@@ -171,6 +171,8 @@ class ThingsController < Kilau::Controller
       .add("/:id", delete { |app_context, request| Kilau::Format.empty(204) })
       .add("/forbidden", get { |app_context, request| raise Kilau::Error::Forbidden })
       .add("/cookie", get { |app_context, request| r = Kilau::Format.text("c"); r.add_set_cookie(Kilau::Cookie.build("theme", "dark", 100, false)); r })
+      .add("/expire", get { |app_context, request| r = Kilau::Format.text("c"); r.add_set_cookie(Kilau::Cookie.build("theme", "dark", 0, false)); r })
+      .add("/echo", get { |app_context, request| Kilau::Format.text("theme=#{request.cookie("theme").to_s} session=#{request.cookie("kilau_session").nil? ? "no" : "yes"}") })
       .add("/uncookie", get { |app_context, request| r = Kilau::Format.text("c"); r.add_set_cookie(Kilau::Cookie.build("theme", "", 0, false)); r })
   end
 end
@@ -227,10 +229,17 @@ T.check("the client refuses a DELETE without a token") { rclient.delete("/things
 T.check("a second client has its own jar, so the first token fails there") do
   Kilau::Testing::Client.new(ThingsApp.new, context).post("/things", { "authenticity_token" => ctoken }).status == 403
 end
-T.check("the client keeps a plain cookie and a later Max-Age=0 deletes it") do
+T.check("a plain cookie is sent back on the next request, next to the session cookie") do
   rclient.get("/things/cookie")
-  sent = rclient.get("/things/form").set_cookies.empty?
+  rclient.get("/things/echo").body == "theme=dark session=yes"
+end
+T.check("a Max-Age=0 line with a non-empty value deletes the cookie, the session cookie stays") do
+  rclient.get("/things/expire")
+  rclient.get("/things/echo").body == "theme= session=yes"
+end
+T.check("an empty value deletes the cookie too") do
+  rclient.get("/things/cookie")
   rclient.get("/things/uncookie")
-  sent
+  rclient.get("/things/echo").body == "theme= session=yes"
 end
 T.check("the client exposes the response's set-cookie lines") { rclient.get("/things/cookie").set_cookies[0].start_with?("theme=dark;") }

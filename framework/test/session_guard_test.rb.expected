@@ -47,5 +47,7 @@ ok the client sends its cookie back, so the token verifies
 ok the client patches and deletes with the token
 ok the client refuses a DELETE without a token
 ok a second client has its own jar, so the first token fails there
-ok the client keeps a plain cookie and a later Max-Age=0 deletes it
+ok a plain cookie is sent back on the next request, next to the session cookie
+ok a Max-Age=0 line with a non-empty value deletes the cookie, the session cookie stays
+ok an empty value deletes the cookie too
 ok the client exposes the response's set-cookie lines
