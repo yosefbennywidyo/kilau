@@ -12,31 +12,34 @@ module Kilau
     def self.load(cookie_value, secret)
       session = new(secret)
       return session if cookie_value.nil?
+      hex_payload = verified_hex(cookie_value, secret)
+      return session if hex_payload.nil?
       begin
-        data = verified_data(cookie_value, secret)
-        session.replace(data) unless data.nil?
-      rescue StandardError
-        # A payload that verifies yet will not decode: treat as empty.
+        session.replace(Form.decode([hex_payload].pack("H*")))
+      rescue Kilau::Error::BadRequest
+        # Verified yet not valid form text (Form.unescape refuses it): empty.
       end
       session
     end
 
-    # The decoded content, or nil unless the cookie is well formed and its
-    # MAC matches. The MAC is compared only at equal length, in constant time.
-    def self.verified_data(cookie_value, secret)
+    # The hex payload, or nil unless the cookie is <even lowercase hex>.<64
+    # lowercase hex> and the MAC matches. Both parts are checked for shape
+    # before the constant-time compare, so it never sees unequal byte lengths.
+    def self.verified_hex(cookie_value, secret)
       parts = cookie_value.split(".", -1)
       return nil unless parts.size == 2
       hex_payload = parts[0]
       mac = parts[1]
-      return nil if hex_payload.empty? || !hex_payload.match?(/\A[0-9a-f]+\z/)
+      return nil unless hex_payload.match?(/\A([0-9a-f]{2})+\z/)
+      return nil unless mac.match?(/\A[0-9a-f]{64}\z/)
       expected = OpenSSL::HMAC.hexdigest("SHA256", secret, hex_payload)
-      return nil unless mac.size == expected.size
       return nil unless OpenSSL.fixed_length_secure_compare(mac, expected)
-      return nil if hex_payload.size.odd?
-      Form.decode([hex_payload].pack("H*"))
+      hex_payload
     end
 
+    # A missing secret is a misconfiguration, never an anonymous session.
     def initialize(secret)
+      raise ArgumentError, "session secret is required" if secret.nil? || secret.empty?
       @secret = secret
       @data = {}
       @changed = false

@@ -6,6 +6,11 @@ ok load alone does not mark changed
 ok the cookie value is hex.hex
 ok delete removes the key and marks changed
 ok reset empties and marks changed
+ok an untampered single-value cookie is not empty
+ok a changed value (valid hex) gives an empty session
+ok a 64-character mac with a multibyte character gives an empty session
+ok a nil secret raises instead of making an anonymous session
+ok a key with & = % and a multibyte character round-trips
 ok a different secret does not open the cookie
 ok one payload character changed gives an empty session
 ok one hmac character changed gives an empty session

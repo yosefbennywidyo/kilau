@@ -23,15 +23,44 @@ fresh.reset
 T.check("reset empties and marks changed") { fresh["note"].nil? && fresh.changed? }
 
 def empty_session?(value, secret)
-  Kilau::Session.load(value, secret)["user_id"].nil?
-rescue StandardError
+  Kilau::Session.load(value, secret).to_cookie_value == Kilau::Session.new(secret).to_cookie_value
+end
+
+def raises_type_error?
+  yield
   false
+rescue StandardError
+  true
 end
 
 dot = cookie.index(".")
 payload = cookie[0, dot]
 mac = cookie[dot + 1, cookie.size - dot - 1]
 flip = ->(str, i) { str[0, i] + (str[i] == "0" ? "1" : "0") + str[i + 1, str.size - i - 1] }
+
+# Tamper inside a value (the "42"): without verification the changed value
+# would show, and empty_session? compares the whole session.
+vs = Kilau::Session.new(SECRET)
+vs["user_id"] = "42"
+vcookie = vs.to_cookie_value
+vdot = vcookie.index(".")
+vpayload = vcookie[0, vdot]
+vmac = vcookie[vdot + 1, vcookie.size - vdot - 1]
+vpos = vpayload.size - 1
+vflip = vpayload[0, vpos] + (vpayload[vpos] == "0" ? "1" : "0")
+T.check("an untampered single-value cookie is not empty") { !empty_session?(vcookie, SECRET) }
+T.check("a changed value (valid hex) gives an empty session") { empty_session?(vflip + "." + vmac, SECRET) }
+T.check("a 64-character mac with a multibyte character gives an empty session") do
+  empty_session?(payload + "." + ("é" + mac[0, 63]), SECRET)
+end
+T.check("a nil secret raises instead of making an anonymous session") do
+  raises_type_error? { Kilau::Session.load(cookie, nil) }
+end
+ks = Kilau::Session.new(SECRET)
+ks["a&b=c%d é"] = "v"
+T.check("a key with & = % and a multibyte character round-trips") do
+  Kilau::Session.load(ks.to_cookie_value, SECRET)["a&b=c%d é"] == "v"
+end
 
 T.check("a different secret does not open the cookie") { empty_session?(cookie, "other-secret") }
 T.check("one payload character changed gives an empty session") { empty_session?(flip.call(payload, 3) + "." + mac, SECRET) }
