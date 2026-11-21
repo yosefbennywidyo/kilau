@@ -41,3 +41,10 @@ req = Kilau::Request.new("GET", "/", "HTTP/1.1", { "cookie" => "sid=abc; theme=d
 T.check("Request#cookie reads the cookie header") { req.cookie("sid") == "abc" && req.cookie("theme") == "dark" }
 T.check("Request#cookie is nil when absent") { req.cookie("nope").nil? }
 T.check("Request#cookie is nil without a cookie header") { Kilau::Request.new("GET", "/", "HTTP/1.1", {}, "").cookie("sid").nil? }
+
+# A stray non-UTF-8 byte in a Cookie header is no cookies, never an exception.
+stray = "a=1; b=\xff"
+T.check("a header with an invalid byte parses as no cookies") { Kilau::Cookie.parse(stray) == {} }
+T.check("Request#cookie is nil for a header with an invalid byte") do
+  Kilau::Request.new("GET", "/", "HTTP/1.1", { "cookie" => stray }, "").cookie("a").nil?
+end

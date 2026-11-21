@@ -74,13 +74,69 @@ T.check("an empty secret raises Config::Error") do
   config_error? { Kilau::Session::Guard.wrap(CountingStub.new, context_for("session:\n  secret: \"\"\n", "production")) }
 end
 T.check("production accepts the secret from the environment") do
-  ENV["KILAU_SESSION_SECRET"] = "env-secret-value"
+  ENV["KILAU_SESSION_SECRET"] = "env-secret-value-that-is-long-enough-0123456789"
   wrapped = Kilau::Session::Guard.wrap(CountingStub.new, context_for("session:\n  enabled: true\n", "production"))
   ENV.delete("KILAU_SESSION_SECRET")
   !wrapped.is_a?(CountingStub)
 end
 T.check("an empty secret from the environment raises Config::Error") do
   ENV["KILAU_SESSION_SECRET"] = ""
+  refused = config_error? { Kilau::Session::Guard.wrap(CountingStub.new, context_for("app:\n  name: x\n", "production")) }
+  ENV.delete("KILAU_SESSION_SECRET")
+  refused
+end
+
+T.check("development with session.enabled and no secret returns a Guard") do
+  Kilau::Session::Guard.wrap(CountingStub.new, context_for("session:\n  enabled: true\n", "development")).is_a?(Kilau::Session::Guard)
+end
+T.check("the development key warning names the key and production") do
+  warning = Kilau::Session::Guard.development_key_warning
+  warning.include?("built-in development key") && warning.include?("never in production")
+end
+T.check("session.enabled in staging without a secret raises Config::Error") do
+  config_error? { Kilau::Session::Guard.wrap(CountingStub.new, context_for("session:\n  enabled: true\n", "staging")) }
+end
+T.check("session.enabled in Production (capitalised) without a secret raises Config::Error") do
+  config_error? { Kilau::Session::Guard.wrap(CountingStub.new, context_for("session:\n  enabled: true\n", "Production")) }
+end
+T.check("session.enabled in prod without a secret raises Config::Error") do
+  config_error? { Kilau::Session::Guard.wrap(CountingStub.new, context_for("session:\n  enabled: true\n", "prod")) }
+end
+T.check("a missing-secret error names the generation command") do
+  message = ""
+  begin
+    Kilau::Session::Guard.wrap(CountingStub.new, context_for("session:\n  enabled: true\n", "staging"))
+  rescue Kilau::Config::Error => e
+    message = e.message
+  end
+  message.include?("openssl rand -hex 32")
+end
+SECRET_31 = "k" * 31
+SECRET_32 = "k" * 32
+def secret_yaml(secret) = "session:\n  secret: #{secret}\n"
+T.check("a 31-byte secret raises in production and names the generation command") do
+  message = ""
+  begin
+    Kilau::Session::Guard.wrap(CountingStub.new, context_for(secret_yaml(SECRET_31), "production"))
+  rescue Kilau::Config::Error => e
+    message = e.message
+  end
+  message.include?("openssl rand -hex 32")
+end
+T.check("a 32-byte secret passes in production") do
+  Kilau::Session::Guard.wrap(CountingStub.new, context_for(secret_yaml(SECRET_32), "production")).is_a?(Kilau::Session::Guard)
+end
+T.check("a 31-byte secret passes in test") do
+  Kilau::Session::Guard.wrap(CountingStub.new, context_for(secret_yaml(SECRET_31), "test")).is_a?(Kilau::Session::Guard)
+end
+T.check("a 31-byte secret passes in development") do
+  Kilau::Session::Guard.wrap(CountingStub.new, context_for(secret_yaml(SECRET_31), "development")).is_a?(Kilau::Session::Guard)
+end
+T.check("a short secret raises in staging too") do
+  config_error? { Kilau::Session::Guard.wrap(CountingStub.new, context_for(secret_yaml(SECRET_31), "staging")) }
+end
+T.check("a short secret from the environment raises in production") do
+  ENV["KILAU_SESSION_SECRET"] = SECRET_31
   refused = config_error? { Kilau::Session::Guard.wrap(CountingStub.new, context_for("app:\n  name: x\n", "production")) }
   ENV.delete("KILAU_SESSION_SECRET")
   refused
@@ -96,6 +152,12 @@ T.check("a GET that makes a token sets one session cookie") { form.set_cookies.s
 T.check("the session cookie carries HttpOnly, SameSite and Max-Age, not Secure") do
   line = form.set_cookies[0]
   line.include?("; HttpOnly") && line.include?("SameSite=Lax") && line.include?("Max-Age=1209600") && !line.include?("Secure")
+end
+T.check("session.secure: true adds Secure to the session cookie") do
+  secure_context = context_for("session:\n  secret: guard-test-secret\n  secure: true\n", "test")
+  secure_guard = Kilau::Session::Guard.wrap(CountingStub.new, secure_context)
+  line = secure_guard.call(request_for("GET", "/form", nil, {})).set_cookies[0]
+  line.include?("; Secure") && line.include?("HttpOnly")
 end
 T.check("a GET that does not change the session sets no cookie") { guard.call(request_for("GET", "/other", cookie, {})).set_cookies.empty? }
 T.check("the same session gets the same token again") { guard.call(request_for("GET", "/form", cookie, {})).body == token }

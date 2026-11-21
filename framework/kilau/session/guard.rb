@@ -8,7 +8,7 @@ module Kilau
     # duplicates Dispatcher#call, so neither has to know about sessions.
     class Guard
       DEVELOPMENT_SECRET = "kilau-development-session-secret-do-not-use-in-production"
-      MAX_AGE = 1209600
+      MIN_SECRET_BYTES = 32
 
       # The dispatcher itself when the app does not use sessions (neither
       # session.secret nor session.enabled is set): old apps are unchanged.
@@ -20,19 +20,31 @@ module Kilau
         new(dispatcher, secret_for(config, app_context.environment), secure)
       end
 
+      def self.development_key_warning
+        "kilau: session.secret is not set; using the built-in development key (never in production)"
+      end
+
       # The configured secret (file or KILAU_SESSION_SECRET), never an empty
-      # one. Without one only development and test get the fixed key, so a
-      # production app cannot run on a key anyone can read in this repo.
+      # one. Without one only the environments named "development" and "test"
+      # get the fixed key: every other name ("production", "staging", a typo)
+      # must configure its own, so no deployment signs with a key anyone can
+      # read in this repo. Outside those two a secret also has to be at least
+      # MIN_SECRET_BYTES long: the cookie is an offline guessing oracle for
+      # its key.
       def self.secret_for(config, environment)
+        local = environment == "development" || environment == "test"
         if config.key?("session.secret")
           secret = config.string("session.secret")
           raise Config::Error, "session.secret must not be empty" if secret.empty?
+          if !local && secret.bytesize < MIN_SECRET_BYTES
+            raise Config::Error, "session.secret must be at least #{MIN_SECRET_BYTES} bytes outside development and test; generate one with: openssl rand -hex 32"
+          end
           return secret
         end
-        if environment == "production"
-          raise Config::Error, "session.enabled needs session.secret (or KILAU_SESSION_SECRET) in production"
+        unless local
+          raise Config::Error, "session.enabled needs session.secret (or KILAU_SESSION_SECRET) in #{environment}; generate one with: openssl rand -hex 32"
         end
-        $stderr.puts "kilau: session.secret is not set; using the built-in development key (never in production)" if environment == "development"
+        $stderr.puts development_key_warning if environment == "development"
         DEVELOPMENT_SECRET
       end
 
@@ -63,7 +75,7 @@ module Kilau
           return refused(request, Dispatcher.error_response(403, "invalid authenticity token"))
         end
         response = @inner.call(request)
-        response.add_set_cookie(Cookie.build(Session::COOKIE, session.to_cookie_value, MAX_AGE, @secure)) if session.changed?
+        response.add_set_cookie(Cookie.build(Session::COOKIE, session.to_cookie_value, Session::MAX_AGE, @secure)) if session.changed?
         response
       end
 

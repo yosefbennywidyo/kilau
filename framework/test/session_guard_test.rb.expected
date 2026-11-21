@@ -1,3 +1,4 @@
+kilau: session.secret is not set; using the built-in development key (never in production)
 ok wrap returns the dispatcher itself when sessions are not configured
 ok wrap returns the dispatcher itself in production when sessions are not configured
 ok wrap returns the dispatcher itself when session.enabled is false
@@ -7,8 +8,21 @@ ok session.enabled in production without a secret raises Config::Error
 ok an empty secret raises Config::Error
 ok production accepts the secret from the environment
 ok an empty secret from the environment raises Config::Error
+ok development with session.enabled and no secret returns a Guard
+ok the development key warning names the key and production
+ok session.enabled in staging without a secret raises Config::Error
+ok session.enabled in Production (capitalised) without a secret raises Config::Error
+ok session.enabled in prod without a secret raises Config::Error
+ok a missing-secret error names the generation command
+ok a 31-byte secret raises in production and names the generation command
+ok a 32-byte secret passes in production
+ok a 31-byte secret passes in test
+ok a 31-byte secret passes in development
+ok a short secret raises in staging too
+ok a short secret from the environment raises in production
 ok a GET that makes a token sets one session cookie
 ok the session cookie carries HttpOnly, SameSite and Max-Age, not Secure
+ok session.secure: true adds Secure to the session cookie
 ok a GET that does not change the session sets no cookie
 ok the same session gets the same token again
 ok a POST without a token is 403 and never reaches the dispatcher

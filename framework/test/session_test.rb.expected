@@ -25,3 +25,21 @@ ok extra dots give an empty session
 ok a missing payload with a valid-length mac gives an empty session
 ok a forged payload signed with another secret is refused
 ok a verified but malformed payload gives an empty session
+ok MAX_AGE is 14 days
+ok a fresh cookie is accepted
+ok a cookie one second short of MAX_AGE is accepted
+ok a cookie exactly MAX_AGE old gives an empty session
+ok a cookie older than MAX_AGE gives an empty session
+ok a cookie stamped 60 seconds ahead is accepted
+ok a cookie stamped more than 60 seconds ahead gives an empty session
+ok a validly signed payload without a stamp gives an empty session
+ok a signed payload with a stamp that is not a number gives an empty session
+ok a signed payload with a stamp and a user value is accepted
+ok rewriting the cookie renews the stamp
+ok the stamp never shows through []
+ok application code cannot set the reserved stamp key
+ok application code cannot set a key that starts with the reserved name
+ok application code cannot delete the reserved stamp key
+ok a refused write leaves the session unchanged
+ok a value for another key survives next to the stamp
+ok a cookie value with an invalid byte gives an empty session

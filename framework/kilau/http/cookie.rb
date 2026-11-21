@@ -8,9 +8,13 @@ module Kilau
     # the first "=" splits name from value, so "=" may appear inside a value.
     # A name that appears twice keeps its FIRST value: a browser sends the
     # cookie with the more specific Path/Domain first, so the later one is the
-    # one a sibling subdomain could have tossed in.
+    # one a sibling subdomain could have tossed in. A header that is not valid
+    # text parses as no cookies at all.
     def parse(header)
       out = {}
+      # A header with bytes that are not valid text is one stray byte away from
+      # an exception in split; it carries no cookie we could have set.
+      return out unless header.valid_encoding?
       header.split(";").each do |piece|
         piece = piece.strip
         eq = piece.index("=")
