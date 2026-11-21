@@ -7,7 +7,8 @@ ok session.enabled in test uses the built-in key silently
 ok session.enabled in production without a secret raises Config::Error
 ok an empty secret raises Config::Error
 ok production accepts the secret from the environment
-ok an empty secret from the environment raises Config::Error
+ok an empty KILAU_SESSION_SECRET is unset: production with session.enabled still raises Config::Error
+ok an empty KILAU_SESSION_SECRET does not turn sessions on by itself
 ok development with session.enabled and no secret returns a Guard
 ok the development key warning names the key and production
 ok session.enabled in staging without a secret raises Config::Error
@@ -23,6 +24,8 @@ ok a short secret from the environment raises in production
 ok a GET that makes a token sets one session cookie
 ok the session cookie carries HttpOnly, SameSite and Max-Age, not Secure
 ok session.secure: true adds Secure to the session cookie
+ok a response through the guard is cache-control private
+ok a handler's own cache-control is kept
 ok a GET that does not change the session sets no cookie
 ok the same session gets the same token again
 ok a POST without a token is 403 and never reaches the dispatcher

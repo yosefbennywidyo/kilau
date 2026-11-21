@@ -24,4 +24,5 @@ ok a non-boolean read as bool names the key
 ok a missing key names the key
 ok load of a missing file names the path
 ok KILAU_SERVER_PORT overrides server.port
+ok an empty environment variable is no override: not a key, and it leaves the file's value
 ok key? counts an environment override the file lacks

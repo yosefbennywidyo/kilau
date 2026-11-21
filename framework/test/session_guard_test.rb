@@ -23,6 +23,14 @@ class CountingStub
   end
 end
 
+class OwnCache
+  def call(request)
+    r = Kilau::Format.text("x")
+    r.set_header("cache-control", "max-age=60")
+    r
+  end
+end
+
 class OtherStub
   def call(request) = Kilau::Format.text("other #{request.request_method}")
 end
@@ -82,11 +90,17 @@ T.check("production accepts the secret from the environment") do
   ENV.delete("KILAU_SESSION_SECRET")
   !wrapped.is_a?(CountingStub)
 end
-T.check("an empty secret from the environment raises Config::Error") do
+T.check("an empty KILAU_SESSION_SECRET is unset: production with session.enabled still raises Config::Error") do
   ENV["KILAU_SESSION_SECRET"] = ""
-  refused = config_error? { Kilau::Session::Guard.wrap(CountingStub.new, context_for("app:\n  name: x\n", "production")) }
+  refused = config_error? { Kilau::Session::Guard.wrap(CountingStub.new, context_for("session:\n  enabled: true\n", "production")) }
   ENV.delete("KILAU_SESSION_SECRET")
   refused
+end
+T.check("an empty KILAU_SESSION_SECRET does not turn sessions on by itself") do
+  ENV["KILAU_SESSION_SECRET"] = ""
+  left_alone = Kilau::Session::Guard.wrap(stub, context_for("app:\n  name: x\n", "production")).equal?(stub)
+  ENV.delete("KILAU_SESSION_SECRET")
+  left_alone
 end
 
 T.check("development with session.enabled and no secret returns a Guard") do
@@ -162,12 +176,16 @@ T.check("session.secure: true adds Secure to the session cookie") do
   line = secure_guard.call(request_for("GET", "/form", nil, {})).set_cookies[0]
   line.include?("; Secure") && line.include?("HttpOnly")
 end
+T.check("a response through the guard is cache-control private") { form.headers["cache-control"] == "private" }
+T.check("a handler's own cache-control is kept") do
+  Kilau::Session::Guard.wrap(OwnCache.new, context).call(request_for("GET", "/", nil, {})).headers["cache-control"] == "max-age=60"
+end
 T.check("a GET that does not change the session sets no cookie") { guard.call(request_for("GET", "/other", cookie, {})).set_cookies.empty? }
 T.check("the same session gets the same token again") { guard.call(request_for("GET", "/form", cookie, {})).body == token }
 
 calls = inner.calls
 no_token = guard.call(request_for("POST", "/things", cookie, {}))
-T.check("a POST without a token is 403 and never reaches the dispatcher") { no_token.status == 403 && inner.calls == calls && no_token.body.include?("invalid authenticity token") }
+T.check("a POST without a token is 403 and never reaches the dispatcher") { no_token.status == 403 && inner.calls == calls && no_token.body.include?("invalid authenticity token") && no_token.body.include?("reload the page") }
 T.check("a refusal carries no session cookie") { no_token.set_cookies.empty? }
 T.check("a POST with the right token passes") do
   r = guard.call(request_for("POST", "/things", cookie, { "authenticity_token" => token }))

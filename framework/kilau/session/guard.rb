@@ -72,9 +72,12 @@ module Kilau
         session = Session.load(request.cookie(Session::COOKIE), @secret)
         request.session = session
         unless Csrf.safe_verb?(request.request_method) || Csrf.verify?(request)
-          return refused(request, Dispatcher.error_response(403, "invalid authenticity token"))
+          return refused(request, Dispatcher.error_response(403, "invalid authenticity token (reload the page and try again; the session may have expired)"))
         end
         response = @inner.call(request)
+        # A page here can carry the session's token and a Set-Cookie: it is one visitor's, so a
+        # shared cache must not keep it. A handler that sets its own cache-control wins.
+        response.set_header("cache-control", "private") if response.headers["cache-control"].nil?
         response.add_set_cookie(Cookie.build(Session::COOKIE, session.to_cookie_value, Session::MAX_AGE, @secure)) if session.changed?
         response
       end
