@@ -26,6 +26,13 @@ module Kilau
       @conn.exec_script("CREATE TABLE #{name} (#{table.to_sql})")
     end
 
+    # A UNIQUE index, so the database itself refuses a duplicate value even
+    # when two requests race past a check made in Ruby. It goes away with
+    # its table.
+    def add_unique_index(table, column)
+      @conn.exec_script("CREATE UNIQUE INDEX index_#{table}_on_#{column} ON #{table} (#{column})")
+    end
+
     def drop_table(name)
       @conn.exec_script("DROP TABLE #{name}")
     end
