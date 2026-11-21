@@ -18,6 +18,17 @@ T.check("verify? rejects a prefix of the password") { !P.verify?("correct hors",
 T.check("two digests of one password differ (salt)") { P.digest("correct horse", IT) != d }
 T.check("the other digest verifies too") { P.verify?("correct horse", P.digest("correct horse", IT)) }
 
+MB = "pässwörd日本"
+T.check("a multibyte password round-trips") { P.verify?(MB, P.digest(MB, IT)) }
+T.check("a wrong multibyte password is false") { !P.verify?("pässwörd日本!", P.digest(MB, IT)) && !P.verify?("passwörd日本", P.digest(MB, IT)) }
+# Generated once in CRuby: salt 000102..0f, 1000 iterations, plain MB.
+KNOWN = "pbkdf2$sha256$1000$000102030405060708090a0b0c0d0e0f$ba2b019f43d14df9a9921eacf860e80aa451b7172f602070a1df6277558eb17a"
+T.check("a CRuby-made digest of a multibyte password verifies") { P.verify?(MB, KNOWN) }
+T.check("the CRuby-made digest rejects another password") { !P.verify?("password", KNOWN) }
+T.check("verify? is false for a non-String plain or digest") { P.verify?(123, d) == false && P.verify?("correct horse", 123) == false }
+T.check("digest refuses a non-Integer iteration count") { raises? { P.digest("pw", 1.5) } }
+T.check("digest refuses a count verify? could never accept") { raises? { P.digest("pw", 1_000_000_000) } }
+
 # The iteration count is recorded and used: rewriting it breaks verification.
 other = d.sub("$1000$", "$1001$")
 T.check("the recorded iteration count is used") { !P.verify?("correct horse", other) }

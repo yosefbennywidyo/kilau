@@ -8,11 +8,16 @@ module Kilau
   # later without locking old users out.
   #
   # verify? never raises on bad input and never runs PBKDF2 before the
-  # digest's shape and the plain's length are checked: a corrupted stored
-  # value or a huge submitted password cannot make a login spin.
+  # digest's shape and the plain's length are checked, so a huge submitted
+  # password never reaches PBKDF2. The shape's 9-digit iteration cap bounds
+  # PARSING only: a digest is trusted data from our own database (written by
+  # digest, which refuses counts above MAX_ITERATIONS). A forged or corrupted
+  # stored count up to 999_999_999 still costs about 18 minutes under Spinel
+  # per login; that risk is accepted.
   # Length POLICY (a minimum, say) belongs to the model, not here.
   class Password
     MAX_BYTES = 1024
+    MAX_ITERATIONS = 999_999_999
 
     # OWASP's PBKDF2-HMAC-SHA256 figure. bench/password_cost.rb (2026-11-21,
     # AC power): one digest takes ~642 ms under Spinel -O2 (Spinel runs its
@@ -38,15 +43,17 @@ module Kilau
     def self.digest(plain, iterations = DEFAULT_ITERATIONS)
       raise ArgumentError, "password is required" if plain.nil? || plain.empty?
       raise ArgumentError, "password is longer than #{MAX_BYTES} bytes" if plain.bytesize > MAX_BYTES
-      raise ArgumentError, "iterations must be at least 1" if iterations < 1
+      raise ArgumentError, "iterations must be an Integer" unless iterations.is_a?(Integer)
+      raise ArgumentError, "iterations must be 1..#{MAX_ITERATIONS}" if iterations < 1 || iterations > MAX_ITERATIONS
       salt = SecureRandom.random_bytes(16)
       hash = OpenSSL::PKCS5.pbkdf2_hmac(plain, salt, iterations, 32, "sha256")
       "pbkdf2$sha256$#{iterations}$#{salt.unpack1("H*")}$#{hash.unpack1("H*")}"
     end
 
     def self.verify?(plain, digest)
-      return false if plain.nil? || plain.empty? || plain.bytesize > MAX_BYTES
-      return false if digest.nil? || !digest.match?(SHAPE)
+      return false unless plain.is_a?(String) && digest.is_a?(String)
+      return false if plain.empty? || plain.bytesize > MAX_BYTES
+      return false unless digest.match?(SHAPE)
       parts = digest.split("$", -1)
       iterations = parts[2].to_i
       salt = [parts[3]].pack("H*")
