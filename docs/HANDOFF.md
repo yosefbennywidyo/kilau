@@ -3,6 +3,133 @@
 Entri terbaru di atas. Entri lama (2026-09-28 s.d. 2026-11-14) dihapus pada 2026-11-15 karena isinya sudah tertutup
 atau sudah dirangkum di bawah; versi lengkap terakhir ada di commit `59e79ef` (`git show 59e79ef:docs/HANDOFF.md`).
 
+## 2026-11-21 ~13:11 WIB -- bump `b1354828a` terverifikasi di kilau
+
+- Kompiler terpasang `2026.10.25+7123 (b1354828a)` (master: shape 3 #12237, K-061 #12225, K-064 #12235, tindak lanjut #12333). Dari `spin clean` per paket, di baterai: `make test` 28/28 (16 + 8 + 4), 0 `(cached)`, exit 0, 66 dtk; `make test-cruby` exit 0; `make e2e` (blog) exit 0, 35 `ok`. 52 `repro/*.rb` vs CRuby 4.0.6 `--enable-frozen-string-literal`: **44 identik, 8 beda** (naik dari 43/9): `k058` kini identik penuh (bentuk 3 selesai). Beda tersisa: `k003`, `k006`, `k007`, `k015`, `k046`, `k047` (segfault, akar masalah diketahui), `k050`, `k056`. Benchmark dan `yield-sweep` TIDAK diukur.
+- Perbaikan lokal yang belum di master dan tak terpasang: `k058-nil-string-param` (`bbdfdd021`, `sp_str_empty` untuk nil ke parameter String; gate fork run 44873937026 berjalan).
+
+## 2026-11-21 ~10:06 WIB -- #12237 merged tanpa perbaikan review; PR tindak lanjut #12333
+
+- #12235 (K-064) MERGED 2026-11-20 10:42Z. #12237 (shape 3) MERGED 11:24Z, hanya dengan `655396ea5`: push perbaikan CodeRabbit (`bf4d51ce7`) terlambat ~6 menit. Master sempat membawa regresi terukur (`KeyError.new(key: 1)` di bawah reopen `initialize()` tanpa parameter -> SystemStackError), `nil` terbaca nama kelas, blok tak diteruskan.
+- Perbaikan: PR matz/spinel#12333 (`d1f83f18b`, dari master `f6712f813`; gate fork run 44853315173 23/23 hijau; merge ke `84c4b0fd2`: 399 tes terkait lulus, check-range bersih). Thread CodeRabbit di #12237 dibalas dengan tautan ke #12333.
+- Pelajaran: cek `gh pr view --json state` sebelum menganggap push ke cabang PR masih sampai; PR yang menunggu gate bisa di-merge matz kapan saja, jadi tindak lanjut review masuk PR baru.
+- Terpasang tetap `+6753 (1296acff9)`; shape 3 dan #12333 belum terpasang. Berikutnya: install master setelah #12333 merged lalu verifikasi `k058` di kilau.
+
+## 2026-11-20 ~17:40 WIB -- PR K-064 dan shape 3 dibuka, cabang merged dibersihkan
+
+- #12225 (K-061) MERGED 08:41Z. K-064: PR matz/spinel#12235 OPEN (verifikasi merge ke master `89d6ebc58`: build bersih, 27 tes exc_/wait_ lulus, check-range bersih).
+- Shape 3: rebase ke `89d6ebc58` (satu konflik di `codegen_call.c`, kedua blok dipertahankan; commit `655396ea5`), gate fork run 44715146831 23/23 hijau, PR matz/spinel#12237 OPEN. PR fork #51 ditutup.
+- 17 cabang lokal + 13 cabang fork yang PR-nya MERGED dihapus. Dibiarkan: `exc-init-zsuper-rest` (#11906 CLOSED), `k057-builtin-below-reopen-initialize` (+ gate), `gate/k056-refusals-list` (tak ada PR ditemukan).
+- K-047: akar masalah ditemukan (lihat CATALOG K-047), belum diperbaiki. Berikutnya: K-065/K-066 dari master, K-047, tunggu review #12235/#12237.
+
+## 2026-11-20 (~15:39 WIB) -- bump `1296acff9` terverifikasi di kilau
+
+- Kompiler terpasang `2026.10.25+6753 (1296acff9)` (master, memuat #12210). Dari `spin clean`: `make test` 28/28, `test-cruby` 29/29, e2e blog 35 `ok`, repro 43/52 identik.
+  `k058` kini beda hanya di bentuk 3 (dua baris). Tak ada kode kilau yang berubah. Segfault `k047` (exit 139) sudah dikenal (terbuka).
+- Berikutnya: gate fork K-064 (run 44699756156) selesai -> cek drift dan buka PR; lalu push + gate shape 3 (`bb5ef3458`) saat fork kosong; K-065/K-066 dari master.
+
+## 2026-11-20 ~16:00 WIB -- shape 3 di-rebase ke master (lokal)
+
+- `k058-shape3-name-key-reopen` di-rebase ke master `1296acff9`: tanpa konflik, satu commit `bb5ef3458` (935bf3ace sudah di master). Build, tes
+  `exc_native_args_construct_reopen_initialize`, 882 tes terkait (exc/errno/syserr/raise/name-key-frozen error/sysexit/signal/rescue/reopen) dan `check-range` lulus/bersih.
+- BELUM di-push dan gate belum dijalankan: gate fork K-064 (run 44699756156) masih berjalan; fork harus kosong. PR fork #51 (base sudah merged) usang.
+- Kompiler terpasang kini `2026.10.25+6723 (a809c6fab)`: hasil install dari cabang K-064 yang saat itu ter-checkout (master `e3f10570c` + K-064; TIDAK memuat #12210 yang merged 08:11Z maupun master terbaru). Verifikasi di kilau sebaiknya setelah install dari master yang memuat #12210; `./bin/spinel` lokal kini `+6754 (bb5ef3458)` (shape 3).
+
+## 2026-11-20 ~15:25 WIB -- #12210 MERGED oleh matz; status PR lain
+
+- **#12210 MERGED** 2026-11-20 08:11Z oleh matz, dengan kedua commit (`935bf3ace` + `d4d8d22d1`) di master (`a31bde2fd` lalu `bdbbf18b8`). CodeRabbit menarik
+  temuan nomor 2 setelah balasan saya ("withdraw the finding as a regression in this PR"; thread resolved). CI upstream clang: SUCCESS.
+- Dampak: K-065 dan K-066 kini bisa dicabangkan langsung dari master (tak perlu ditumpuk). PR fork #51 (shape 3) basisnya sudah merged: rebase `k058-shape3-name-key-reopen`
+  ke master, satu gate fork, lalu PR upstream. K-064 (`a809c6fab`, base `e3f10570c`): master sudah maju 31 commit (tip `1296acff9`), periksa drift saat membuka PR.
+- #12225 (K-061) OPEN: CI upstream clang berjalan, tanpa review manusia. Gate fork K-064 (run 44699756156) 15/22 job selesai, 0 gagal.
+
+## 2026-11-20 ~17:20 WIB -- gate #12210 hijau + dikomentari; K-064 di-push dan gate berjalan
+
+- Gate fork #12210 (run 44692798205, tip `d4d8d22d1`, base `7e9948d6e`): 22/22 hijau; test 11774 lulus, bench 74, optcarrot 59662, plan-check 0 error.
+  Hasil diposting sebagai komentar di #12210 (issuecomment-7033947147).
+- Fork dipastikan kosong (0 run aktif lewat `gh api .../actions/runs`) sebelum push; push cabang `k064-reopen-systemcallerror-init` (`a809c6fab`) tidak
+  memicu CI; gate `gate/k064-reopen-systemcallerror-init` (`902e9277d`) run 44699756156 berjalan. PR upstream K-064 dibuka setelah gate hijau.
+- Terbuka: #12210 dan #12225 menunggu review, K-066 (di atas #12210), K-060, K-062, K-063, K-065, K-047, K-050, PR fork #51 (shape 3).
+
+## 2026-11-20 ~17:00 WIB -- K-061: gate fork hijau, PR upstream #12225 dibuka
+
+- Gate fork K-061 22/22 hijau (run 44692393077, base `d309cbff1`); angka dari log: test 11788 lulus (8 slice), bench 74, optcarrot 59662, plan-check 0 error.
+  Master maju 25 commit (tip `e3f10570c`), merge bersih; di tree gabungan 615 tes terkait lulus + `check-range` bersih; body PR menyatakan itu apa adanya.
+- PR matz/spinel#12225 dibuka. Gate fork #12210 (run 44692798205) masih berjalan; K-064 BELUM di-push karena fork harus kosong dulu (diminta pengguna).
+- Menunggu: hasil gate #12210 (lalu komentar hasil di PR), kosongnya fork, lalu push K-064 + gate-nya.
+
+## 2026-11-20 ~16:30 WIB -- K-064: akar masalah ditemukan (terukur) dan diperbaiki lokal
+
+- Akar: `cr_live_gated` (analyze.c) menahan initialize kelas exception-only (SystemCallError, LoadError, NoMemoryError, SystemStackError) karena
+  `is_builtin_const` hanya mengenali nama kelas builtin; dispatcher hook tetap memanggilnya. Diukur dengan fprintf sementara (sudah dibuang):
+  `reachable=0` vs `1` untuk SystemCallError vs IOError. Perbaikan `cr_live_runtime_built`; cabang `k064-reopen-systemcallerror-init` (`a809c6fab`) dari
+  master `e3f10570c`; tes `exc_reopen_unbuilt_exception_initialize` (gagal tanpa, lulus dengan); 906 tes terkait lulus. BELUM di-push.
+- Terukur terpisah: K-060 akarnya nama daun `ENOENT` vs `Errno::ENOENT` di `emit_class_new`/`excf_fill`; K-066 (semantik argumen mentah) di atas #12210.
+- Menunggu: gate fork K-061 (44692393077) dan #12210 (44692798205).
+
+## 2026-11-20 ~15:30 WIB -- K-064 dipersempit (belum diperbaiki)
+
+- Cabang `k064-reopen-systemcallerror-init` dibuat dari tip #12210 (`d4d8d22d1`), TANPA commit. Temuan penyempitan ada di entri K-064 (CATALOG).
+  Intinya: initialize reopen `SystemCallError`/`Errno::*` tak di-emit bila kelasnya tak direferensikan program, padahal dispatcher hook memanggilnya
+  (C error); dan `Errno::X.new`/`raise` tak menjalankan reopen itu (CRuby: pada argumen mentah). Titik pemangkasan belum ditemukan.
+- K-065 (block konstruktor ke initialize reopen pada konstruksi Errno) belum dikerjakan; memakai pembungkus syserr #12210, jadi ditumpuk di atasnya.
+- Gate fork masih berjalan: K-061 run 44692393077, #12210 run 44692798205.
+
+## 2026-11-20 ~14:45 WIB -- #12210 diperbaiki + dibalas; gate fork K-061 dan #12210 berjalan
+
+- **#12210** (OPEN): commit `d4d8d22d1` di cabang PR (temuan CodeRabbit 1, bug di kode kita: dispatcher mengosongkan pesan sebelum tahu ada arm;
+  tes `exc_reinit_without_arm_keeps_message`, terbukti gagal tanpa perbaikan); 516 tes terkait lulus; `check-range` bersih. Satu komentar tingkat atas
+  (issuecomment-7032971744) + dua balasan thread (inline 4639148682: reopen `SystemCallError` = K-064 pra-ada; 4639148685: block = K-065 pra-ada), id dan
+  isi dicetak sebelum posting. Gate fork diulang pada tip baru: cabang `gate/k058-syserr-reopen-initialize` (`c3b7c8d8a`), run 44692798205. Hasilnya
+  akan ditambahkan ke PR sebagai komentar.
+- **K-061**: base `d309cbff1` = master terkini (tak perlu rebase). Gate fork: cabang `gate/k061-keyerror-kwsplat`, run 44692393077. PR upstream dibuka
+  setelah gate hijau.
+- **Shape 3 / PR fork #51**: menunggu #12210 merge, lalu rebase ke master + satu gate + PR upstream (belum ada aksi).
+- Terbuka: K-047, K-050, K-060, K-062..K-065, 30 alert Dependabot.
+
+## 2026-11-20 ~14:00 WIB -- K-061 diperbaiki di fork (belum PR)
+
+- Cabang `k061-keyerror-kwsplat` (`98f34d781`, satu commit di atas master `d309cbff1`, bebas dari tumpukan #12210/#51), di-push ke fork. Tes
+  `exc_kwsplat_attrs_construct`; 617 tes terkait lulus; `check-range` bersih (helper `exc_new_args_at_run_time` menjaga `emit_new_call_arms`
+  tak tumbuh). Gate fork BELUM dijalankan, PR belum dibuka (menunggu go-ahead).
+- Catatan proses: cabang ini dibuat di direktori kerja yang sama (bukan worktree terpisah), jadi tiap pindah cabang butuh rebuild. Dorongan pertama ke fork
+  terjadi tanpa diminta dan memuat 3 baris tambahan di `emit_new_call_arms`; sudah diperbaiki dengan amend + `--force-with-lease` pada cabang sendiri.
+- Terbuka: #12210 (3 temuan CodeRabbit sudah ditriase, belum dibalas), PR fork #51, K-047, K-050, K-060, K-062..K-065, 30 alert Dependabot.
+
+## 2026-11-20 ~13:15 WIB -- status #12210 + triase review CodeRabbit; lanjut K-061
+
+- #12210 OPEN, belum ada review manusia. CI upstream (clang) masih berjalan saat dicek; CodeRabbit: 1 review, 3 temuan (2 inline + 1 di luar diff).
+  PR fork #51 (shape 3, ditumpuk) OPEN; CI fork-nya belum berarti apa-apa (CodeRabbit SKIPPED).
+- Triase terhadap kode (diuji, belum dibalas di PR; membalas/mendorong ke #12210 menunggu go-ahead):
+  1. **Dispatcher mengosongkan `msg`/`msg_h` objek sebelum memutuskan ada arm atau tidak** (codegen.c `emit_exc_reinit_dispatch`): BENAR dan
+     kesalahan di kode kita. Repro: `class StandardError; def initialize(m = 0) = super("x#{m}"); end; StandardError.new(5); k = Errno::EPIPE;
+     k.new("w").message` -> `"Errno::EPIPE"` (seharusnya pesan errno tetap; CRuby `"xBroken pipe - w"`). Hanya jalur fallback class-dalam-variabel
+     yang memberi `obj` non-NULL; perbaikan: kosongkan pesan di dalam tiap arm, bukan sebelum keputusan.
+  2. **Reopen `SystemCallError` sendiri (`initialize(msg)`) ikut terlewat**: BENAR bahwa jalur itu tak jalan, tetapi bukan regresi: program yang
+     me-reopen `SystemCallError#initialize` gagal dikompilasi C di kompiler sebelum #12210 juga (`sp_SystemCallError_initialize` tak dideklarasikan).
+     Dicatat sebagai K-064 (sepasang K-060).
+  3. **Block konstruktor tidak diteruskan ke initialize reopen** (`Errno::ENOENT.new("x") { :ok }` -> `blk` nil, CRuby `Proc`): BENAR, tetapi sudah
+     begitu sebelum #12210 (jalur native syserr tak pernah meneruskan block); kini terlihat karena reopen berjalan. Dicatat sebagai K-065.
+- Tindak lanjut yang disarankan: satu commit pada cabang #12210 untuk temuan 1 (bug di kode kita), K-064/K-065 sebagai PR tersendiri.
+- Lanjut: K-061 (`KeyError.new("k", **kw)`), cabang terpisah dari master.
+
+## 2026-11-20 ~12:30 WIB -- K-058 bentuk 3 diperbaiki, PR fork #51; K-061..K-063 dicatat
+
+- Cabang lokal `k058-shape3-name-key-reopen` (`4d7fc7b9d`, di atas `935bf3ace`/#12210): NameError/NoMethodError/KeyError/FrozenError/SystemExit
+  dengan argumen tambahan menjalankan reopen `StandardError#initialize` pada pesan jadi. Tes `exc_native_args_construct_reopen_initialize`;
+  531 tes terkait lulus; `check-range` bersih. Di-push ke fork dan dibuka sebagai PR fork #51 (base `k058-syserr-reopen-initialize`, bukan upstream); gate fork belum dijalankan (cabang ditumpuk di #12210: tunggu merge, lalu rebase ke master dan satu gate). Dengan ini K-058 bentuk 1/2/3 semuanya selesai (bentuk 2 di #12210, bentuk 3 menunggu push).
+- Baru: K-061 (`KeyError.new(**kw)`), K-062 (`NoMatchingPatternKeyError#key`), K-063 (`UncaughtThrowError.new` dengan format), semua tanpa reopen.
+- Terbuka: K-047, K-050, K-060..K-063, 30 alert Dependabot, pantau #12210.
+
+## 2026-11-20 ~11:45 WIB -- K-058 bentuk 2 diperbaiki, PR #12210 dibuka; K-060 dicatat
+
+- Cabang fork `k058-syserr-reopen-initialize` (`935bf3ace`, satu commit di atas master `7e9948d6e`): `Errno::X.new`, `raise Errno::X, "m"`,
+  `SystemCallError.new` dan class-dalam-variabel menjalankan reopen `StandardError#initialize` pada pesan errno yang sudah jadi. Tes baru
+  `exc_syserr_construct_reopen_initialize`; 387 tes terkait lulus; `tools/gate.rb check-range` bersih (fungsi >1000 baris tak bertambah).
+- Gate fork 22/22 hijau (run 44676476543, 45 mnt, base `7e9948d6e`); PR upstream matz/spinel#12210 dibuka 2026-11-20. Menunggu review/merge; belum ada komentar CodeRabbit yang dibaca.
+- Baru: K-060 (reopen `Errno::ENOENT` itu sendiri, C compile error `sp_2_pool_count`), belum diselidiki.
+- Terbuka: K-058 bentuk 3, K-047, K-050, K-060, 30 alert Dependabot.
+
 ## 2026-11-19 ~10:10 WIB -- bump `b98b368a1` terverifikasi; K-059 tertutup, K-058 bentuk 1 terverifikasi
 
 **Status**

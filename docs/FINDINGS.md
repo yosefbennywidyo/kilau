@@ -105,6 +105,13 @@ di kedua engine.
 | K-057 | builtin exception tanpa reopen sendiri, di bawah builtin ter-reopen, melewati `initialize` reopen itu | nilai salah | PR terbuka: matz/spinel#12068 (+ commit lanjutan `d9dbccd70`: 3 temuan CodeRabbit, 2 regresi) |
 | K-058 | error runtime, `Errno::*` dan kelas dengan argumen sendiri (NameError name, KeyError key:) melewati `initialize` reopen `StandardError` | nilai salah | terbuka |
 | K-059 | `initialize` reopen builtin exception yang memakai parameter block-nya gagal dikompilasi C (`sp_IndexError_initialize` tak dideklarasikan) | C compile error | terbuka |
+| K-060 | reopen kelas `Errno::ENOENT` itu sendiri (`def initialize`) gagal dikompilasi C (`sp_2_pool_count` tak dideklarasikan) | C compile error | terbuka |
+| K-061 | `KeyError.new("k", **kw)` tidak mencatat key/receiver dari hash keyword dinamis | nilai salah | PR matz/spinel#12225 (gate fork 22/22) |
+| K-062 | `NoMatchingPatternKeyError#key` tidak ada saat runtime (`#matchee` ditolak bernama) | nilai salah | terbuka |
+| K-063 | `UncaughtThrowError.new(tag, value, fmt)` tidak memformat pesan | nilai salah | terbuka |
+| K-064 | reopen `SystemCallError`/`LoadError`/`NoMemoryError`/`SystemStackError#initialize` tak di-emit (kelas exception-only ditahan analisis keterjangkauan): C compile error | C compile error | diperbaiki di fork (`k064-reopen-systemcallerror-init`), belum PR |
+| K-065 | block konstruktor (`Errno::ENOENT.new("x") { }`) tidak diteruskan ke `initialize(&blk)` reopen: `blk` nil (CRuby Proc) | nilai salah | terbuka |
+| K-066 | `Errno::X.new`/`raise Errno::X, m` tak menjalankan reopen `SystemCallError#initialize` (CRuby: pada argumen mentah); butuh cabang di atas #12210 | nilai salah | terbuka |
 
 **Pola yang paling mahal:** K-012 dan K-014 s.d. K-017 bergantung pada inferensi
 **seluruh program**. Menambah satu pemanggilan bertipe di tempat lain bisa
@@ -496,6 +503,6 @@ sudah selesai; riwayatnya ada di `docs/HANDOFF.md`.
 5. **Benchmark k6 dari mesin terpisah** (alur multi-langkah, model terbuka dengan
    laju tetap, `thresholds` sebagai gerbang regresi). Tetap berlaku dari versi
    September; sesi ini menunjukkan lagi bahwa angka lintas-sesi di satu laptop tidak
-   bisa dibandingkan. `bench/run.sh` sebaiknya mencatat sumber daya dan Low Power
-   Mode ke `meta.txt`.
+   bisa dibandingkan. (`bench/run.sh` sudah mencatat sumber daya dan Low Power Mode
+   ke `meta.txt` sejak `27ba1a6`; diperiksa 2026-11-21, terisi di hasil 2026-11-16.)
 6. ~~K-042 ke upstream~~ selesai: diperbaiki lewat matz/spinel#11723 (2026-11-13).

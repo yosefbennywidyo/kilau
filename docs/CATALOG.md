@@ -1,5 +1,9 @@
 # Katalog batas AOT
 
+**Bump 2026-11-21 (~13:11 WIB)** (user `git pull` master + `make install`; diverifikasi dari `spin clean` per paket, di baterai): compiler terpasang sekarang `2026.10.25+7123 (b1354828a)`, naik dari `+6753 (1296acff9)`; membawa K-058 bentuk 3 (#12237), K-061 (#12225), K-064 (#12235) dan tindak lanjut #12333. Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), 0 `(cached)`, exit 0, 66 dtk; `make test-cruby` exit 0; `make e2e` exit 0, 35 `ok`. 52 `repro/*.rb` vs CRuby 4.0.6: **44 identik, 8 beda**; `k058` identik penuh. Beda tersisa: `k003`, `k006`, `k007`, `k015`, `k046`, `k047` (segfault exit 139, akar masalah di entri K-047), `k050`, `k056`. TIDAK diukur: benchmark dan `yield-sweep`. Belum di master: `bbdfdd021` (nil ke parameter String).
+
+**Bump 2026-11-20 (~15:39 WIB)** (user `git pull` master + `make install`; diverifikasi dari `spin clean` per paket, AC): compiler terpasang sekarang `2026.10.25+6753 (1296acff9)`, naik dari `+6441 (b98b368a1)`; membawa K-058 bentuk 2 (#12210, MERGED 2026-11-20 08:11Z oleh matz, termasuk `d4d8d22d1`). Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), 0 `(cached)`, exit 0, 62 dtk; `make test-cruby` 29/29; `make e2e` (di `examples/blog`) exit 0, 35 `ok`. 52 `repro/*.rb` vs CRuby 4.0.6 `--enable-frozen-string-literal` (berkas ber-ARGV diberi satu argumen): **43 identik, 9 beda**, set yang sama dengan bump sebelumnya. `k058` kini beda HANYA di dua baris bentuk 3 (`NameError.new("n", :field)` -> `"n"` vs CRuby `"S[n]"`; `KeyError.new("k", ...)` -> `"k"` vs `"S[k]"`): baris `Errno::ENOENT.new` (bentuk 2) sekarang identik. Beda lain tak berubah: `k003`, `k006`, `k007`, `k015` (repro sendiri; `k015` gagal build karena `migration/migrator.rb` tak termuat), `k046` (build gagal), `k047` (segfault, exit 139; terbuka), `k050`, `k056` (penolakan bernama). TIDAK diukur: benchmark dan `yield-sweep`. Perbaikan lokal yang belum di master dan tak terpasang: shape 3 (`bb5ef3458`), K-061 (#12225 OPEN), K-064 (cabang `k064-reopen-systemcallerror-init`).
+
 **Bump 2026-11-19 (~10:10 WIB)** (user `git pull` + `make install`; diverifikasi dari `spin clean`, AC): compiler terpasang sekarang `2026.10.25+6441 (b98b368a1)`, naik dari `+6092 (a2aa05227)`; membawa K-058 bentuk 1 (#12116) dan tindak lanjutnya #12122, K-059 (#12111). Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), exit 0; `make test-cruby` 29/29; `make e2e` (di `examples/blog`) exit 0, 35 `ok`. 52 `repro/*.rb` vs CRuby 4.0.6 `--enable-frozen-string-literal`: **43 identik, 9 beda** (sebelumnya 42/10). Berubah: `k059` kini identik. Beda tersisa: `k003`, `k006`, `k007`, `k015`, `k046` (sebab sendiri/by design), `k047`, `k050` (penolakan bernama), `k056` (penolakan bernama), `k058` (hanya baris `Errno::ENOENT.new`, `NameError.new` dan `KeyError.new`, yaitu bentuk 2/3; baris runtime-raised kini identik).
 
 **Bump 2026-11-18 (~12:10 WIB)** (user `git pull` + rebuild; diverifikasi dari `spin clean`, AC): compiler terpasang sekarang `2026.10.25+6092 (a2aa05227)`, naik dari `+5778 (8a6d3fa76)`; membawa K-054 (#12058), K-055 (#12061), K-056 (#12065) dan K-057 (#12068), semuanya MERGED 2026-11-17. Diverifikasi di kilau: `make test` **28/28** (16 + 8 + 4), 0 `(cached)`, exit 0 (±4 mnt 45 dtk); `make test-cruby` 29/29; `make e2e` (di `examples/blog`) blog dan blog_routes exit 0, 35 `ok`. 52 `repro/*.rb` dibandingkan dengan CRuby 4.0.6 `--enable-frozen-string-literal` (berkas yang membaca `ARGV` dijalankan dengan satu argumen): **42 identik, 10 beda**. Berubah oleh bump ini: `k054`, `k055`, `k057` kini identik dengan CRuby; `k056` kini penolakan bernama (`unsupported super in self.new of a Struct, Data, exception or native class`). Beda yang tersisa: `k003`, `k006`, `k007`, `k015` (repronya sendiri), `k046`, `k050` (penolakan bernama), dan terbuka `k047`, `k058`, `k059` (k059 masih error C `sp_IndexError_initialize`). Repro bertambah dari 49 ke 52 karena `k057`..`k059`. TIDAK diukur: benchmark dan `yield-sweep`.
@@ -2352,7 +2356,16 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
   sendiri (kelas builtin untuk gerbang wrapper: `bcls` hanya memetakan `TY_RANGE` ke "Range").
 - Repro: `repro/k047_method_obj_string_range_wrong_value.rb` (bentuk a; bentuk b ada di gejala).
 - Klasifikasi: (a) nilai salah diam-diam, kategori terburuk, tetapi bentuknya langka; (b) C error mentah.
-- Status: dicatat; belum diperbaiki; belum diajukan ke upstream.
+- Akar masalah (diukur 2026-11-20 ~17:00 WIB, master `1296acff9`; repro itu kini segfault exit 139, bukan `[]`):
+  1. `desugar_builtin_method_obj` (`src/analyze.c`) membuat wrapper `def __bam_N(__bam_r) = __bam_r.to_a`, parameter bertipe String Range.
+  2. `desugar_str_range_methods` lalu mengganti receiver `r.method(:to_a)` dengan `r.to_a` (Array), sebab `method`/`public_method` tidak ada di
+     `range_native` dan sengaja keluar dari `range_object_face` (`is_object_receiver_handoff`, `src/builtin_names.c`, untuk to_enum/instance_eval).
+  3. Codegen mengikat `self` Method ke pointer Array, tetapi thunk `sp___bam_N` menerima `sp_StrRange` by value: `.call` meneruskan pointer
+     ke parameter struct, `sp_srange_to_a` membaca alamat 0x3 (EXC_BAD_ACCESS). Compiler lama membaca sampah yang sama dan menjawab `[]`.
+  Cakupan: Range String `to_a`, `include?`, `first`, `min`, `each_slice` crash atau sampah; `size` nil kebetulan; Range Float `include?` C error; Range Integer benar.
+  Arah perbaikan (belum dikerjakan): pass `desugar_str_range_methods` membiarkan `method`/`public_method`, dan StrRange dibawa lewat slot self
+  (holder PolyArray seperti jalur `bam_poly`); minimal: penolakan bernama, bukan crash.
+- Status: akar masalah diketahui; belum diperbaiki; belum diajukan ke upstream.
 
 ## K-048: `super` tanpa argumen di `initialize` exception yang punya parameter rest -> C error mentah
 
@@ -2556,10 +2569,84 @@ id.nil? ... self.id = 99 ... end`), lalu diverifikasi 2 repro kilau cocok CRuby.
     (`S[can't modify frozen String: ]`), punya kita menyertakannya (batas yang diketahui). `raise` tulisan program tetap memakai versi
     `initialize` per situs (`sp_raise_cls_u`). Tindak lanjut review: matz/spinel#12122 (MERGED 2026-11-18 14:03Z: cek alokasi + tes pakai `Dir.mktmpdir`).
     Diverifikasi 2026-11-19 pada kompiler terpasang `b98b368a1`: baris runtime-raised `repro/k058_*` identik; hanya bentuk 2/3 yang masih beda.
-  - **Bentuk 2, `Errno::ENOENT.new("x")`** (jalur konstruksi compiler, bukan runtime): TERBUKA, belum dikerjakan. Pesan sekarang
-    `"No such file or directory - x"`, CRuby `"S[No such file or directory - x]"` (diukur ulang di cabang #12116).
-  - **Bentuk 3, `NameError.new("n", :field)` / `KeyError.new("k", receiver: 1, key: :kk)`**: TERBUKA. Atribut benar, pesan `"n"` / `"k"`,
-    CRuby `"S[n]"` / `"S[k]"`; jalur native membaca argumen sendiri dan reopening di atasnya sengaja dilewati (#12068).
+  - **Bentuk 2, `Errno::ENOENT.new("x")`** (jalur konstruksi compiler, bukan runtime): DIPERBAIKI di fork, cabang `k058-syserr-reopen-initialize`
+    (`935bf3ace`, di-push 2026-11-20); PR matz/spinel#12210 dibuka 2026-11-20 setelah gate fork 22/22 hijau (run 44676476543, base `7e9948d6e`; merge ke master terbaru bersih, 387 tes terkait lulus di tree gabungan). Sebab sebenarnya: `syserr_initialize` CRuby membangun pesan errno lalu memanggil
+    `super` dengannya, jadi reopen di atas `SystemCallError` berjalan pada pesan JADI, apa pun argumen panggilannya. Empat jalur melewatinya:
+    arm `.new` constant-path langsung ke builder syserr; `raise Errno::X, "m"` memakai nama tanpa kualifikasi sehingga pencarian reopen tak
+    pernah ditanya; `SystemCallError.new("x")` menjalankan reopen pada "x" mentah (`S[x]`, CRuby `S[unknown error - x]`); class dalam variabel
+    (`k = Errno::EPIPE; k.new`) dibangun di fallback dinamis runtime tanpa hook. Reopen `SystemCallError`/kelas `Errno` itu sendiri tetap seperti
+    semula. Tes `exc_syserr_construct_reopen_initialize`; 387 tes exc/exception/reinit/errno/syserr/raise lulus; GC stress identik.
+  - **Bentuk 3, `NameError.new("n", :field)` / `KeyError.new("k", receiver: 1, key: :kk)`** (juga `NoMethodError.new(m, name, args)`,
+    `FrozenError.new("f", receiver:)`, `SystemExit.new(3, "bye")` dan bentuk `raise`-nya): DIPERBAIKI di fork, cabang `k058-shape3-name-key-reopen`
+    (`4d7fc7b9d`, kini di-rebase ke master `1296acff9` setelah #12210 merged = `bb5ef3458`, build+882 tes terkait lulus+`check-range` bersih, belum di-push; semula ditumpuk di atas #12210; di-push ke fork 2026-11-20 dan dibuka sebagai PR fork yosefbennywidyo/spinel#51 dengan base `k058-syserr-reopen-initialize`; BELUM ada PR upstream, gate fork belum dijalankan). `initialize` bawaan kelas-kelas itu membaca argumennya sendiri lalu memanggil
+    `super` dengan pesan saja, jadi reopen `StandardError`/`Exception` berjalan pada pesan itu sementara name/key/receiver/status tetap tercatat.
+    Konstruksi native dipertahankan dan reopen dijalankan sesudahnya (pembungkus yang sama dengan bentuk 2). Reopen kelas itu sendiri, atau kelas
+    di antaranya dan `StandardError` (reopen `NameError` di bawah `NoMethodError`), mendapat argumen lain dari CRuby, jadi dibiarkan seperti semula.
+    Tes `exc_native_args_construct_reopen_initialize`; 531 tes terkait lulus; GC stress identik; `check-range` bersih tanpa pertumbuhan fungsi.
+
+## K-060: `class Errno::ENOENT; def initialize ...; end; end` (reopen kelas Errno itu sendiri) gagal dikompilasi C
+
+- Lapisan: compiler, reopen builtin exception di famili `Errno::*`.
+- Ditemukan: 2026-11-20 ~11:40 WIB, saat memperbaiki K-058 bentuk 2 (compiler `7e9948d6e`); sama pada kompiler terpasang, jadi bukan akibat perbaikan itu.
+- Gejala: `class Errno::ENOENT; def initialize(m = nil) = super("E[#{m}]"); end` lalu `Errno::ENOENT.new("a")` gagal di C:
+  `use of undeclared identifier 'sp_2_pool_count'` / `'sp_2_pool_max'` (makro `SP_POOL_DEFINE`). CRuby `"No such file or directory - E[a]"`.
+- Klasifikasi: C compile error (melanggar kontrak "penolakan bernama, bukan error C"). BELUM diselidiki. Reopen `StandardError` di atasnya sehat.
+- Repro: lihat gejala; belum ada berkas `repro/`.
+
+## K-061: `KeyError.new("k", **kw)` tidak mencatat `key`/`receiver` dari hash keyword dinamis
+
+- Lapisan: compiler, konstruksi exception native. Ditemukan 2026-11-20 saat bentuk 3 K-058 (master `7e9948d6e`+#12210).
+- Gejala: `kw = {receiver: 3, key: :q}; x = KeyError.new("kw", **kw); x.key` -> ArgumentError "no key is available" (CRuby `:q`, `x.receiver` 3).
+  Juga `**{key: :lit}`, `NameError.new("n", :f, **h)`, `NoMethodError.new(m, name, args, **h)` dan `FrozenError.new("f", **h)` (receiver hilang).
+  Dengan keyword literal benar. Tanpa reopen apa pun, jadi bukan akibat K-058.
+- Sebab: arm compile-time untuk kelas-kelas ini hanya membaca keyword literal `key:`/`receiver:`; hash dengan elemen `**h` jatuh ke konstruktor pesan biasa.
+- Perbaikan (fork, cabang `k061-keyerror-kwsplat`, `98f34d781`, dari master `d309cbff1`, di-push 2026-11-20; PR matz/spinel#12225 dibuka 2026-11-20 setelah gate fork 22/22 hijau, run 44692393077, base `d309cbff1`; merge ke master `e3f10570c` bersih, 615 tes terkait lulus di tree gabungan):
+  panggilan seperti itu mengambil jalur `.new(*args)` yang sudah ada (run time mengumpulkan argumen dan membaca hash keyword seperti initialize,
+  termasuk ArgumentError untuk keyword tak dikenal). Kondisinya ada di helper `exc_new_args_at_run_time` supaya `emit_new_call_arms` tak bertambah.
+  Subclass dan `super(msg, **o)` sudah lewat jalur itu. Tes `exc_kwsplat_attrs_construct`; 617 tes terkait lulus; `check-range` bersih.
+- Catatan interaksi: dengan reopen `StandardError#initialize`, `KeyError.new("a", **kw).message` baru benar (`S[a]`) setelah shape 3 (#51) bergabung dengan ini.
+
+## K-062: `NoMatchingPatternKeyError#key` tidak ada saat runtime
+
+- Lapisan: compiler/runtime. Ditemukan 2026-11-20. `NoMatchingPatternKeyError.new("nm", matchee: {a: 1}, key: :b).key` -> NoMethodError
+  "undefined method 'key'" saat runtime (CRuby `:b`); `#matchee` ditolak bernama saat kompilasi. Belum diselidiki: refusal bernama vs implementasi.
+
+## K-063: `UncaughtThrowError.new(tag, value, fmt)` tidak memformat pesan
+
+- Lapisan: compiler, konstruksi exception native. Ditemukan 2026-11-20. `UncaughtThrowError.new(:t, 1, "tag %p").message` -> `"t"` (CRuby
+  `"tag :t"`). Tanpa reopen apa pun. Belum diselidiki.
+
+## K-064: reopen `SystemCallError#initialize` itu sendiri gagal dikompilasi C (PR matz/spinel#12235 OPEN, gate fork 23/23 hijau, run 44699756156)
+
+- Lapisan: compiler, analisis keterjangkauan. Ditemukan 2026-11-20 lewat temuan CodeRabbit di #12210; ada sebelum #12210.
+- Gejala: `class SystemCallError; def initialize(m = nil) = super("SCE[#{m}]"); end` (bahkan hanya itu + `p 1`) -> C: `call to undeclared function
+  'sp_SystemCallError_initialize'`. Juga `LoadError`, `NoMemoryError`, `SystemStackError` (4 kelas; diukur dengan menjalankan semua kelas Exception CRuby).
+- AKAR MASALAH (diukur dengan instrumentasi sementara, bukan dugaan): loop emisi (codegen.c) melewati scope yang `reachable=0`; scope
+  `SystemCallError#initialize` memang `reachable=0`, sedangkan `IOError#initialize` `reachable=1`. Di analyze.c `cr_live_reach_as` menahan method
+  instance akar (initialize) selama `held_i[k]` (kelas dianggap tak pernah dibangun), dan `cr_live_start` hanya membuka kelas yang bukan
+  `cr_live_gated`. `cr_live_gated` mengecualikan kelas ber-`is_builtin_const`, diisi dari `is_builtin_class_name(name)`; keempat kelas itu hanya
+  exception (bukan nama kelas builtin), jadi `gated=1` dan initialize-nya tak dijangkau, sementara dispatcher hook `sp_user_exc_reinit`
+  memanggilnya. Reopen `StandardError`/`KeyError`/`IOError`/dll tak terkena karena nama kelas builtin.
+- Perbaikan: `cr_live_runtime_built` (analyze.c): kelas exception builtin tak ditahan karena runtime membangunnya tanpa `new` di program.
+  Cabang `k064-reopen-systemcallerror-init` (`a809c6fab`, satu commit di atas master `e3f10570c`, bebas dari #12210). Tes
+  `exc_reopen_unbuilt_exception_initialize` (4 error C tanpa perbaikan, PASS dengan); 906 tes terkait lulus; `check-range` bersih. Di-push ke fork 2026-11-20; gate fork `gate/k064-reopen-systemcallerror-init` (`902e9277d`) run 44699756156 dimulai setelah fork dipastikan kosong (0 run aktif); PR upstream belum dibuka.
+- Sisa yang TERUKUR dan terpisah:
+  - `class Errno::ENOENT` (reopen kelas Errno itu sendiri, K-060): tabel kelas menyimpannya dengan nama daun `ENOENT`, jadi `emit_class_new`
+    (`is_builtin_reopen(nama)`) memperlakukannya sebagai kelas program: struct `sp_ENOENT` + `SP_POOL_DEFINE(ENOENT)` -> `sp_2_pool_count`.
+    `excf_fill` (`is_exc_name(nama daun)`) juga tak mengenalinya sebagai reopen. Akarnya nama daun vs nama berkualifikasi; belum diperbaiki.
+  - K-066: setelah K-064 terkompilasi, `Errno::ENOENT.new("x")` dan `raise Errno::EPIPE, "z"` tetap tak menjalankan reopen `SystemCallError`
+    (`"No such file or directory - x"`, CRuby `"SCE[x]"`: CRuby menjalankan reopen itu pada argumen mentah dan `super` menimpa pesan errno).
+    Di kode #12210 `exc_builtin_reopen_initialize` mengembalikan -1 untuk famili syserr dan `syserr_reinit_initialize` menolak pemilik syserr; ini
+    persis temuan CodeRabbit nomor 2: reopen milik famili syserr harus lewat jalur argumen mentah, hanya reopen DI ATAS `SystemCallError` lewat
+    pesan jadi. Perlu cabang yang ditumpuk di #12210.
+  - `File.open` pada path tak ada: CRuby memanggil `initialize(path, "rb_sysopen")` (dua argumen terpisah); hook kita memberi pesan jadi. Beda dan tak terkait K-064.
+
+## K-065: block konstruktor tidak diteruskan ke `initialize(&blk)` reopen pada konstruksi `Errno::*`
+
+- Lapisan: compiler. Ditemukan 2026-11-20 lewat temuan CodeRabbit di #12210; sama sebelum #12210 (reopen tak berjalan di jalur ini, jadi tak terlihat).
+- Gejala: `class StandardError; def initialize(m = nil, &blk) = (@b = blk; super("S[#{m}]")); end` lalu `Errno::ENOENT.new("x") { :ok }.b` -> nil
+  (CRuby `Proc`); `ArgumentError.new("y") { :ok }.b` benar (Proc). Pembungkus `syserr_reinit_*` memanggil `emit_reinit_init_text`, yang menambah `NULL`
+  untuk `&blk`; perlu `emit_ctor_block_slot` milik panggilan. Belum diperbaiki.
 
 ## K-059: `initialize` reopen builtin exception yang memakai parameter block-nya gagal dikompilasi C
 
